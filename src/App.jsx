@@ -8,6 +8,7 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import PremiumAccess from './pages/PremiumAccess';
 import Community from './pages/Community';
+import NotFound from './pages/NotFound';
 import SoulCursor from './components/SoulCursor';
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/premium" element={<PremiumAccess />} />
           <Route path="/community" element={<Community />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
 
         {/* Indie Footer */}
