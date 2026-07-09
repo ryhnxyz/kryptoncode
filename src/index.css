@@ -27,6 +27,12 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  cursor: none !important;
 }
 
 .mono {
@@ -60,8 +66,26 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  margin-bottom: 24px;
+  padding: 20px 40px;
+  border-bottom: 1px dashed var(--border);
+  position: relative;
+  z-index: 1000;
+  background: var(--bg-color);
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
 }
 
 .logo {
@@ -321,11 +345,14 @@ body {
   border-radius: 12px;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-card-actions .btn-light:hover {
   border-color: var(--text-primary);
   background: rgba(0,0,0,0.03);
+}
+.ref-card-actions .btn-light:active {
+  transform: scale(0.97);
 }
 
 .ref-card-actions .btn-dark {
@@ -337,9 +364,174 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-card-actions .btn-dark:hover {
   background: transparent;
   color: var(--text-primary);
+}
+.ref-card-actions .btn-dark:active {
+  transform: scale(0.97);
+}
+
+/* ========================================================
+   ANIMATIONS & TRANSITIONS
+   ======================================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-up {
+  opacity: 0; /* starts hidden */
+  animation: fadeInUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Staggered animation delays for lists/cards */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Global interaction updates */
+a, button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active, .btn-primary:active, .btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* ========================================================
+   MOBILE RESPONSIVENESS
+   ======================================================== */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+    padding: 0 16px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+  .hero-actions button {
+    width: 100%;
+  }
+  
+  .navbar {
+    padding: 16px 20px;
+  }
+  
+  .mobile-menu-btn {
+    display: block;
+  }
+  
+  .nav-content {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-color);
+    border-bottom: 1px dashed var(--border);
+    padding: 24px 20px;
+    gap: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 999;
+  }
+  
+  .nav-content.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
+    margin: 0;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  
+  .nav-item {
+    width: 100%;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  
+  .nav-telegram-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+    padding: 0 16px;
+  }
+  
+  .page-content {
+    padding: 20px 0;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .detail-actions {
+    flex-direction: column;
+  }
+  
+  .detail-actions button {
+    width: 100%;
+  }
+
+  .ref-card {
+    padding: 24px !important;
+  }
 }

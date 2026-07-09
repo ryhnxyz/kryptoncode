@@ -4,14 +4,14 @@ import { CheckCircle } from '@phosphor-icons/react';
 function PremiumAccess() {
   return (
     <main className="hero-section" style={{ marginTop: '80px', paddingBottom: '40px' }}>
-      <h1 className="hero-title" style={{ fontSize: '3.5rem', marginBottom: '16px' }}>
+      <h1 className="hero-title animate-slide-up" style={{ fontSize: '3.5rem', marginBottom: '16px' }}>
         Premium <span className="highlight">Access</span>
       </h1>
-      <p className="hero-subtitle">
+      <p className="hero-subtitle animate-slide-up delay-100">
         Buka kunci semua limitasi. Akses seluruh koleksi script VIP kami.
       </p>
       
-      <div className="ref-card" style={{ maxWidth: '400px', marginTop: '40px', alignItems: 'center' }}>
+      <div className="ref-card animate-slide-up delay-200" style={{ maxWidth: '400px', marginTop: '40px', alignItems: 'center' }}>
         <h2 style={{ fontSize: '2rem', marginBottom: '8px', color: 'var(--text-primary)' }}>Lifetime Pass</h2>
         <div style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '24px', color: 'var(--text-primary)' }}>
           $99 <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/sekali bayar</span>
