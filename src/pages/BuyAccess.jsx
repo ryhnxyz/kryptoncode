@@ -22,7 +22,12 @@ export default function BuyAccess() {
       const found = (data.plans || []).find(p => p.id === planId);
       if (found) {
         setPlan(found);
-        createOrder(found.id);
+        const saved = sessionStorage.getItem(`order_${planId}`);
+        if (saved) {
+          fetchOrder(saved);
+        } else {
+          createOrder(found.id);
+        }
       } else {
         setError('Plan not found');
       }
@@ -33,12 +38,30 @@ export default function BuyAccess() {
     });
   }, [planId]);
 
+  const fetchOrder = async (orderId) => {
+    try {
+      const data = await api.get(`/api/payments/order/${orderId}`);
+      if (data.order) {
+        setOrder(data.order);
+        if (data.order.status === 'confirmed') {
+          setStatus('confirmed');
+        } else {
+          startPolling(orderId);
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(`order_${planId}`);
+      createOrder(planId);
+    }
+  };
+
   const createOrder = async (pid) => {
     setCreating(true);
     try {
       const data = await api.post('/api/payments/create-order', { plan_id: pid });
       if (data.order) {
         setOrder(data.order);
+        sessionStorage.setItem(`order_${pid}`, data.order.id);
         startPolling(data.order.id);
       }
     } catch (err) {
