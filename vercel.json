@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://www.kryptoncode.xyz/$1",
+      "permanent": true,
+      "has": [
+        {
+          "type": "host",
+          "value": "kryptoncode.xyz"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
