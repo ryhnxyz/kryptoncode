@@ -16,6 +16,7 @@ export default function BuyAccess() {
   const [status, setStatus] = useState('pending');
   const [seed, setSeed] = useState(null);
   const [sessionId, setSessionId] = useState(null);
+  const [qrData, setQrData] = useState(null);
 
   useEffect(() => {
     api.get('/api/plans').then(data => {
@@ -184,6 +185,13 @@ export default function BuyAccess() {
                 {order.memo && <span> · Memo: <strong style={{ color: 'var(--text-primary)' }}>{order.memo}</strong></span>}
               </div>
             </div>
+
+            {qrData && (
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%', display: 'block', margin: '0 auto' }} />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>scan to pay — USDC on Base</p>
+              </div>
+            )}
 
             <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(245,158,11,0.05)', borderRadius: '12px', border: '1px dashed rgba(245,158,11,0.3)' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
