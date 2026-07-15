@@ -6,7 +6,6 @@ import './index.css';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
-import PremiumAccess from './pages/PremiumAccess';
 import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
 import NotFound from './pages/NotFound';
@@ -38,7 +37,6 @@ function App() {
           <div className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
               <NavLink to="/products" className="nav-item" onClick={closeMenu}>/products</NavLink>
-              <NavLink to="/premium" className="nav-item" onClick={closeMenu}>/premium</NavLink>
               <NavLink to="/community" className="nav-item" onClick={closeMenu}>/komunitas</NavLink>
             </div>
             

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Lightning, ArrowLeft, Copy, Check, Wallet, QrCode } from '@phosphor-icons/react';
+import { Lightning, ArrowLeft, Copy, Check, Wallet } from '@phosphor-icons/react';
+import QRCode from 'qrcode';
 import { api } from '../lib/api';
 
 export default function BuyAccess() {
@@ -13,7 +14,8 @@ export default function BuyAccess() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState('pending');
-  const [licenseKey, setLicenseKey] = useState(null);
+  const [seed, setSeed] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
 
   useEffect(() => {
     api.get('/api/plans').then(data => {
@@ -51,7 +53,8 @@ export default function BuyAccess() {
         const data = await api.get(`/api/payments/check-payment/${orderId}`);
         if (data.status === 'confirmed') {
           setStatus('confirmed');
-          setLicenseKey(data.license_key);
+          setSeed(data.seed || null);
+          setLicenseKey(data.license_key || null);
           clearInterval(interval);
         } else if (data.status === 'expired') {
           setStatus('expired');
