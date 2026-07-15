@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Lightning, Copy, Check, Wallet, ArrowsClockwise } from '@phosphor-icons/react';
+import { Lightning, Copy, Check, Wallet, ArrowsClockwise, Spinner } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { api } from '../lib/api';
 
@@ -235,6 +235,9 @@ export default function BuyAccess() {
               <p style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Transfer <strong style={{ color: 'var(--text-primary)' }}>${order.amount_usd} USDC</strong> exactly. No rounding.
               </p>
+              <button onClick={manualCheck} disabled={checking} className="btn-light" style={{ marginTop: '12px', borderRadius: '100px', padding: '8px 20px', fontSize: '0.8rem' }}>
+                {checking ? 'checking...' : 'check payment'}
+              </button>
             </div>
           </>
         ) : (
