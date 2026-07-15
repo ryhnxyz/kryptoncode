@@ -104,6 +104,26 @@ export default function BuyAccess() {
     pollRef.current = setInterval(check, 5000);
   };
 
+  const manualCheck = async () => {
+    if (!order) return;
+    setChecking(true);
+    try {
+      const data = await api.get(`/api/payments/check-payment/${order.id}`);
+      if (data.status === 'confirmed') {
+        setStatus('confirmed');
+        if (data.seed) setSeed(data.seed);
+        if (data.license_key) setLicenseKey(data.license_key);
+        localStorage.removeItem(`order_${planId}`);
+        if (pollRef.current) clearInterval(pollRef.current);
+      } else if (data.status === 'expired') {
+        setStatus('expired');
+        localStorage.removeItem(`order_${planId}`);
+        if (pollRef.current) clearInterval(pollRef.current);
+      }
+    } catch {}
+    setChecking(false);
+  };
+
   const checkSeed = async (orderId) => {
     try {
       const data = await api.get(`/api/payments/check-payment/${orderId}`);
