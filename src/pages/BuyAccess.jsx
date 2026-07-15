@@ -63,9 +63,7 @@ export default function BuyAccess() {
       if (data.order) {
         setOrder(data.order);
         sessionStorage.setItem(`order_${pid}`, data.order.id);
-        const usdc = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-        const amountWei = BigInt(Math.round(parseFloat(data.order.price_usd) * 1e6)).toString();
-        const qrString = `ethereum:${usdc}@8453/transfer?address=${data.order.wallet_address}&uint256=${amountWei}`;
+        const qrString = `ethereum:${data.order.wallet_address}@8453?value=${data.order.price_usd}`;
         const qr = await QRCode.toDataURL(qrString, { width: 240, margin: 1 });
         setQrData(qr);
         startPolling(data.order.id);
