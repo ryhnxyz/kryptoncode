@@ -63,7 +63,7 @@ export default function BuyAccess() {
       if (data.order) {
         setOrder(data.order);
         sessionStorage.setItem(`order_${pid}`, data.order.id);
-        const qrString = `ethereum:${data.order.wallet_address}@8453`;
+        const qrString = data.order.wallet_address;
         const qr = await QRCode.toDataURL(qrString, { width: 240, margin: 1 });
         setQrData(qr);
         startPolling(data.order.id);
