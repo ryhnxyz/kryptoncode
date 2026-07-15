@@ -56,6 +56,7 @@ function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/premium" element={<PremiumAccess />} />
+          <Route path="/buy/:planId" element={<BuyAccess />} />
           <Route path="/community" element={<Community />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
