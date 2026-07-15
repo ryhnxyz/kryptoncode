@@ -17,6 +17,7 @@ export default function BuyAccess() {
   const [seed, setSeed] = useState(null);
   const [licenseKey, setLicenseKey] = useState(null);
   const [qrData, setQrData] = useState(null);
+  const [checking, setChecking] = useState(false);
   const pollRef = useRef(null);
 
   useEffect(() => {
