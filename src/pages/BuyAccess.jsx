@@ -185,27 +185,19 @@ export default function BuyAccess() {
                   {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
                 </button>
               </div>
-              <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                Amount: <strong style={{ color: 'var(--text-primary)' }}>${plan?.price_usd} USDC</strong>
+              <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>EXACT AMOUNT</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+                ${order.price_usd} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 400 }}>USDC</span>
+              </div>
+              <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#ef4444', fontFamily: 'var(--font-mono)' }}>
+                wajib transfer jumlah PERSIS — tidak boleh kurang atau lebih
               </div>
             </div>
 
             {qrData && (
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%', display: 'block', margin: '0 auto' }} />
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>scan with wallet — auto-fills address + amount on Base</p>
-              </div>
-            )}
-
-            {order.memo && (
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>MEMO (required)</div>
-                  <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700 }}>{order.memo}</code>
-                </div>
-                <button onClick={() => { navigator.clipboard.writeText(order.memo); setCopiedMemo(true); setTimeout(() => setCopiedMemo(false), 2000); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                  {copiedMemo ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
-                </button>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>scan — auto-fills address + exact amount on Base</p>
               </div>
             )}
 
@@ -215,7 +207,7 @@ export default function BuyAccess() {
                 Waiting for payment...
               </div>
               <p style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Send exactly ${plan?.price_usd} USDC on Base. Include the memo above.
+                Transfer <strong style={{ color: 'var(--text-primary)' }}>${order.price_usd} USDC</strong> exactly. No rounding.
               </p>
             </div>
           </>
