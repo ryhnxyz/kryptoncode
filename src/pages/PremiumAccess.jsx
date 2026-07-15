@@ -17,7 +17,7 @@ function PremiumAccess() {
   useEffect(() => {
     Promise.all([
       api.get('/api/plans'),
-      api.get('/api/bots'),
+      api.get('/api/bots/public'),
     ]).then(([plansData, botsData]) => {
       setPlans(plansData.plans || []);
       setBots(botsData.bots || []);
