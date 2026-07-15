@@ -3,7 +3,13 @@ import React, { useEffect, useRef } from 'react';
 const SoulCursor = () => {
   const canvasRef = useRef(null);
 
+  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
+
   useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      setIsTouchDevice(true);
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -72,6 +78,8 @@ const SoulCursor = () => {
       window.removeEventListener('mouseover', onMouseOver);
     };
   }, []);
+
+  if (isTouchDevice) return null;
 
   return (
     <canvas 

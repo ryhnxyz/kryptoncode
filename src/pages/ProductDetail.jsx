@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { renderIcon } from '../lib/icons';
 import { ArrowLeft, CheckCircle, LinkSimple, ArrowUpRight } from '@phosphor-icons/react';
+import { api } from '../lib/api';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -14,28 +14,15 @@ function ProductDetail() {
 
   useEffect(() => {
     async function fetchProduct() {
-      if (!supabase) {
-        setError('Supabase client tidak dikonfigurasi. Pastikan .env sudah diatur.');
-        setLoading(false);
-        return;
-      }
-      
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .single();
-          
-        if (error) throw error;
-        setProduct(data);
+        const data = await api.get('/api/products/' + id);
+        setProduct(data.product);
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     }
-
     fetchProduct();
   }, [id]);
 
@@ -59,11 +46,10 @@ function ProductDetail() {
     );
   }
 
-  // Supabase stores JSON arrays or strings for features. Let's handle it safely.
   let features = [];
   try {
     features = typeof product.features === 'string' ? JSON.parse(product.features) : product.features || [];
-  } catch (e) {
+  } catch {
     features = [];
   }
 

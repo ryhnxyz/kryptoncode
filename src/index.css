@@ -31,8 +31,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  cursor: none !important;
+@media (pointer: fine) {
+  * {
+    cursor: none !important;
+  }
 }
 
 .mono {

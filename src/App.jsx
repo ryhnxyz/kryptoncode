@@ -9,7 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import PremiumAccess from './pages/PremiumAccess';
 import Community from './pages/Community';
 import NotFound from './pages/NotFound';
-import AdminPanel from './pages/AdminPanel';
+
 import SoulCursor from './components/SoulCursor';
 
 function App() {
@@ -56,7 +56,6 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/premium" element={<PremiumAccess />} />
           <Route path="/community" element={<Community />} />
-          <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
 

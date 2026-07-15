@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag } from '@phosphor-icons/react';
-import { supabase } from '../lib/supabase';
 import { renderIcon } from '../lib/icons';
+import { api } from '../lib/api';
 
 function Products() {
   const navigate = useNavigate();
@@ -11,29 +11,13 @@ function Products() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchProducts() {
-      if (!supabase) {
-        setError('Supabase client tidak dikonfigurasi. Pastikan .env sudah diatur.');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('id', { ascending: true });
-          
-        if (error) throw error;
-        setProducts(data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProducts();
+    api.get('/api/products').then(data => {
+      setProducts(data.products || []);
+      setLoading(false);
+    }).catch(err => {
+      setError(err.message);
+      setLoading(false);
+    });
   }, []);
   
   return (
@@ -41,13 +25,10 @@ function Products() {
       <h1 className="page-title animate-slide-up">Koleksi Produk</h1>
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Memuat produk dari Supabase...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Memuat produk...</div>
       ) : error ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
-          Error: {error}<br/><br/>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Note: Anda perlu membuat tabel "products" di Supabase dan memasukkan VITE_SUPABASE_URL ke .env
-          </span>
+          Error: {error}
         </div>
       ) : (
         <div className="cards-grid">
