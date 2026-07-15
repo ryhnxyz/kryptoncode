@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import PremiumAccess from './pages/PremiumAccess';
+import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
 import NotFound from './pages/NotFound';
 
