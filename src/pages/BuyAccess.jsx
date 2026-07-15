@@ -63,7 +63,8 @@ export default function BuyAccess() {
       if (data.order) {
         setOrder(data.order);
         sessionStorage.setItem(`order_${pid}`, data.order.id);
-        const qrString = `ethereum:${data.order.wallet_address}@8453?value=${data.order.price_usd}`;
+        const amountWei = BigInt(Math.round(parseFloat(data.order.amount_usd) * 1e6)).toString();
+        const qrString = `ethereum:${data.order.wallet_address}@8453?value=${amountWei}`;
         const qr = await QRCode.toDataURL(qrString, { width: 240, margin: 1 });
         setQrData(qr);
         startPolling(data.order.id);
@@ -205,7 +206,7 @@ export default function BuyAccess() {
                 Waiting for payment...
               </div>
               <p style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Transfer <strong style={{ color: 'var(--text-primary)' }}>${order.price_usd} USDC</strong> exactly. No rounding.
+                Transfer <strong style={{ color: 'var(--text-primary)' }}>${order.amount_usd} USDC</strong> exactly. No rounding.
               </p>
             </div>
           </>
