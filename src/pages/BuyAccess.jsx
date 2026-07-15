@@ -23,7 +23,7 @@ export default function BuyAccess() {
       const found = (data.plans || []).find(p => p.id === planId);
       if (found) {
         setPlan(found);
-        const saved = sessionStorage.getItem(`order_${planId}`);
+        const saved = localStorage.getItem(`order_${planId}`);
         if (saved) {
           fetchOrder(saved);
         } else {
