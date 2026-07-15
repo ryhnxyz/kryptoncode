@@ -63,6 +63,9 @@ export default function BuyAccess() {
       if (data.order) {
         setOrder(data.order);
         sessionStorage.setItem(`order_${pid}`, data.order.id);
+        const qrString = `ethereum:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913/transfer?address=${data.order.wallet_address}&amount=${data.order.price_usd}&token-params=${JSON.stringify({memo:data.order.memo})}`;
+        const qr = await QRCode.toDataURL(qrString, { width: 200, margin: 1 });
+        setQrData(qr);
         startPolling(data.order.id);
       }
     } catch (err) {
