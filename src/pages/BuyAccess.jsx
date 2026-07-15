@@ -63,8 +63,7 @@ export default function BuyAccess() {
       if (data.order) {
         setOrder(data.order);
         sessionStorage.setItem(`order_${pid}`, data.order.id);
-        const amountWei = BigInt(Math.round(parseFloat(data.order.amount_usd) * 1e6)).toString();
-        const qrString = `ethereum:${data.order.wallet_address}@8453?value=${amountWei}`;
+        const qrString = `ethereum:${data.order.wallet_address}@8453`;
         const qr = await QRCode.toDataURL(qrString, { width: 240, margin: 1 });
         setQrData(qr);
         startPolling(data.order.id);
@@ -186,7 +185,7 @@ export default function BuyAccess() {
               </div>
               <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>EXACT AMOUNT</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
-                ${order.price_usd} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 400 }}>USDC</span>
+                ${order.amount_usd} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 400 }}>USDC</span>
               </div>
               <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#ef4444', fontFamily: 'var(--font-mono)' }}>
                 wajib transfer jumlah PERSIS — tidak boleh kurang atau lebih
