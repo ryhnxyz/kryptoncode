@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Lightning, Copy, Check, Wallet } from '@phosphor-icons/react';
+import { Lightning, Copy, Check, Wallet, ArrowsClockwise } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { api } from '../lib/api';
 
@@ -51,16 +51,17 @@ export default function BuyAccess() {
         if (data.order.status === 'confirmed') {
           setStatus('confirmed');
           checkSeed(orderId);
+          localStorage.removeItem(`order_${planId}`);
         } else if (data.order.status === 'expired') {
           localStorage.removeItem(`order_${planId}`);
-          createOrder(planId);
+          setStatus('expired');
         } else {
           startPolling(orderId);
         }
       }
     } catch {
       localStorage.removeItem(`order_${planId}`);
-      createOrder(planId);
+      setStatus('expired');
     }
   };
 
