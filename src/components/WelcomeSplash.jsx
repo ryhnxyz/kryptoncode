@@ -67,7 +67,7 @@ export default function WelcomeSplash({ onComplete }) {
             }}>
               {/* Static pure logo underneath */}
               <img 
-                src={stage === 'intro' ? "/logo-dark.png" : "/splash-logo.png"} 
+                src={stage === 'intro' ? "/welcome-logo.png" : "/lang-logo.png"} 
                 alt="logo" 
                 style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease' }} 
               />
@@ -80,8 +80,8 @@ export default function WelcomeSplash({ onComplete }) {
                 transition={{ duration: 0.6 }}
                 style={{ 
                   width: '100%', height: '100%', position: 'absolute', top: 0, left: 0,
-                  WebkitMaskImage: stage === 'intro' ? 'url(/logo-dark.png)' : undefined,
-                  maskImage: stage === 'intro' ? 'url(/logo-dark.png)' : undefined
+                  WebkitMaskImage: stage === 'intro' ? 'url(/welcome-logo.png)' : undefined,
+                  maskImage: stage === 'intro' ? 'url(/welcome-logo.png)' : undefined
                 }} 
               />
             </div>
