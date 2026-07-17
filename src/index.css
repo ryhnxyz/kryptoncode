@@ -288,20 +288,21 @@ body {
   content: '';
   position: absolute;
   top: -60px;
-  right: 0;
   bottom: -100px;
-  left: 0;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
   background-image: url('/hero-bg.png');
   background-size: clamp(400px, 85vw, 1200px) auto;
-  background-position: calc(100% + 120px) calc(50% + 30px);
+  background-position: calc(50% + 400px) calc(50% + 30px);
   background-repeat: no-repeat;
   z-index: -1;
   pointer-events: none;
   transition: all 0.3s ease;
   
   /* Fade out edges so it never looks cut off on huge screens */
-  -webkit-mask-image: radial-gradient(ellipse at 90% 50%, black 45%, transparent 75%);
-  mask-image: radial-gradient(ellipse at 90% 50%, black 45%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at calc(50% + 400px) 50%, black 45%, transparent 70%);
+  mask-image: radial-gradient(ellipse at calc(50% + 400px) 50%, black 45%, transparent 70%);
 }
 
 :root[data-theme="dark"] .hero-section::before {
