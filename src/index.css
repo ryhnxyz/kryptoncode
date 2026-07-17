@@ -432,41 +432,10 @@ body {
   font-family: var(--font-sans);
 }
 
-.ref-card-actions .btn-light {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
+.ref-card-actions .btn-light, .ref-card-actions .btn-dark {
   padding: 10px;
-  border-radius: 12px;
   font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.ref-card-actions .btn-light:hover {
-  border-color: var(--text-primary);
-  background: var(--accent-dim);
-}
-.ref-card-actions .btn-light:active {
-  transform: scale(0.97);
-}
-
-.ref-card-actions .btn-dark {
-  background: var(--text-primary);
-  border: 1px solid var(--text-primary);
-  color: var(--bg-color);
-  padding: 10px;
   border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.ref-card-actions .btn-dark:hover {
-  background: transparent;
-  color: var(--text-primary);
-}
-.ref-card-actions .btn-dark:active {
-  transform: scale(0.97);
 }
 
 /* ========================================================
