@@ -1,0 +1,73 @@
+.glow-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  /* background-wrapper already handles the base color */
+}
+
+.glow-blob {
+  position: absolute;
+  filter: blur(140px);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: float-glow 15s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+
+:root[data-theme="light"] .glow-blob {
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  filter: blur(140px) saturate(0.8);
+}
+
+.glow-blob-1 {
+  top: -15%;
+  left: -15%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 800px;
+  max-height: 800px;
+  background-color: #2563eb;
+}
+
+.glow-blob-2 {
+  bottom: -20%;
+  right: -10%;
+  width: 80vw;
+  height: 80vw;
+  max-width: 900px;
+  max-height: 900px;
+  background-color: #38bdf8;
+  animation-delay: -5s;
+}
+
+.glow-blob-3 {
+  top: 20%;
+  left: 30%;
+  width: 60vw;
+  height: 60vw;
+  max-width: 700px;
+  max-height: 700px;
+  background-color: #0ea5e9;
+  animation-delay: -10s;
+}
+
+@keyframes float-glow {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(3%, 5%) scale(1.05) rotate(5deg);
+  }
+  66% {
+    transform: translate(-2%, 8%) scale(0.95) rotate(-5deg);
+  }
+  100% {
+    transform: translate(5%, -2%) scale(1.1) rotate(2deg);
+  }
+}

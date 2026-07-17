@@ -11,6 +11,7 @@ import Community from './pages/Community';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
+import BackgroundGlow from './components/BackgroundGlow';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
 
@@ -28,6 +29,7 @@ function AppContent() {
 
   return (
     <>
+      <BackgroundGlow />
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       
       <div className="background-wrapper"></div>
