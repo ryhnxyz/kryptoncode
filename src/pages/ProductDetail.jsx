@@ -17,11 +17,57 @@ export default function ProductDetail() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const data = await api.get('/api/products/' + id);
-        setProduct(data.product);
+        const mockProducts = [
+          {
+            id: "premium-bot",
+            title: "Krypton Premium Trading Bot",
+            desc: "An advanced algorithmic trading bot with real-time market analysis and automated execution capabilities.",
+            company: "KryptonCode",
+            type: "Trading / Automation",
+            icon_name: "Code",
+            features: ["Auto-execution", "Real-time tracking", "Risk management", "Portfolio balancing"],
+            project_link: "https://kryptoncode.xyz"
+          },
+          {
+            id: "defi-dashboard",
+            title: "DeFi Analytics Dashboard",
+            desc: "Comprehensive dashboard for tracking decentralized finance yields, liquidity pools, and impermanent loss.",
+            company: "KryptonCode",
+            type: "Web3 / Analytics",
+            icon_name: "Database",
+            features: ["Yield tracking", "Wallet aggregation", "Live charts", "Custom alerts"],
+            project_link: "https://kryptoncode.xyz"
+          },
+          {
+            id: "crypto-wallet",
+            title: "Secure Web3 Wallet",
+            desc: "A highly secure, non-custodial Web3 wallet with multi-chain support and hardware wallet integration.",
+            company: "KryptonCode",
+            type: "Web3 / Security",
+            icon_name: "Lock",
+            features: ["Multi-chain", "Hardware support", "dApp browser", "Biometric unlock"],
+            project_link: "https://kryptoncode.xyz"
+          },
+          {
+            id: "api-gateway",
+            title: "Enterprise API Gateway",
+            desc: "High-performance API gateway with built-in rate limiting, caching, and analytics for blockchain data.",
+            company: "KryptonCode",
+            type: "Infrastructure",
+            icon_name: "Terminal",
+            features: ["High throughput", "DDoS protection", "Detailed analytics", "99.9% uptime"],
+            project_link: "https://kryptoncode.xyz"
+          }
+        ];
+        
+        setTimeout(() => {
+          const product = mockProducts.find(p => p.id === id);
+          if (!product) throw new Error("Product not found");
+          setProduct(product);
+          setLoading(false);
+        }, 600);
       } catch (err) {
         setError(err.message);
-      } finally {
         setLoading(false);
       }
     }
