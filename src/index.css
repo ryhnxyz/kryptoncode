@@ -301,15 +301,11 @@ body {
 }
 
 :root[data-theme="dark"] .hero-section::before {
-  filter: invert(1);
-  mix-blend-mode: screen;
   opacity: 0.9;
 }
 
 :root[data-theme="light"] .hero-section::before {
-  filter: none;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
+  opacity: 0.9;
 }
 
 .hero-title {
