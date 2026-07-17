@@ -233,18 +233,18 @@ body {
 }
 
 .btn-primary:hover, .btn-dark:hover, .btn-secondary:hover, .btn-light:hover {
-  background: linear-gradient(0deg, #8e8e8e, #e0e0e0);
-  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
-  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
-  0px 0px 0px 4px rgba(255, 255, 255, 0.2),
-  0px 0px 120px 0px rgba(192, 192, 192, 0.5);
+  background: linear-gradient(0deg, #e5e5e5, #ffffff);
+  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 1),
+  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.1),
+  0px 0px 0px 4px rgba(255, 255, 255, 0.3),
+  0px 0px 120px 0px rgba(255, 255, 255, 0.7);
   transform: translateY(-2px);
-  color: white;
+  color: #000000;
 }
 
 .btn-primary:hover svg, .btn-dark:hover svg, .btn-secondary:hover svg, .btn-light:hover svg {
-  fill: white;
-  color: white;
+  fill: #000000;
+  color: #000000;
   transform: scale(1.2);
 }
 
