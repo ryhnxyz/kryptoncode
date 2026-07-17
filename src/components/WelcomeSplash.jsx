@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useTheme } from '../contexts/ThemeContext';
 
 export default function WelcomeSplash({ onComplete }) {
   const [stage, setStage] = useState('intro'); // intro -> lang-select -> done
   const { changeLanguage } = useLanguage();
-  const { theme } = useTheme();
 
   const titleText = "KryptonCode".split('');
 
@@ -69,7 +67,7 @@ export default function WelcomeSplash({ onComplete }) {
             }}>
               {/* Static pure logo underneath */}
               <img 
-                src={theme === 'dark' && stage === 'lang-select' ? "/logo-dark.png" : "/logo.png"} 
+                src="/logo-dark.png" 
                 alt="logo" 
                 style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease' }} 
               />

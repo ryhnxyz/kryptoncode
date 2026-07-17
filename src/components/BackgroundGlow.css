@@ -19,11 +19,7 @@
   mix-blend-mode: screen;
 }
 
-:root[data-theme="light"] .glow-blob {
-  opacity: 0.4;
-  mix-blend-mode: multiply;
-  filter: blur(140px) saturate(0.8);
-}
+
 
 .glow-blob-1 {
   top: -15%;
@@ -55,16 +51,6 @@
   max-height: 700px;
   background-color: #f5f5f5;
   animation-delay: -10s;
-}
-
-:root[data-theme="light"] .glow-blob-1 {
-  background-color: #d6d3d1;
-}
-:root[data-theme="light"] .glow-blob-2 {
-  background-color: #a8a29e;
-}
-:root[data-theme="light"] .glow-blob-3 {
-  background-color: #78716c;
 }
 
 @keyframes float-glow {
