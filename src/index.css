@@ -111,11 +111,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
+  padding: 12px 24px;
   border-bottom: 1px dashed var(--border);
   position: relative;
-  z-index: 1000;
-  background: var(--bg-color);
+  z-index: 100;
 }
 
 .nav-content {
@@ -124,13 +123,19 @@ body {
   gap: 32px;
 }
 
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .mobile-menu-btn {
   display: none;
   background: transparent;
   border: none;
   color: var(--text-primary);
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
 }
 
 .logo {
@@ -138,7 +143,7 @@ body {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-family: var(--font-mono);
   color: var(--text-primary);
 }
@@ -218,8 +223,7 @@ body {
 }
 
 .btn-primary:hover, .btn-dark:hover {
-  background: transparent;
-  color: var(--text-primary);
+  /* removed hover effect */
 }
 
 .btn-secondary, .btn-light {
@@ -243,10 +247,7 @@ body {
 }
 
 .btn-secondary:hover, .btn-light:hover {
-  border-color: var(--text-primary);
-  background: var(--card-bg);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  /* removed hover effect */
 }
 
 .btn-sm {
