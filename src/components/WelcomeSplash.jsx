@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function WelcomeSplash({ onComplete }) {
   const [stage, setStage] = useState('intro'); // intro -> lang-select -> done
   const { changeLanguage } = useLanguage();
+  const { theme } = useTheme();
 
   const titleText = "KryptonCode".split('');
 
@@ -66,7 +68,11 @@ export default function WelcomeSplash({ onComplete }) {
               transition: 'margin 0.6s cubic-bezier(0.4, 0, 0.2, 1)' 
             }}>
               {/* Static pure logo underneath */}
-              <img src="/logo.png" alt="logo" style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain' }} />
+              <img 
+                src={theme === 'dark' && stage === 'lang-select' ? "/logo-dark.png" : "/logo.png"} 
+                alt="logo" 
+                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease' }} 
+              />
               
               {/* Animated Chromia effect that fades out smoothly */}
               <motion.div 
@@ -74,7 +80,11 @@ export default function WelcomeSplash({ onComplete }) {
                 initial={{ opacity: 1 }}
                 animate={{ opacity: stage === 'intro' ? 1 : 0 }}
                 transition={{ duration: 0.6 }}
-                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }} 
+                style={{ 
+                  width: '100%', height: '100%', position: 'absolute', top: 0, left: 0,
+                  WebkitMaskImage: stage === 'intro' ? 'url(/logo.png)' : undefined,
+                  maskImage: stage === 'intro' ? 'url(/logo.png)' : undefined
+                }} 
               />
             </div>
           </motion.div>
