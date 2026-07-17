@@ -13,45 +13,13 @@ export default function Products() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const mockProducts = [
-      {
-        id: "premium-bot",
-        title: "Krypton Premium Trading Bot",
-        desc: "An advanced algorithmic trading bot with real-time market analysis and automated execution capabilities.",
-        company: "KryptonCode",
-        type: "Trading / Automation",
-        icon_name: "Code",
-      },
-      {
-        id: "defi-dashboard",
-        title: "DeFi Analytics Dashboard",
-        desc: "Comprehensive dashboard for tracking decentralized finance yields, liquidity pools, and impermanent loss.",
-        company: "KryptonCode",
-        type: "Web3 / Analytics",
-        icon_name: "Database",
-      },
-      {
-        id: "crypto-wallet",
-        title: "Secure Web3 Wallet",
-        desc: "A highly secure, non-custodial Web3 wallet with multi-chain support and hardware wallet integration.",
-        company: "KryptonCode",
-        type: "Web3 / Security",
-        icon_name: "Lock",
-      },
-      {
-        id: "api-gateway",
-        title: "Enterprise API Gateway",
-        desc: "High-performance API gateway with built-in rate limiting, caching, and analytics for blockchain data.",
-        company: "KryptonCode",
-        type: "Infrastructure",
-        icon_name: "Terminal",
-      }
-    ];
-
-    setTimeout(() => {
-      setProducts(mockProducts);
+    api.get('/api/products').then(data => {
+      setProducts(data.products || []);
       setLoading(false);
-    }, 800); // simulate network delay
+    }).catch(err => {
+      setError(err.message);
+      setLoading(false);
+    });
   }, []);
   
   return (
