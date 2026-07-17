@@ -193,7 +193,18 @@ export default function PremiumAccess() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('premium.loading')}</div>
+        <div className="cards-grid">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="ref-card" style={{ padding: '40px', textAlign: 'center', boxShadow: 'none', borderColor: 'transparent' }}>
+              <div className="skeleton skeleton-icon" />
+              <div className="skeleton skeleton-text" style={{ width: '40%', margin: '0 auto 8px auto' }} />
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-title" style={{ height: '48px', marginBottom: '24px' }} />
+              <div className="skeleton skeleton-text" style={{ width: '80%', margin: '0 auto 32px auto' }} />
+              <div className="skeleton skeleton-btn" />
+            </div>
+          ))}
+        </div>
       ) : plans.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('premium.noPlans')}</div>
       ) : (

@@ -27,7 +27,24 @@ export default function Products() {
       <h1 className="page-title animate-slide-up">{t('products.title')}</h1>
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('products.loading')}</div>
+        <div className="cards-grid">
+          {[1, 2, 3, 4].map(n => (
+            <div key={n} className="ref-card" style={{ boxShadow: 'none', borderColor: 'transparent' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px' }}>
+                <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                <div className="skeleton" style={{ height: '20px', width: '120px' }} />
+              </div>
+              <div className="skeleton" style={{ height: '60px', width: '100px', borderRadius: '16px', marginBottom: '24px' }} />
+              <div className="skeleton" style={{ height: '28px', width: '80%', marginBottom: '12px' }} />
+              <div className="skeleton" style={{ height: '20px', width: '100%', marginBottom: '8px' }} />
+              <div className="skeleton" style={{ height: '20px', width: '90%', marginBottom: '32px' }} />
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="skeleton skeleton-btn" style={{ height: '40px', borderRadius: '12px' }} />
+                <div className="skeleton skeleton-btn" style={{ height: '40px', borderRadius: '12px' }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
           {t('products.error')}: {error}
