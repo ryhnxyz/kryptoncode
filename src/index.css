@@ -298,6 +298,10 @@ body {
   z-index: -1;
   pointer-events: none;
   transition: all 0.3s ease;
+  
+  /* Fade out edges so it never looks cut off on huge screens */
+  -webkit-mask-image: radial-gradient(ellipse at 90% 50%, black 45%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 90% 50%, black 45%, transparent 75%);
 }
 
 :root[data-theme="dark"] .hero-section::before {
