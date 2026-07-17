@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, NavLink } from 'react-router-dom';
-import { TerminalWindow, ArrowUpRight, List, X } from '@phosphor-icons/react';
+import { TerminalWindow, ArrowUpRight, List, X, Moon, Sun } from '@phosphor-icons/react';
 import './index.css';
 
 import Home from './pages/Home';
@@ -13,11 +13,13 @@ import NotFound from './pages/NotFound';
 import SoulCursor from './components/SoulCursor';
 import WelcomeSplash from './components/WelcomeSplash';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useTheme } from './contexts/ThemeContext';
 
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const { language, changeLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
 
@@ -36,7 +38,7 @@ function AppContent() {
         <nav className="navbar">
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
             <div className="logo">
-              <img src="/logo.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+              <img src={theme === 'dark' ? "/logo-dark.png" : "/logo.png"} alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
               KryptonCode
             </div>
           </Link>
@@ -51,6 +53,10 @@ function AppContent() {
               <NavLink to="/community" className="nav-item" onClick={closeMenu}>{t('nav.community')}</NavLink>
             </div>
             
+            <button onClick={toggleTheme} className="btn-light btn-sm" style={{ padding: '8px', borderRadius: '50%' }}>
+              {theme === 'dark' ? <Sun size={18} weight="bold" /> : <Moon size={18} weight="bold" />}
+            </button>
+
             <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} onClick={closeMenu}>
               <button className="btn-secondary btn-sm nav-telegram-btn">
                 {t('nav.joinTelegram')} <ArrowUpRight weight="bold" />

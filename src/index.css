@@ -1,6 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-:root {
+:root, :root[data-theme="light"] {
+  --bg-color: #faf7f2;
+  --bg-secondary: #f3efe6;
+  --bg-tertiary: #ebe5d5;
+  --text-primary: #1A1A1A;
+  --text-secondary: #78716c;
+  --accent: #1A1A1A;
+  --accent-dim: rgba(26, 26, 26, 0.05);
+  --border: #e7e5e4;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  --card-border: rgba(0,0,0,0.06);
+  --radius: 100px;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+  --ink: currentColor;
+  --ink-2: #FF4FD8;
+  --ink-3: #4FF8FF;
+}
+
+:root[data-theme="dark"] {
   --bg-color: #1A1A1A; 
   --bg-secondary: #242424; 
   --bg-tertiary: #2a2a2a; 
@@ -9,12 +29,9 @@
   --accent: #faf7f2; 
   --accent-dim: rgba(250, 247, 242, 0.05); 
   --border: #333333;
-  --radius: 100px;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-sans: 'Inter', sans-serif;
-  --ink: currentColor;
-  --ink-2: #FF4FD8;
-  --ink-3: #4FF8FF;
+  --card-bg: rgba(36, 36, 36, 0.6);
+  --card-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  --card-border: rgba(255,255,255,0.05);
 }
 
 /* 06 Chromia — brushed-metal sheen applied to the logo */
@@ -37,6 +54,11 @@
       color-mix(in srgb, var(--text-primary) 40%, transparent) 62% 100%
     ) 0 0 / 260% 100%;
   animation: fx-chrome 2.8s ease-in-out infinite;
+}
+
+:root[data-theme="dark"] .fx-chrome-logo {
+  -webkit-mask-image: url(/logo-dark.png);
+  mask-image: url(/logo-dark.png);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -320,12 +342,12 @@ body {
 }
 
 .ref-card {
-  background: rgba(36, 36, 36, 0.6);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 24px;
-  border: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, border-color 0.2s;
