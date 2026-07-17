@@ -32,7 +32,7 @@
   height: 70vw;
   max-width: 800px;
   max-height: 800px;
-  background-color: #2563eb;
+  background-color: #faf7f2;
 }
 
 .glow-blob-2 {
@@ -42,7 +42,7 @@
   height: 80vw;
   max-width: 900px;
   max-height: 900px;
-  background-color: #38bdf8;
+  background-color: #e7e5e4;
   animation-delay: -5s;
 }
 
@@ -53,8 +53,18 @@
   height: 60vw;
   max-width: 700px;
   max-height: 700px;
-  background-color: #0ea5e9;
+  background-color: #f5f5f5;
   animation-delay: -10s;
+}
+
+:root[data-theme="light"] .glow-blob-1 {
+  background-color: #d6d3d1;
+}
+:root[data-theme="light"] .glow-blob-2 {
+  background-color: #a8a29e;
+}
+:root[data-theme="light"] .glow-blob-3 {
+  background-color: #78716c;
 }
 
 @keyframes float-glow {
