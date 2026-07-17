@@ -34,8 +34,8 @@ function AppContent() {
         {/* Navbar */}
         <nav className="navbar">
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
-            <div className="logo">
-              <img src="/logo-dark.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <div className="logo" style={{ color: '#C0C0C0' }}>
+              <img src="/splash-logo.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(110%) contrast(90%)' }} />
               KryptonCode
             </div>
           </Link>

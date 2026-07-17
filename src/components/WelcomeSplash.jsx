@@ -69,7 +69,7 @@ export default function WelcomeSplash({ onComplete }) {
               <img 
                 src="/splash-logo.png" 
                 alt="logo" 
-                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease' }} 
+                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease', filter: 'invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(110%) contrast(90%)' }} 
               />
               
               {/* Animated Chromia effect that fades out smoothly */}

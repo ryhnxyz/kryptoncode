@@ -113,8 +113,12 @@ body {
   align-items: center;
   padding: 12px 24px;
   border-bottom: 1px dashed var(--border);
-  position: relative;
-  z-index: 100;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
 .nav-content {
@@ -205,49 +209,43 @@ body {
   font-weight: 700;
 }
 
-.btn-primary, .btn-dark {
-  background: var(--text-primary);
-  border: 1px solid var(--text-primary);
-  color: var(--bg-color);
+.btn-primary, .btn-dark, .btn-secondary, .btn-light {
+  border: none;
+  border-radius: 3em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  background: #1C1A1C;
+  cursor: pointer;
+  transition: all 450ms ease-in-out;
   padding: 14px 32px;
-  border-radius: 12px;
   font-family: var(--font-mono);
   font-weight: 600;
+  color: #AAAAAA;
   font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-primary:hover, .btn-dark:hover {
-  /* removed hover effect */
+.btn-primary svg, .btn-dark svg, .btn-secondary svg, .btn-light svg {
+  fill: #AAAAAA;
+  color: #AAAAAA;
+  transition: all 800ms ease;
 }
 
-.btn-secondary, .btn-light {
-  background: var(--card-bg);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  padding: 14px 32px;
-  border-radius: 12px;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.btn-primary:hover, .btn-dark:hover, .btn-secondary:hover, .btn-light:hover {
+  background: linear-gradient(0deg, #8e8e8e, #e0e0e0);
+  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
+  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
+  0px 0px 0px 4px rgba(255, 255, 255, 0.2),
+  0px 0px 120px 0px rgba(192, 192, 192, 0.5);
+  transform: translateY(-2px);
+  color: white;
 }
 
-.btn-secondary:hover, .btn-light:hover {
-  /* removed hover effect */
+.btn-primary:hover svg, .btn-dark:hover svg, .btn-secondary:hover svg, .btn-light:hover svg {
+  fill: white;
+  color: white;
+  transform: scale(1.2);
 }
 
 .btn-sm {
