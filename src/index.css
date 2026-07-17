@@ -210,13 +210,15 @@ body {
 }
 
 .btn-primary, .btn-dark, .btn-secondary, .btn-light {
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 3em;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 12px;
-  background: #1C1A1C;
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   cursor: pointer;
   transition: all 450ms ease-in-out;
   padding: 14px 32px;
@@ -233,18 +235,18 @@ body {
 }
 
 .btn-primary:hover, .btn-dark:hover, .btn-secondary:hover, .btn-light:hover {
-  background: linear-gradient(0deg, #e5e5e5, #ffffff);
-  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 1),
-  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.1),
-  0px 0px 0px 4px rgba(255, 255, 255, 0.3),
-  0px 0px 120px 0px rgba(255, 255, 255, 0.7);
+  background: linear-gradient(0deg, #8e8e8e, #e0e0e0);
+  box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
+  inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
+  0px 0px 0px 4px rgba(255, 255, 255, 0.2),
+  0px 0px 120px 0px rgba(192, 192, 192, 0.5);
   transform: translateY(-2px);
-  color: #000000;
+  color: white;
 }
 
 .btn-primary:hover svg, .btn-dark:hover svg, .btn-secondary:hover svg, .btn-light:hover svg {
-  fill: #000000;
-  color: #000000;
+  fill: white;
+  color: white;
   transform: scale(1.2);
 }
 
