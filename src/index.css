@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  --bg-color: #faf7f2; /* Soft cream */
-  --bg-secondary: #f3efe6; /* Slightly darker cream */
-  --bg-tertiary: #ebe5d5; /* Even darker for borders/icons */
-  --text-primary: #1A1A1A; /* Primary dark color */
-  --text-secondary: #78716c; /* Stone 500 */
-  --accent: #1A1A1A; /* Primary accent color */
-  --accent-dim: rgba(26, 26, 26, 0.05); /* Very light accent */
-  --border: #e7e5e4;
+  --bg-color: #1A1A1A; 
+  --bg-secondary: #242424; 
+  --bg-tertiary: #2a2a2a; 
+  --text-primary: #faf7f2; 
+  --text-secondary: #a8a29e; 
+  --accent: #faf7f2; 
+  --accent-dim: rgba(250, 247, 242, 0.05); 
+  --border: #333333;
   --radius: 100px;
   --font-mono: 'JetBrains Mono', monospace;
   --font-sans: 'Inter', sans-serif;
@@ -144,27 +144,53 @@ body {
 .nav-links {
   display: flex;
   gap: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  padding: 8px;
-  border-radius: 100px;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
 }
 
 .nav-item {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  padding: 8px 16px;
-  border-radius: 100px;
+  padding: 6px 14px;
   color: var(--text-secondary);
   text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.nav-item::before {
+  content: '<';
+  color: var(--text-secondary);
+  opacity: 0.4;
+  margin-right: 6px;
+  font-weight: 400;
+  transition: all 0.2s;
+}
+
+.nav-item::after {
+  content: '/>';
+  color: var(--text-secondary);
+  opacity: 0.4;
+  margin-left: 6px;
+  font-weight: 400;
   transition: all 0.2s;
 }
 
 .nav-item:hover, .nav-item.active {
-  color: var(--accent);
-  background: rgba(0,0,0,0.04);
+  color: var(--bg-color);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  border-style: solid;
+}
+
+.nav-item:hover::before, .nav-item.active::before,
+.nav-item:hover::after, .nav-item.active::after {
+  color: var(--bg-secondary);
+  opacity: 0.6;
+  font-weight: 700;
 }
 
 .btn-primary, .btn-dark {
@@ -208,7 +234,7 @@ body {
 
 .btn-secondary:hover, .btn-light:hover {
   border-color: var(--text-primary);
-  background: rgba(0,0,0,0.03);
+  background: var(--accent-dim);
 }
 
 .btn-sm {
@@ -294,12 +320,12 @@ body {
 }
 
 .ref-card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(36, 36, 36, 0.6);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 24px;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, border-color 0.2s;
@@ -346,7 +372,7 @@ body {
   background: var(--bg-secondary);
   padding: 10px 14px;
   border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.04);
+  border: 1px solid rgba(255,255,255,0.04);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -405,7 +431,7 @@ body {
 }
 .ref-card-actions .btn-light:hover {
   border-color: var(--text-primary);
-  background: rgba(0,0,0,0.03);
+  background: var(--accent-dim);
 }
 .ref-card-actions .btn-light:active {
   transform: scale(0.97);
@@ -433,6 +459,37 @@ body {
 /* ========================================================
    ANIMATIONS & TRANSITIONS
    ======================================================== */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: var(--border);
+  border-radius: 12px;
+}
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+}
+.skeleton-title {
+  height: 32px;
+  width: 60%;
+  margin: 0 auto 16px auto;
+}
+.skeleton-btn {
+  height: 48px;
+  width: 100%;
+  border-radius: 14px;
+}
+.skeleton-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin: 0 auto 16px auto;
+}
 
 @keyframes fadeInUp {
   from {
