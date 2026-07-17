@@ -237,7 +237,9 @@ body {
 }
 
 .btn-secondary, .btn-light {
-  background: transparent;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--border);
   color: var(--text-primary);
   padding: 14px 32px;
@@ -250,12 +252,15 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover, .btn-light:hover {
   border-color: var(--text-primary);
-  background: var(--accent-dim);
+  background: var(--card-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 
 .btn-sm {
