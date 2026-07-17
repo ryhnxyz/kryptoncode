@@ -17,6 +17,7 @@ const SoulCursor = () => {
     let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     let trail = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     let isHovering = false;
+    let isVisible = false; // Start hidden until first move
     
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -27,8 +28,19 @@ const SoulCursor = () => {
     resize();
 
     const onMouseMove = (e) => {
+      isVisible = true;
       mouse.x = e.clientX;
       mouse.y = e.clientY;
+    };
+
+    const onMouseLeave = (e) => {
+      if (
+        e.clientY <= 0 || 
+        e.clientX <= 0 || 
+        (e.clientX >= window.innerWidth || e.clientY >= window.innerHeight)
+      ) {
+        isVisible = false;
+      }
     };
     
     const onMouseOver = (e) => {
@@ -40,32 +52,35 @@ const SoulCursor = () => {
     };
 
     window.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseleave', onMouseLeave);
     window.addEventListener('mouseover', onMouseOver);
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Smooth linear interpolation (lerp) for the outer shape
-      trail.x += (mouse.x - trail.x) * 0.25;
-      trail.y += (mouse.y - trail.y) * 0.25;
-      
-      // 1. Draw exact mouse dot (main cursor)
-      ctx.beginPath();
-      if (isHovering) {
-        ctx.arc(mouse.x, mouse.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#1c1917';
-      } else {
-        ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#1c1917';
-      }
-      ctx.fill();
+      if (isVisible) {
+        // Smooth linear interpolation (lerp) for the outer shape
+        trail.x += (mouse.x - trail.x) * 0.25;
+        trail.y += (mouse.y - trail.y) * 0.25;
+        
+        // 1. Draw exact mouse dot (main cursor)
+        ctx.beginPath();
+        if (isHovering) {
+          ctx.arc(mouse.x, mouse.y, 6, 0, Math.PI * 2);
+          ctx.fillStyle = '#1c1917';
+        } else {
+          ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#1c1917';
+        }
+        ctx.fill();
 
-      // 2. Draw smooth trailing minimalist ring
-      ctx.beginPath();
-      ctx.arc(trail.x, trail.y, isHovering ? 24 : 16, 0, Math.PI * 2);
-      ctx.strokeStyle = isHovering ? 'rgba(28, 25, 23, 0.15)' : 'rgba(28, 25, 23, 0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+        // 2. Draw smooth trailing minimalist ring
+        ctx.beginPath();
+        ctx.arc(trail.x, trail.y, isHovering ? 24 : 16, 0, Math.PI * 2);
+        ctx.strokeStyle = isHovering ? 'rgba(28, 25, 23, 0.15)' : 'rgba(28, 25, 23, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
       
       requestAnimationFrame(animate);
     };
@@ -75,6 +90,7 @@ const SoulCursor = () => {
     return () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('mouseover', onMouseOver);
     };
   }, []);

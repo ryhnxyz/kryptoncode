@@ -11,22 +11,33 @@ import Community from './pages/Community';
 import NotFound from './pages/NotFound';
 
 import SoulCursor from './components/SoulCursor';
+import WelcomeSplash from './components/WelcomeSplash';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
-function App() {
+function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const { language, changeLanguage, t } = useLanguage();
+
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  const toggleLanguage = () => {
+    changeLanguage(language === 'id' ? 'en' : 'id');
+  };
 
   return (
     <>
       <SoulCursor />
+      {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
+      
       <div className="background-wrapper"></div>
-      <div className="app-container">
+      <div className="app-container" style={{ opacity: showSplash ? 0 : 1, transition: 'opacity 0.8s ease-in' }}>
         {/* Navbar */}
         <nav className="navbar">
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
             <div className="logo">
-              <TerminalWindow weight="bold" className="logo-icon" size={24} />
-              kryptoncode
+              <img src="/logo.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+              KryptonCode
             </div>
           </Link>
           
@@ -36,13 +47,13 @@ function App() {
           
           <div className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
-              <NavLink to="/products" className="nav-item" onClick={closeMenu}>/products</NavLink>
-              <NavLink to="/community" className="nav-item" onClick={closeMenu}>/komunitas</NavLink>
+              <NavLink to="/products" className="nav-item" onClick={closeMenu}>{t('nav.products')}</NavLink>
+              <NavLink to="/community" className="nav-item" onClick={closeMenu}>{t('nav.community')}</NavLink>
             </div>
             
             <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} onClick={closeMenu}>
-              <button className="btn-secondary nav-telegram-btn" style={{ borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                gabung /telegram <ArrowUpRight weight="bold" />
+              <button className="btn-secondary btn-sm nav-telegram-btn">
+                {t('nav.joinTelegram')} <ArrowUpRight weight="bold" />
               </button>
             </a>
           </div>
@@ -70,10 +81,18 @@ function App() {
           fontSize: '0.85rem' 
         }}>
           [ <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>telegram</a> ] 
-          — dibangun secara independen oleh kryptoncode 
+          — {t('footer')}
         </footer>
       </div>
     </>
+  );
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 

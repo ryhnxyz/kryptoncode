@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Tag } from '@phosphor-icons/react';
 import { renderIcon } from '../lib/icons';
 import { api } from '../lib/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
-function Products() {
+export default function Products() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,13 +24,13 @@ function Products() {
   
   return (
     <div className="page-content">
-      <h1 className="page-title animate-slide-up">Koleksi Produk</h1>
+      <h1 className="page-title animate-slide-up">{t('products.title')}</h1>
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Memuat produk...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('products.loading')}</div>
       ) : error ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
-          Error: {error}
+          {t('products.error')}: {error}
         </div>
       ) : (
         <div className="cards-grid">
@@ -47,7 +49,7 @@ function Products() {
                   <div className="ref-info-box" style={{ flex: 'none', width: 'fit-content', paddingRight: '20px' }}>
                     <div className="ref-info-label">
                       <Tag weight="bold" size={14} />
-                      Kategori
+                      {t('products.category')}
                     </div>
                     <div className="ref-info-value">{item.type}</div>
                   </div>
@@ -57,8 +59,8 @@ function Products() {
                 <p className="ref-card-desc">{item.desc}</p>
                 
                 <div className="ref-card-actions">
-                  <button className="btn-light" onClick={() => navigate('/product/' + item.id)}>Lihat detail</button>
-                  <button className="btn-dark" onClick={() => navigate('/product/' + item.id)}>Buka Proyek</button>
+                  <button className="btn-light" onClick={() => navigate('/product/' + item.id)}>{t('products.viewDetails')}</button>
+                  <button className="btn-dark" onClick={() => navigate('/product/' + item.id)}>{t('products.openProject')}</button>
                 </div>
               </div>
             );
@@ -68,5 +70,3 @@ function Products() {
     </div>
   );
 }
-
-export default Products;

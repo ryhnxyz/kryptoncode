@@ -3,10 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Lightning, Copy, Check, Wallet, ArrowsClockwise, Spinner } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { api } from '../lib/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function BuyAccess() {
   const { planId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  
   const [plan, setPlan] = useState(null);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,15 +35,15 @@ export default function BuyAccess() {
           createOrder(found.id);
         }
       } else {
-        setError('Plan not found');
+        setError(t('buy.errorPlan'));
       }
       setLoading(false);
     }).catch(() => {
-      setError('Failed to load plan');
+      setError(t('buy.errorLoad'));
       setLoading(false);
     });
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [planId]);
+  }, [planId, t]);
 
   const restoreOrder = async (orderId) => {
     try {
@@ -79,7 +82,7 @@ export default function BuyAccess() {
         startPolling(data.order.id);
       }
     } catch (err) {
-      setError(err.message || 'Failed to create order');
+      setError(err.message || t('buy.failedCreate'));
     }
     setCreating(false);
   };
@@ -144,7 +147,7 @@ export default function BuyAccess() {
   if (loading) {
     return (
       <div className="page-content" style={{ textAlign: 'center', padding: '80px 20px' }}>
-        <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>Loading...</p>
+        <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{t('buy.loading')}</p>
       </div>
     );
   }
@@ -164,8 +167,8 @@ export default function BuyAccess() {
           <div style={{ width: '64px', height: '64px', margin: '0 auto 24px', background: 'rgba(34,197,94,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Check size={32} weight="bold" color="#22c55e" />
           </div>
-          <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.5rem', marginBottom: '8px' }}>Payment Confirmed</h1>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Save your Krypton Seed below</p>
+          <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.5rem', marginBottom: '8px' }}>{t('buy.paymentConfirmed')}</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{t('buy.saveSeed')}</p>
 
           <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '24px', marginBottom: '24px', border: '2px dashed var(--green)' }}>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '12px', fontFamily: 'var(--font-mono)' }}>KRYPTON SEED (8 WORDS)</div>
@@ -173,14 +176,14 @@ export default function BuyAccess() {
               {seed.join ? seed.join(' ') : seed}
             </div>
             <div style={{ marginTop: '12px', fontSize: '0.7rem', color: '#ef4444', fontFamily: 'var(--font-mono)' }}>
-              SIMPAN SEED INI. TIDAK AKAN MUNCUL LAGI.
+              {t('buy.seedWarning')}
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {plan?.bot_id && (
               <a href="https://awdex.kryptoncode.xyz" target="_blank" rel="noopener noreferrer">
-                <button className="btn-dark" style={{ borderRadius: '100px', padding: '12px 28px' }}>Login to AWDEX</button>
+                <button className="btn-dark" style={{ borderRadius: '100px', padding: '12px 28px' }}>{t('buy.loginAwdex')}</button>
               </a>
             )}
           </div>
@@ -193,9 +196,9 @@ export default function BuyAccess() {
     return (
       <div className="page-content" style={{ maxWidth: '560px', margin: '0 auto', padding: '40px 20px' }}>
         <div className="ref-card" style={{ padding: '40px', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.3rem', marginBottom: '12px' }}>Order Expired</h1>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Your order has expired. Create a new one.</p>
-          <button className="btn-dark" style={{ borderRadius: '100px', padding: '12px 28px' }} onClick={() => { localStorage.removeItem(`order_${planId}`); setStatus('pending'); setOrder(null); createOrder(planId); }}>Create New Order</button>
+          <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.3rem', marginBottom: '12px' }}>{t('buy.orderExpired')}</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{t('buy.orderExpiredDesc')}</p>
+          <button className="btn-dark" style={{ borderRadius: '100px', padding: '12px 28px' }} onClick={() => { localStorage.removeItem(`order_${planId}`); setStatus('pending'); setOrder(null); createOrder(planId); }}>{t('buy.createNewOrder')}</button>
         </div>
       </div>
     );
@@ -208,7 +211,7 @@ export default function BuyAccess() {
           <Lightning size={28} weight="fill" />
           <div>
             <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.3rem' }}>{plan?.name || 'Access'}</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{plan?.duration_days} day access</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{plan?.duration_days} {t('buy.dayAccess')}</p>
           </div>
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.8rem', fontWeight: 800 }}>${plan?.price_usd}</div>
@@ -217,52 +220,52 @@ export default function BuyAccess() {
         </div>
 
         {creating ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Creating order...</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('buy.creatingOrder')}</div>
         ) : order ? (
           <>
             <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <Wallet size={16} weight="bold" />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', fontWeight: 600 }}>SEND USDC ON BASE NETWORK</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', fontWeight: 600 }}>{t('buy.sendUsdc')}</span>
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>WALLET ADDRESS</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>{t('buy.walletAddress')}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', wordBreak: 'break-all', flex: 1 }}>{order.wallet_address}</code>
                 <button onClick={copyAddress} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                   {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
                 </button>
               </div>
-              <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>EXACT AMOUNT</div>
+              <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{t('buy.exactAmount')}</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
                 ${order.amount_usd} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 400 }}>USDC</span>
               </div>
               <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#ef4444', fontFamily: 'var(--font-mono)' }}>
-                wajib transfer jumlah PERSIS — tidak boleh kurang atau lebih
+                {t('buy.exactWarning')}
               </div>
             </div>
 
             {qrData && (
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%', display: 'block', margin: '0 auto' }} />
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>scan — auto-fills address on Base</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>{t('buy.scanQr')}</p>
               </div>
             )}
 
             <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(245,158,11,0.05)', borderRadius: '12px', border: '1px dashed rgba(245,158,11,0.3)' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', animation: 'pulse 2s infinite' }} />
-                Waiting for payment...
+                {t('buy.waiting')}
               </div>
               <p style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Transfer <strong style={{ color: 'var(--text-primary)' }}>${order.amount_usd} USDC</strong> exactly. No rounding.
+                {t('buy.transferExactly')} <strong style={{ color: 'var(--text-primary)' }}>${order.amount_usd} USDC</strong> {t('buy.noRounding')}
               </p>
               <button onClick={manualCheck} disabled={checking} className="btn-light" style={{ marginTop: '12px', borderRadius: '100px', padding: '8px 20px', fontSize: '0.8rem' }}>
-                {checking ? 'checking...' : 'check payment'}
+                {checking ? t('buy.checking') : t('buy.checkPayment')}
               </button>
             </div>
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Failed to create order</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('buy.failedCreate')}</div>
         )}
       </div>
     </div>

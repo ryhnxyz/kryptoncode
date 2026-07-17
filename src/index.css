@@ -4,14 +4,50 @@
   --bg-color: #faf7f2; /* Soft cream */
   --bg-secondary: #f3efe6; /* Slightly darker cream */
   --bg-tertiary: #ebe5d5; /* Even darker for borders/icons */
-  --text-primary: #1c1917; /* Stone 900 for warmer text */
+  --text-primary: #1A1A1A; /* Primary dark color */
   --text-secondary: #78716c; /* Stone 500 */
-  --accent: #1c1917; /* Black/Stone 900 */
-  --accent-dim: rgba(28, 25, 23, 0.05); /* Very light black/stone */
+  --accent: #1A1A1A; /* Primary accent color */
+  --accent-dim: rgba(26, 26, 26, 0.05); /* Very light accent */
   --border: #e7e5e4;
   --radius: 100px;
   --font-mono: 'JetBrains Mono', monospace;
   --font-sans: 'Inter', sans-serif;
+  --ink: currentColor;
+  --ink-2: #FF4FD8;
+  --ink-3: #4FF8FF;
+}
+
+/* 06 Chromia — brushed-metal sheen applied to the logo */
+.fx-chrome-logo {
+  width: 100px;
+  height: 100px;
+  -webkit-mask-image: url(/logo.png);
+  mask-image: url(/logo.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background: linear-gradient(105deg,
+      color-mix(in srgb, var(--text-primary) 40%, transparent) 0 38%,
+      var(--text-primary) 47%,
+      #fff 50%,
+      var(--text-primary) 53%,
+      color-mix(in srgb, var(--text-primary) 40%, transparent) 62% 100%
+    ) 0 0 / 260% 100%;
+  animation: fx-chrome 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-chrome-logo {
+    animation: none;
+  }
+}
+
+@keyframes fx-chrome {
+  0%   { background-position: 130% 0; }
+  60%, 100% { background-position: -130% 0; }
 }
 
 * {
@@ -131,43 +167,61 @@ body {
   background: rgba(0,0,0,0.04);
 }
 
-.btn-primary {
-  background: var(--accent-dim);
-  color: var(--accent);
-  padding: 12px 24px;
-  border-radius: var(--radius);
+.btn-primary, .btn-dark {
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  color: #ffffff;
+  padding: 14px 32px;
+  border-radius: 12px;
   font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.9rem;
-  border: 1px solid var(--accent);
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-primary:hover {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.btn-secondary {
+.btn-primary:hover, .btn-dark:hover {
   background: transparent;
   color: var(--text-primary);
-  padding: 12px 24px;
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.9rem;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all 0.2s;
 }
 
-.btn-secondary:hover {
+.btn-secondary, .btn-light {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary:hover, .btn-light:hover {
   border-color: var(--text-primary);
   background: rgba(0,0,0,0.03);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  padding: 16px 38px;
+  font-size: 1.1rem;
+  border-radius: 14px;
+  font-weight: 600;
 }
 
 /* Hero Section */

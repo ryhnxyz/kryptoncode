@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Crown, CopySimple, Check, ShieldCheck, Wallet, Robot, QrCode, Spinner } from '@phosphor-icons/react';
 import { api, API_BASE } from '../lib/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
-function PremiumAccess() {
+export default function PremiumAccess() {
+  const { t } = useLanguage();
   const [plans, setPlans] = useState([]);
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,10 +63,10 @@ function PremiumAccess() {
         setOrderResult(data.order);
         startPolling(data.order.id);
       } else {
-        alert('Gagal membuat order: ' + (data.error || 'Unknown error'));
+        alert(t('premium.errorCreate') + (data.error || 'Unknown error'));
       }
     } catch (err) {
-      alert('Network error: ' + err.message);
+      alert(t('premium.errorNetwork') + err.message);
     } finally {
       setOrderingId(null);
     }
@@ -95,27 +97,27 @@ function PremiumAccess() {
         {paymentStatus === 'confirmed' && (
           <div style={{ background: '#16241c', border: '1px solid #22c55e', borderRadius: '16px', padding: '24px', marginBottom: '24px', textAlign: 'center', animation: 'fadeIn 0.4s ease' }}>
             <CheckCircle size={40} weight="fill" color="#22c55e" style={{ marginBottom: '8px' }} />
-            <h3 style={{ color: '#22c55e', fontSize: '1.2rem', marginBottom: '8px' }}>Pembayaran Terkonfirmasi!</h3>
-            <p style={{ color: '#86efac', fontSize: '0.85rem' }}>License key Anda sudah aktif. Simpan key di bawah dan aktivasi di bot Telegram.</p>
+            <h3 style={{ color: '#22c55e', fontSize: '1.2rem', marginBottom: '8px' }}>{t('premium.confirmed')}</h3>
+            <p style={{ color: '#86efac', fontSize: '0.85rem' }}>{t('premium.confirmedDesc')}</p>
           </div>
         )}
 
         <div className="ref-card" style={{ padding: '40px', textAlign: 'center' }}>
           <Wallet size={48} weight="duotone" color="var(--text-primary)" style={{ marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '8px', color: 'var(--text-primary)' }}>Instruksi Pembayaran</h2>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '8px', color: 'var(--text-primary)' }}>{t('premium.instruction')}</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>
-            Kirim USDC di jaringan <strong>Base</strong> ke alamat berikut
+            {t('premium.instructionDesc')}
           </p>
 
           {qrData && (
             <div style={{ marginBottom: '24px' }}>
               <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%' }} />
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>Scan QR atau copy detail manual</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>{t('premium.scanDesc')}</p>
             </div>
           )}
 
           <div style={{ background: '#1c1917', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'left' }}>
-            <div style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>Alamat Wallet (Base Network)</div>
+            <div style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>{t('premium.walletLabel')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
               <code style={{ color: '#faf7f2', fontSize: '0.85rem', wordBreak: 'break-all' }}>{orderResult.wallet_address}</code>
               <button onClick={() => copyToClipboard(orderResult.wallet_address, 'wallet')} style={{ background: 'transparent', border: 'none', color: '#78716c', cursor: 'pointer', flexShrink: 0, padding: '4px' }}>
@@ -125,7 +127,7 @@ function PremiumAccess() {
           </div>
 
           <div style={{ background: '#1c1917', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'left' }}>
-            <div style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>Jumlah</div>
+            <div style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>{t('premium.amountLabel')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <code style={{ color: '#faf7f2', fontSize: '1.2rem', fontWeight: 'bold' }}>{orderResult.price_usd} USDC</code>
               <button onClick={() => copyToClipboard(String(orderResult.price_usd), 'amount')} style={{ background: 'transparent', border: 'none', color: '#78716c', cursor: 'pointer', padding: '4px' }}>
@@ -135,22 +137,22 @@ function PremiumAccess() {
           </div>
 
           <div style={{ background: '#1c1917', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left', border: '1px solid #f59e0b' }}>
-            <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontWeight: 'bold' }}>Memo / Catatan (WAJIB)</div>
+            <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginBottom: '8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontWeight: 'bold' }}>{t('premium.memoLabel')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <code style={{ color: '#faf7f2', fontSize: '1.4rem', fontWeight: 'bold', letterSpacing: '2px' }}>{orderResult.memo}</code>
               <button onClick={() => copyToClipboard(orderResult.memo, 'memo')} style={{ background: 'transparent', border: 'none', color: '#78716c', cursor: 'pointer', padding: '4px' }}>
                 {copied === 'memo' ? <Check size={18} color="#22c55e" /> : <CopySimple size={18} />}
               </button>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '8px' }}>Sertikan memo ini di catatan transaksi agar pembayaran terdeteksi</div>
+            <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '8px' }}>{t('premium.memoDesc')}</div>
           </div>
 
           <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left', border: paymentStatus === 'confirmed' ? '1px solid #22c55e' : '1px dashed var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>License Key</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>{t('premium.keyLabel')}</span>
               {polling && (
                 <span style={{ fontSize: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Spinner size={12} /> Menunggu pembayaran...
+                  <Spinner size={12} /> {t('premium.waiting')}
                 </span>
               )}
             </div>
@@ -162,14 +164,14 @@ function PremiumAccess() {
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
               {paymentStatus === 'confirmed' 
-                ? <span style={{ color: '#22c55e' }}>Key aktif! Ketik /activate {orderResult.license_key} di bot Telegram</span>
-                : <>Key akan aktif otomatis setelah pembayaran terdeteksi. Ketik <code>/activate {'<key>'}</code> di bot Telegram</>}
+                ? <span style={{ color: '#22c55e' }}>{t('premium.keyActive')}{orderResult.license_key}{t('premium.inBot')}</span>
+                : <>{t('premium.keyPending')}</>}
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
             <button className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '0.95rem', justifyContent: 'center' }} onClick={() => { setOrderResult(null); setSelectedPlan(null); setPaymentStatus('pending'); if (pollRef.current) clearInterval(pollRef.current); }}>
-              Kembali ke Paket
+              {t('premium.backToPlans')}
             </button>
           </div>
         </div>
@@ -180,20 +182,20 @@ function PremiumAccess() {
   return (
     <div className="page-content animate-fade-in" style={{ padding: '40px 16px', maxWidth: '960px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-        <h1 className="page-title animate-slide-up">Premium Access</h1>
+        <h1 className="page-title animate-slide-up">{t('premium.title')}</h1>
         <p className="animate-slide-up delay-100" style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto', lineHeight: '1.6' }}>
-          Pilih paket untuk bot atau produk yang kamu inginkan. Bayar dengan USDC, dapatkan license key.
+          {t('premium.subtitle')}
         </p>
 
         <div className="animate-slide-up delay-200" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--bg-secondary)', padding: '8px 16px', borderRadius: '100px', marginTop: '16px', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          <ShieldCheck weight="fill" size={16} /> Pembayaran via USDC di Base Network
+          <ShieldCheck weight="fill" size={16} /> {t('premium.paymentNetwork')}
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Memuat paket...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('premium.loading')}</div>
       ) : plans.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Belum ada paket tersedia.</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('premium.noPlans')}</div>
       ) : (
         <div className="cards-grid">
           {plans.map(plan => (
@@ -207,15 +209,15 @@ function PremiumAccess() {
                 ${plan.price_usd} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: '400' }}>USDC</span>
               </div>
               <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                {plan.duration_days ? `${plan.duration_days} hari` : 'Lifetime'}
+                {plan.duration_days ? `${plan.duration_days} ${t('premium.days')}` : t('premium.lifetime')}
               </div>
               {plan.description && (
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>{plan.description}</p>
               )}
               <ul style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px', color: 'var(--text-secondary)', listStyleType: 'none', padding: 0 }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> Akses penuh ke bot ini</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> Update gratis</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> Support via Telegram</li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> {t('premium.featAccess')}</li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> {t('premium.featUpdate')}</li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCircle weight="fill" color="var(--accent)" size={20} /> {t('premium.featSupport')}</li>
               </ul>
               <button
                 className="btn-primary"
@@ -223,7 +225,7 @@ function PremiumAccess() {
                 onClick={() => handleOrder(plan)}
                 style={{ width: '100%', fontSize: '1rem', padding: '14px', justifyContent: 'center' }}
               >
-                {orderingId === plan.id ? 'Memproses...' : 'Beli Sekarang'}
+                {orderingId === plan.id ? t('premium.processing') : t('premium.buyNow')}
               </button>
             </div>
           ))}
@@ -231,13 +233,13 @@ function PremiumAccess() {
       )}
 
       <div className="animate-slide-up delay-300" style={{ marginTop: '64px', textAlign: 'center' }}>
-        <h3 style={{ fontSize: '1.3rem', marginBottom: '24px', color: 'var(--text-primary)' }}>Cara Kerja</h3>
+        <h3 style={{ fontSize: '1.3rem', marginBottom: '24px', color: 'var(--text-primary)' }}>{t('premium.howItWorks')}</h3>
         <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
-            { step: '01', title: 'Pilih Paket', desc: 'Pilih paket untuk bot yang kamu mau' },
-            { step: '02', title: 'Bayar USDC', desc: 'Transfer USDC di Base Network dengan memo unik' },
-            { step: '03', title: 'Dapatkan Key', desc: 'License key otomatis disiapkan untuk Anda' },
-            { step: '04', title: 'Aktivasi Bot', desc: 'Ketik /activate <key> di bot Telegram' },
+            { step: '01', title: t('premium.step1Title'), desc: t('premium.step1Desc') },
+            { step: '02', title: t('premium.step2Title'), desc: t('premium.step2Desc') },
+            { step: '03', title: t('premium.step3Title'), desc: t('premium.step3Desc') },
+            { step: '04', title: t('premium.step4Title'), desc: t('premium.step4Desc') },
           ].map((item) => (
             <div key={item.step} style={{ flex: '1', minWidth: '180px', maxWidth: '200px', textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: '8px' }}>{item.step}</div>
@@ -250,5 +252,3 @@ function PremiumAccess() {
     </div>
   );
 }
-
-export default PremiumAccess;
