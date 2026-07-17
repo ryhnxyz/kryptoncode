@@ -277,11 +277,39 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  text-align: center;
+  text-align: left;
   margin-top: 60px;
   padding-bottom: 100px;
+  position: relative;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -50px;
+  bottom: -100px;
+  left: 0;
+  background-image: url('/hero-bg.png');
+  background-size: 65% auto;
+  background-position: right center;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme="dark"] .hero-section::before {
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+:root[data-theme="light"] .hero-section::before {
+  filter: invert(1);
+  mix-blend-mode: multiply;
+  opacity: 0.5;
 }
 
 .hero-title {
