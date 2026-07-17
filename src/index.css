@@ -288,12 +288,12 @@ body {
   content: '';
   position: absolute;
   top: -60px;
-  right: -50px;
+  right: 0;
   bottom: -100px;
   left: 0;
   background-image: url('/hero-bg.png');
   background-size: 85% auto;
-  background-position: right center;
+  background-position: calc(100% + 120px) center;
   background-repeat: no-repeat;
   z-index: -1;
   pointer-events: none;
