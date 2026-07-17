@@ -80,8 +80,8 @@ export default function WelcomeSplash({ onComplete }) {
                 transition={{ duration: 0.6 }}
                 style={{ 
                   width: '100%', height: '100%', position: 'absolute', top: 0, left: 0,
-                  WebkitMaskImage: stage === 'intro' ? 'url(/logo.png)' : undefined,
-                  maskImage: stage === 'intro' ? 'url(/logo.png)' : undefined
+                  WebkitMaskImage: stage === 'intro' ? 'url(/logo-dark.png)' : undefined,
+                  maskImage: stage === 'intro' ? 'url(/logo-dark.png)' : undefined
                 }} 
               />
             </div>
