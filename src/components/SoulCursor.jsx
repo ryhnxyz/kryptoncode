@@ -63,21 +63,25 @@ const SoulCursor = () => {
         trail.x += (mouse.x - trail.x) * 0.25;
         trail.y += (mouse.y - trail.y) * 0.25;
         
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const colorHex = isDark ? '#faf7f2' : '#1c1917';
+        const colorRgb = isDark ? '250, 247, 242' : '28, 25, 23';
+
         // 1. Draw exact mouse dot (main cursor)
         ctx.beginPath();
         if (isHovering) {
           ctx.arc(mouse.x, mouse.y, 6, 0, Math.PI * 2);
-          ctx.fillStyle = '#1c1917';
+          ctx.fillStyle = colorHex;
         } else {
           ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#1c1917';
+          ctx.fillStyle = colorHex;
         }
         ctx.fill();
 
         // 2. Draw smooth trailing minimalist ring
         ctx.beginPath();
         ctx.arc(trail.x, trail.y, isHovering ? 24 : 16, 0, Math.PI * 2);
-        ctx.strokeStyle = isHovering ? 'rgba(28, 25, 23, 0.15)' : 'rgba(28, 25, 23, 0.4)';
+        ctx.strokeStyle = isHovering ? `rgba(${colorRgb}, 0.15)` : `rgba(${colorRgb}, 0.4)`;
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
