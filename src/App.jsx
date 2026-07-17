@@ -10,7 +10,6 @@ import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
 import NotFound from './pages/NotFound';
 
-import SoulCursor from './components/SoulCursor';
 import WelcomeSplash from './components/WelcomeSplash';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
@@ -29,7 +28,6 @@ function AppContent() {
 
   return (
     <>
-      <SoulCursor />
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       
       <div className="background-wrapper"></div>

@@ -89,10 +89,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (pointer: fine) {
-  * {
-    cursor: none !important;
-  }
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 .mono {
@@ -293,7 +292,7 @@ body {
   bottom: -100px;
   left: 0;
   background-image: url('/hero-bg.png');
-  background-size: 65% auto;
+  background-size: 85% auto;
   background-position: right center;
   background-repeat: no-repeat;
   z-index: -1;
@@ -302,12 +301,13 @@ body {
 }
 
 :root[data-theme="dark"] .hero-section::before {
+  filter: invert(1);
   mix-blend-mode: screen;
   opacity: 0.9;
 }
 
 :root[data-theme="light"] .hero-section::before {
-  filter: invert(1);
+  filter: none;
   mix-blend-mode: multiply;
   opacity: 0.5;
 }
