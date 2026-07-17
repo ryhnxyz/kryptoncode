@@ -104,7 +104,7 @@ export default function WelcomeSplash({ onComplete }) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '1.4rem' }}
+                style={{ fontFamily: 'var(--font-sans)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '1.4rem' }}
               >
                 Select System Language
               </motion.h2>

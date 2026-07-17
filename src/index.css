@@ -81,7 +81,7 @@ body {
 }
 
 .mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 /* Plain background with just a subtle grid (NO gradients) */
@@ -148,7 +148,7 @@ body {
   gap: 8px;
   font-weight: 700;
   font-size: 1rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   color: var(--text-primary);
 }
 
@@ -163,7 +163,7 @@ body {
 }
 
 .nav-item {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   padding: 6px 14px;
   color: var(--text-secondary);
@@ -220,7 +220,7 @@ body {
   cursor: pointer;
   transition: all 450ms ease-in-out;
   padding: 14px 32px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 600;
   color: #AAAAAA;
   font-size: 1rem;
@@ -308,7 +308,7 @@ body {
 }
 
 .page-title {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 32px;
@@ -390,7 +390,7 @@ body {
 }
 
 .ref-info-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.7rem;
   color: var(--text-secondary);
   display: flex;
@@ -427,7 +427,7 @@ body {
 .ref-card-actions button {
   flex: 1;
   justify-content: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 .ref-card-actions .btn-light {
