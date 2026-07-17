@@ -123,7 +123,6 @@ body {
   background: rgba(20, 20, 20, 0.6);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 .nav-content {
