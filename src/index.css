@@ -196,7 +196,7 @@ body {
 .btn-primary, .btn-dark {
   background: var(--text-primary);
   border: 1px solid var(--text-primary);
-  color: #ffffff;
+  color: var(--bg-color);
   padding: 14px 32px;
   border-radius: 12px;
   font-family: var(--font-mono);
@@ -440,7 +440,7 @@ body {
 .ref-card-actions .btn-dark {
   background: var(--text-primary);
   border: 1px solid var(--text-primary);
-  color: #ffffff;
+  color: var(--bg-color);
   padding: 10px;
   border-radius: 12px;
   font-size: 0.8rem;
