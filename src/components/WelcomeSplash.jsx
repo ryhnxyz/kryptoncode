@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 export default function WelcomeSplash({ onComplete }) {
   const [stage, setStage] = useState('intro'); // intro -> lang-select -> done
-  const { changeLanguage } = useLanguage();
-
-  const titleText = "KryptonCode".split('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     const savedLang = localStorage.getItem('app_language');
@@ -22,8 +21,7 @@ export default function WelcomeSplash({ onComplete }) {
     return () => clearTimeout(timer);
   }, [onComplete]);
 
-  const handleSelectLanguage = (lang) => {
-    changeLanguage(lang);
+  const handleSelectLanguage = () => {
     setStage('done');
     setTimeout(onComplete, 1200);
   };
@@ -100,29 +98,18 @@ export default function WelcomeSplash({ onComplete }) {
                 gap: '30px'
               }}
             >
-              <motion.h2 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                style={{ fontFamily: 'var(--font-sans)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '1.4rem' }}
-              >
-                Select System Language
-              </motion.h2>
-              
-              <div style={{ display: 'flex', gap: '20px' }}>
-                {[{id: 'id', label: 'Indonesia'}, {id: 'en', label: 'English'}].map((lang, idx) => (
-                  <motion.button
-                    key={lang.id}
-                    className="btn-dark"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
-                    onClick={() => handleSelectLanguage(lang.id)}
-                  >
-                    {lang.label}
-                  </motion.button>
-                ))}
+              <div className="welcome-language-copy">
+                <span className="welcome-language-kicker">KryptonCode / {t('language.menuLabel')}</span>
+                <motion.h2 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {t('language.welcomeTitle')}
+                </motion.h2>
+                <p>{t('language.welcomeDescription')}</p>
               </div>
+              <LanguageSelector mode="welcome" onSelect={handleSelectLanguage} />
             </motion.div>
           )}
         </motion.div>

@@ -103,7 +103,7 @@ export default function ProductDetail() {
                 {product.type}
               </span>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
-                by {product.company}
+                {t('common.by')} {product.company}
               </span>
             </div>
             <h1 style={{ margin: 0, fontSize: '2.5rem', color: 'var(--text-primary)', lineHeight: '1.2' }}>{product.title}</h1>

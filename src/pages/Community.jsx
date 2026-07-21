@@ -1,6 +1,8 @@
 import React from 'react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { buttonVariants } from '../components/ui/button';
+import { cn } from '../lib/utils';
 
 export default function Community() {
   const { t } = useLanguage();
@@ -14,11 +16,15 @@ export default function Community() {
         {t('community.subtitle')}
       </p>
       
-      <div className="animate-slide-up delay-200" style={{ marginTop: '40px' }}>
-        <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-          <button className="btn-dark btn-lg">
-            {t('community.join')} <ArrowUpRight weight="bold" size={18} />
-          </button>
+      <div className="hero-actions animate-slide-up delay-200">
+        <a
+          className={cn(buttonVariants({ size: 'lg' }), 'hero-cta')}
+          href="https://t.me/kryptoncodes"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t('community.join')}
+          <ArrowUpRight data-icon="inline-end" weight="bold" aria-hidden="true" />
         </a>
       </div>
     </main>
