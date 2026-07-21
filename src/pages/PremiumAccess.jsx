@@ -51,7 +51,7 @@ export default function PremiumAccess() {
 
   const botName = (botId) => {
     const bot = bots.find(b => b.id === botId);
-    return bot ? bot.bot_name : 'Unknown Bot';
+    return bot ? bot.bot_name : t('common.unknownBot');
   };
 
   const handleOrder = async (plan) => {
@@ -63,7 +63,7 @@ export default function PremiumAccess() {
         setOrderResult(data.order);
         startPolling(data.order.id);
       } else {
-        alert(t('premium.errorCreate') + (data.error || 'Unknown error'));
+        alert(t('premium.errorCreate') + (data.error || t('premium.unknownError')));
       }
     } catch (err) {
       alert(t('premium.errorNetwork') + err.message);
@@ -86,7 +86,7 @@ export default function PremiumAccess() {
           <text x="110" y="120" text-anchor="middle" fill="#faf7f2" font-size="9" font-family="monospace">${orderResult.wallet_address.slice(0, 10)}...${orderResult.wallet_address.slice(-8)}</text>
           <text x="110" y="150" text-anchor="middle" fill="#22c55e" font-size="20" font-family="monospace" font-weight="bold">${orderResult.price_usd} USDC</text>
           <text x="110" y="180" text-anchor="middle" fill="#f59e0b" font-size="14" font-family="monospace" font-weight="bold">MEMO: ${orderResult.memo}</text>
-          <text x="110" y="205" text-anchor="middle" fill="#78716c" font-size="8" font-family="monospace">Scan dengan wallet USDC Base</text>
+          <text x="110" y="205" text-anchor="middle" fill="#78716c" font-size="8" font-family="monospace">${t('premium.qrWalletHint')}</text>
         </svg>`
       )}`
     : null;
@@ -111,7 +111,7 @@ export default function PremiumAccess() {
 
           {qrData && (
             <div style={{ marginBottom: '24px' }}>
-              <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%' }} />
+              <img src={qrData} alt={t('common.paymentQr')} style={{ borderRadius: '12px', maxWidth: '220px', width: '100%' }} />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>{t('premium.scanDesc')}</p>
             </div>
           )}

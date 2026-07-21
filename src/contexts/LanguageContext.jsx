@@ -6,18 +6,20 @@ const translations = { id, en };
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState('id');
+  const [language, setLanguage] = useState(() => {
+    if (typeof window === 'undefined') return 'id';
+    const savedLanguage = window.localStorage.getItem('app_language');
+    return translations[savedLanguage] ? savedLanguage : 'id';
+  });
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('app_language');
-    if (savedLang && translations[savedLang]) {
-      setLanguage(savedLang);
-    }
-  }, []);
+    document.documentElement.lang = language === 'id' ? 'id' : 'en';
+  }, [language]);
 
   const changeLanguage = (lang) => {
+    if (!translations[lang]) return;
     setLanguage(lang);
-    localStorage.setItem('app_language', lang);
+    window.localStorage.setItem('app_language', lang);
   };
 
   const t = (key) => {

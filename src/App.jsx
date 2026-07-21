@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
 import BackgroundGlow from './components/BackgroundGlow';
+import LanguageSelector from './components/LanguageSelector';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
@@ -61,7 +62,7 @@ function AppContent() {
           <button
             className="mobile-menu-btn"
             type="button"
-            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-label={isMobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={isMobileMenuOpen}
             aria-controls="primary-navigation"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -85,13 +86,16 @@ function AppContent() {
             </div>
 
             <div className="mobile-menu-meta" aria-hidden={!isMobileMenuOpen}>
-              <span>KryptonCode / Navigation</span>
-              <span>Independent digital studio</span>
+              <span>KryptonCode / {t('nav.navigation')}</span>
+              <span>{t('common.studio')}</span>
             </div>
             
-            <a className="btn-white-pill nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
-              Try Agent <ArrowUpRight size={18} weight="bold" aria-hidden="true" />
-            </a>
+            <div className="nav-actions">
+              <LanguageSelector />
+              <a className="btn-white-pill nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
+                {t('nav.tryAgent')} <ArrowUpRight size={18} weight="bold" aria-hidden="true" />
+              </a>
+            </div>
           </div>
         </nav>
 
@@ -112,17 +116,17 @@ function AppContent() {
                 <img src="/splash-logo.png" alt="" width="32" height="32" />
                 <span>KryptonCode</span>
               </Link>
-              <p>Practical tools and automation for a faster digital workflow.</p>
+              <p>{t('footer.description')}</p>
             </div>
 
-            <nav className="footer-nav" aria-label="Footer navigation">
-              <p className="footer-label">Explore</p>
+            <nav className="footer-nav" aria-label={t('footer.navigationLabel')}>
+              <p className="footer-label">{t('footer.explore')}</p>
               <Link to="/products">{t('nav.products')}</Link>
               <Link to="/community">{t('nav.community')}</Link>
             </nav>
 
             <div className="footer-connect">
-              <p className="footer-label">Connect</p>
+              <p className="footer-label">{t('footer.connect')}</p>
               <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
                 Telegram
                 <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
@@ -132,7 +136,7 @@ function AppContent() {
 
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} KryptonCode</span>
-            <span className="footer-status"><i aria-hidden="true" />{t('footer')}</span>
+            <span className="footer-status"><i aria-hidden="true" />{t('footer.status')}</span>
           </div>
         </footer>
       </div>

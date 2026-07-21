@@ -171,7 +171,7 @@ export default function BuyAccess() {
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{t('buy.saveSeed')}</p>
 
           <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '24px', marginBottom: '24px', border: '2px dashed var(--green)' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '12px', fontFamily: 'var(--font-mono)' }}>KRYPTON SEED (8 WORDS)</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '12px', fontFamily: 'var(--font-mono)' }}>{t('buy.seedLabel')}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 700, lineHeight: 2, color: 'var(--green)' }}>
               {seed.join ? seed.join(' ') : seed}
             </div>
@@ -210,7 +210,7 @@ export default function BuyAccess() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <Lightning size={28} weight="fill" />
           <div>
-            <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.3rem' }}>{plan?.name || 'Access'}</h1>
+            <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.3rem' }}>{plan?.name || t('common.access')}</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{plan?.duration_days} {t('buy.dayAccess')}</p>
           </div>
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
@@ -246,7 +246,7 @@ export default function BuyAccess() {
 
             {qrData && (
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <img src={qrData} alt="Payment QR" style={{ borderRadius: '12px', maxWidth: '220px', width: '100%', display: 'block', margin: '0 auto' }} />
+                <img src={qrData} alt={t('common.paymentQr')} style={{ borderRadius: '12px', maxWidth: '220px', width: '100%', display: 'block', margin: '0 auto' }} />
                 <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>{t('buy.scanQr')}</p>
               </div>
             )}

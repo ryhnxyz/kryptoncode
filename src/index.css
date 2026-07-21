@@ -18,8 +18,8 @@
   --font-mono: 'Geist Variable', monospace;
   --font-sans: 'Instrument Sans Variable', sans-serif;
   --ink: currentColor;
-  --ink-2: #FF4FD8;
-  --ink-3: #4FF8FF;
+  --ink-2: #d6d3d1;
+  --ink-3: #78716c;
 
   /* Shadcn standard root variables (Defaulting to our Dark Theme) */
   --background: oklch(0.18 0 0); /* #1A1A1A equivalent */
@@ -37,6 +37,10 @@
   --card: oklch(0.18 0 0);
   --card-foreground: oklch(0.97 0 0);
   --ring: oklch(0.97 0 0);
+  --popover: oklch(0.21 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --accent: oklch(0.28 0 0);
+  --accent-foreground: oklch(0.97 0 0);
 }
 
 @theme inline {
@@ -55,10 +59,149 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
 }
 
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.language-trigger {
+  min-width: 68px;
+  border-radius: 999px;
+  border-color: color-mix(in oklch, var(--foreground) 14%, transparent);
+  background: color-mix(in oklch, var(--background) 72%, transparent);
+}
+
+.language-menu {
+  width: 220px;
+  padding: 8px;
+}
+
+.language-menu-item {
+  min-height: 42px;
+  gap: 10px;
+}
+
+.language-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.welcome-language-copy {
+  display: flex;
+  max-width: 520px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.welcome-language-copy h2 {
+  color: var(--text-primary);
+  font-size: clamp(1.55rem, 5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.welcome-language-copy p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.welcome-language-kicker {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.language-welcome {
+  display: flex;
+  width: min(520px, calc(100vw - 40px));
+  gap: 12px;
+}
+
+.language-welcome-option {
+  min-height: 72px;
+  height: auto;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.language-option-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.language-option-copy strong {
+  font-size: 0.95rem;
+}
+
+.language-option-copy small {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.hero-cta {
+  min-height: 44px;
+  border-radius: 999px;
+  padding-inline: 22px;
+  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.hero-cta:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .language-welcome {
+    flex-direction: column;
+  }
+
+  .language-welcome-option {
+    width: 100%;
+  }
+}
 
 /* 06 Chromia — brushed-metal sheen applied to the logo */
 .fx-chrome-logo {
