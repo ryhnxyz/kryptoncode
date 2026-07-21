@@ -46,7 +46,6 @@ function AppContent() {
 
   return (
     <>
-      <div className="background-wrapper"></div>
       <BackgroundGlow />
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       <div className="app-container" style={{ opacity: showSplash ? 0 : 1, transition: 'opacity 0.8s ease-in' }}>

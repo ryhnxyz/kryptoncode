@@ -1,46 +1,110 @@
-.glow-container {
+.signal-field {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
   z-index: -1;
-  pointer-events: none;
   overflow: hidden;
+  pointer-events: none;
+  background: #1a1a1a;
+  isolation: isolate;
 }
 
-.glow-blob {
+.signal-field__grid,
+.signal-field__wave {
   position: absolute;
-  border-radius: 50%;
-  mix-blend-mode: screen;
+  inset: -8%;
 }
 
-/* Wide spotlight originating from top-center */
-.glow-blob-1 {
-  top: -50vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120vw;
-  height: 120vw;
-  max-width: 1500px;
-  max-height: 1500px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 40%, transparent 70%);
-  filter: blur(80px);
+.signal-field__grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1.2px);
+  background-size: 28px 28px;
+  opacity: 0.26;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 2%, black 28%, black 70%, transparent 98%);
+  mask-image: linear-gradient(to bottom, transparent 2%, black 28%, black 70%, transparent 98%);
 }
 
-/* Secondary subtle glow to deepen the center */
-.glow-blob-2 {
-  top: -20vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60vw;
-  height: 60vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-  filter: blur(100px);
+.signal-field__wave {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.82) 1.4px, transparent 1.6px);
+  background-size: 18px 18px;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 
-.glow-blob-3 {
-  display: none;
+.signal-field__wave--far {
+  opacity: 0.16;
+  clip-path: polygon(0 18%, 10% 14%, 22% 22%, 35% 42%, 48% 53%, 62% 45%, 76% 24%, 89% 17%, 100% 26%, 100% 66%, 88% 58%, 75% 61%, 61% 74%, 48% 82%, 34% 72%, 20% 49%, 8% 39%, 0 43%);
+  animation: signal-drift-far 36s ease-in-out infinite alternate;
+}
+
+.signal-field__wave--near {
+  opacity: 0.34;
+  clip-path: polygon(0 56%, 12% 48%, 25% 51%, 38% 63%, 51% 72%, 64% 68%, 77% 54%, 90% 48%, 100% 52%, 100% 79%, 88% 75%, 75% 80%, 62% 90%, 49% 94%, 36% 87%, 23% 72%, 10% 66%, 0 70%);
+  animation: signal-drift-near 42s ease-in-out infinite alternate;
+}
+
+.signal-field__axis {
+  position: absolute;
+  inset: 22px 22px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.28);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+}
+
+.signal-field__axis::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 72px;
+  left: 42px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes signal-drift-far {
+  from { transform: translate3d(-0.5%, -0.4%, 0) scale(1.01); }
+  to { transform: translate3d(0.5%, 0.4%, 0) scale(1.015); }
+}
+
+@keyframes signal-drift-near {
+  from { transform: translate3d(0.4%, 0.3%, 0) scale(1.005); }
+  to { transform: translate3d(-0.4%, -0.3%, 0) scale(1.012); }
+}
+
+@media (max-width: 640px) {
+  .signal-field__grid {
+    inset: 0;
+    background-size: 26px 26px;
+    opacity: 0.1;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
+    mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
+  }
+
+  .signal-field__wave {
+    inset: -6%;
+    background-size: 20px 20px;
+    animation: none;
+    will-change: auto;
+  }
+
+  .signal-field__wave--far {
+    opacity: 0.08;
+  }
+
+  .signal-field__wave--near {
+    opacity: 0.12;
+  }
+
+  .signal-field__axis {
+    inset: 16px 16px auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-field__wave {
+    animation: none;
+    will-change: auto;
+  }
 }
