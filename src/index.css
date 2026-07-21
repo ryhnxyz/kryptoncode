@@ -267,19 +267,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Plain background with a dotted grid */
-.background-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-color: var(--bg-color);
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
-  background-size: 30px 30px;
-  background-position: center;
-}
 .app-container {
   max-width: 1280px;
   margin: 0 auto;
