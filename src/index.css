@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
+@import "tailwindcss";
 :root {
+  /* Our custom variables (Legacy) */
   --bg-color: #1A1A1A; 
   --bg-secondary: #242424; 
   --bg-tertiary: #2a2a2a; 
@@ -12,13 +14,51 @@
   --card-bg: rgba(36, 36, 36, 0.6);
   --card-shadow: 0 4px 15px rgba(0,0,0,0.4);
   --card-border: rgba(255,255,255,0.05);
-  --radius: 100px;
+  --radius: 0.5rem;
   --font-mono: 'JetBrains Mono', monospace;
   --font-sans: 'Inter', sans-serif;
   --ink: currentColor;
   --ink-2: #FF4FD8;
   --ink-3: #4FF8FF;
+
+  /* Shadcn standard root variables (Defaulting to our Dark Theme) */
+  --background: oklch(0.18 0 0); /* #1A1A1A equivalent */
+  --foreground: oklch(0.97 0 0);
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --secondary: oklch(0.24 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.24 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --border: oklch(0.3 0 0);
+  --input: oklch(0.3 0 0);
+  --destructive: oklch(0.6 0.2 20);
+  --destructive-foreground: oklch(0.97 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --ring: oklch(0.97 0 0);
 }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-ring: var(--ring);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+}
+
 
 /* 06 Chromia — brushed-metal sheen applied to the logo */
 .fx-chrome-logo {
@@ -84,7 +124,7 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Plain background with just a subtle grid (NO gradients) */
+/* Plain background with a dotted grid */
 .background-wrapper {
   position: fixed;
   top: 0;
@@ -93,10 +133,10 @@ body {
   height: 100vh;
   z-index: -1;
   background-color: var(--bg-color);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+  background-size: 30px 30px;
+  background-position: center;
 }
-
-
-
 .app-container {
   max-width: 1280px;
   margin: 0 auto;
@@ -106,35 +146,36 @@ body {
   flex-direction: column;
 }
 
-/* Header Navbar (Light Glassmorphism Pill) */
+/* Header Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 28px;
+  padding: 8px 12px 8px 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50px;
   position: sticky;
   top: 20px;
   margin: 20px auto;
-  max-width: 1200px;
-  width: 92%;
+  max-width: 1000px;
+  width: 95%;
   z-index: 1000;
   background: rgba(20, 20, 20, 0.6);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
+.nav-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
 .nav-content {
   display: flex;
   align-items: center;
-  gap: 32px;
-}
-
-.nav-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  flex: 2;
+  justify-content: flex-end;
 }
 
 .mobile-menu-btn {
@@ -156,64 +197,80 @@ body {
   color: var(--text-primary);
 }
 
-.logo-icon {
-  color: var(--accent);
-  font-weight: bold;
-}
-
 .nav-links {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
 }
 
-.nav-item {
+.nav-separator {
+  color: var(--text-secondary);
+  opacity: 0.3;
+  font-size: 0.6rem;
+  user-select: none;
+}
+
+.nav-item-clean {
   font-family: var(--font-sans);
-  font-size: 0.85rem;
-  padding: 6px 14px;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 600;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  position: relative;
+  padding: 4px 0;
+}
+
+.nav-item-clean::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 50%;
+  background-color: var(--text-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.nav-item-clean:hover, .nav-item-clean.active {
+  color: var(--text-primary);
+}
+
+.nav-item-clean:hover::after, .nav-item-clean.active::after {
+  width: 100%;
+  opacity: 1;
+}
+
+.btn-white-pill {
   display: flex;
   align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 40px;
+  padding: 10px 24px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-item::before {
-  content: '<';
-  color: var(--text-secondary);
-  opacity: 0.4;
-  margin-right: 6px;
-  font-weight: 400;
-  transition: all 0.2s;
+.btn-white-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
 }
 
-.nav-item::after {
-  content: '/>';
-  color: var(--text-secondary);
-  opacity: 0.4;
-  margin-left: 6px;
-  font-weight: 400;
-  transition: all 0.2s;
-}
-
-.nav-item:hover, .nav-item.active {
-  color: var(--bg-color);
-  background: var(--text-primary);
-  border-color: var(--text-primary);
-  border-style: solid;
-}
-
-.nav-item:hover::before, .nav-item.active::before,
-.nav-item:hover::after, .nav-item.active::after {
-  color: var(--bg-secondary);
-  opacity: 0.6;
-  font-weight: 700;
-}
-
-.btn-primary, .btn-dark, .btn-secondary, .btn-light {
+.btn-dark, .btn-light {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 3em;
   display: flex;
@@ -232,13 +289,13 @@ body {
   font-size: 1rem;
 }
 
-.btn-primary svg, .btn-dark svg, .btn-secondary svg, .btn-light svg {
+.btn-dark svg, .btn-light svg {
   fill: #AAAAAA;
   color: #AAAAAA;
   transition: all 800ms ease;
 }
 
-.btn-primary:hover, .btn-dark:hover, .btn-secondary:hover, .btn-light:hover {
+.btn-dark:hover, .btn-light:hover {
   background: linear-gradient(0deg, #8e8e8e, #e0e0e0);
   box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.4),
   inset 0px -4px 0px 0px rgba(0, 0, 0, 0.2),
@@ -248,10 +305,91 @@ body {
   color: white;
 }
 
-.btn-primary:hover svg, .btn-dark:hover svg, .btn-secondary:hover svg, .btn-light:hover svg {
+.btn-dark:hover svg, .btn-light:hover svg {
   fill: white;
   color: white;
   transform: scale(1.2);
+}
+
+/* Shadcn-like Minimalist Solid Button */
+.btn-primary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--text-primary);
+  color: var(--bg-color);
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  box-shadow: 0 4px 14px rgba(250, 247, 242, 0.15);
+}
+
+.btn-primary:hover {
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(250, 247, 242, 0.25);
+}
+
+/* Semi-Liquid Glass Button */
+.btn-secondary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 4px 14px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent
+  );
+  transition: all 0.5s ease;
+  transform: skewX(-20deg);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover::before {
+  left: 200%;
 }
 
 .btn-sm {
@@ -493,6 +631,12 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
 
