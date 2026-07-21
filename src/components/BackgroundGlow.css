@@ -75,21 +75,26 @@
 
 @media (max-width: 640px) {
   .signal-field__grid {
-    background-size: 24px 24px;
-    opacity: 0.15;
+    inset: 0;
+    background-size: 26px 26px;
+    opacity: 0.1;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
+    mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
   }
 
   .signal-field__wave {
-    inset: -12%;
-    background-size: 16px 16px;
+    inset: -6%;
+    background-size: 20px 20px;
+    animation: none;
+    will-change: auto;
   }
 
   .signal-field__wave--far {
-    opacity: 0.13;
+    opacity: 0.08;
   }
 
   .signal-field__wave--near {
-    opacity: 0.18;
+    opacity: 0.12;
   }
 
   .signal-field__axis {

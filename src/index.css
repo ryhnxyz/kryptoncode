@@ -558,7 +558,7 @@ body {
 }
 
 .hero-title .highlight {
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 .hero-subtitle {
