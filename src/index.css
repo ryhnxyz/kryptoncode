@@ -1164,6 +1164,15 @@ button:focus-visible {
     overflow: hidden;
   }
 
+  body.mobile-menu-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: var(--background);
+    pointer-events: none;
+    z-index: 1099;
+  }
+
   .navbar {
     position: relative;
     top: 0;
@@ -1192,6 +1201,7 @@ button:focus-visible {
     box-shadow: none;
     transform: none;
     transition: none;
+    will-change: auto;
     z-index: 1101;
   }
 
@@ -1458,7 +1468,6 @@ button:focus-visible {
     border-color 280ms ease,
     box-shadow 280ms ease,
     transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, width, padding;
 }
 
 .navbar-scrolled {
