@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { WarningCircle, ArrowLeft } from '@phosphor-icons/react';
+import { CircleAlert as WarningCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function NotFound() {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowClockwise, ArrowRight, ArrowUpRight, Package, Tag, WifiSlash } from '@phosphor-icons/react';
+import { RefreshCw as ArrowClockwise, ArrowRight, ArrowUpRight, Package, Tag, WifiOff as WifiSlash } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import {

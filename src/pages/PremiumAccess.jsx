@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, Crown, CopySimple, Check, ShieldCheck, Wallet, Robot, QrCode, Spinner } from '@phosphor-icons/react';
+import { CheckCircle, Crown, Copy as CopySimple, Check, ShieldCheck, Wallet, Bot as Robot, QrCode, LoaderCircle as Spinner } from 'lucide-react';
 import { api, API_BASE } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
 
