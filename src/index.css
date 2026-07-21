@@ -2534,3 +2534,75 @@ button:focus-visible {
     font-size: 1.95rem;
   }
 }
+
+/* Compact mobile navigation with the same solid surface as the footer. */
+@media (max-width: 768px) {
+  .navbar.navbar-menu-open {
+    inset: 18px 18px auto;
+    min-height: 50px;
+  }
+
+  .navbar.navbar-menu-open .logo img {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .navbar.navbar-menu-open .mobile-menu-btn {
+    width: 50px;
+    height: 50px;
+    background: rgba(20, 20, 20, 0.58);
+  }
+
+  .nav-content {
+    inset: 12px;
+    min-height: calc(100dvh - 24px);
+    border-radius: 24px;
+    padding: 106px 20px 20px;
+    background: rgba(20, 20, 20, 0.58);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.05), 0 20px 54px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  .nav-content::before {
+    display: none;
+  }
+
+  .nav-item-clean {
+    grid-template-columns: 28px 1fr auto;
+    gap: 10px;
+    padding: 18px 2px;
+    font-size: clamp(1.45rem, 7vw, 1.9rem);
+    letter-spacing: -0.035em;
+  }
+
+  .nav-index {
+    padding-top: 5px;
+    font-size: 0.58rem;
+  }
+
+  .nav-link-arrow {
+    width: 19px;
+    height: 19px;
+  }
+
+  .mobile-menu-meta {
+    gap: 14px;
+    margin-top: 18px;
+    font-size: 0.58rem;
+  }
+
+  .nav-actions {
+    gap: 10px;
+    padding-top: 18px;
+  }
+
+  .language-trigger {
+    min-height: 48px;
+  }
+
+  .nav-try-btn {
+    min-height: 54px;
+    font-size: 0.9rem;
+  }
+}
