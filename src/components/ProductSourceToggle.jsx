@@ -1,26 +1,26 @@
+import { Radio, Database } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+
 export default function ProductSourceToggle({ source, onChange, label, liveLabel, mockLabel }) {
   return (
     <div className="product-source-control">
       <span className="product-source-label">{label}</span>
-      <div className="product-source-toggle" role="group" aria-label={label}>
-        <button
-          type="button"
-          className={source === 'live' ? 'is-active' : ''}
-          aria-pressed={source === 'live'}
-          onClick={() => onChange('live')}
-        >
-          <span className="product-source-indicator" aria-hidden="true" />
+      <ToggleGroup
+        className="product-source-toggle"
+        value={[source]}
+        onValueChange={(value) => value[0] && onChange(value[0])}
+        aria-label={label}
+        spacing={0}
+      >
+        <ToggleGroupItem value="live" aria-label={liveLabel}>
+          <Radio data-icon="inline-start" aria-hidden="true" />
           {liveLabel}
-        </button>
-        <button
-          type="button"
-          className={source === 'mock' ? 'is-active' : ''}
-          aria-pressed={source === 'mock'}
-          onClick={() => onChange('mock')}
-        >
+        </ToggleGroupItem>
+        <ToggleGroupItem value="mock" aria-label={mockLabel}>
+          <Database data-icon="inline-start" aria-hidden="true" />
           {mockLabel}
-        </button>
-      </div>
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
 }
