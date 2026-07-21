@@ -16,10 +16,18 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 28);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('mobile-menu-open', isMobileMenuOpen);
