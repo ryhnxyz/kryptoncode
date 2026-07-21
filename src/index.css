@@ -1402,6 +1402,10 @@ button:focus-visible {
     width: 100%;
     min-height: 60px;
     border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0;
   }
 
   .hero-note {
