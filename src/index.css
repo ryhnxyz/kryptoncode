@@ -181,6 +181,10 @@
   min-height: 44px;
   border-radius: 999px;
   padding-inline: 22px;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
 
