@@ -1569,6 +1569,96 @@ button:focus-visible {
   font-size: 0.68rem;
 }
 
+.product-source-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-source-label {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.product-source-toggle {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.product-source-toggle button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.product-source-toggle button:hover {
+  color: var(--text-primary);
+}
+
+.product-source-toggle button:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.product-source-toggle button.is-active {
+  background: var(--text-primary);
+  color: var(--bg-color);
+}
+
+.product-source-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.product-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.product-detail-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+.product-detail-back:hover {
+  color: var(--text-primary);
+}
+
+.product-detail-back:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 4px;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1997,12 +2087,29 @@ button:focus-visible {
   }
 
   .products-meta {
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
     font-size: 0.62rem;
   }
 
-  .products-meta span:last-child {
+  .products-meta > span:last-child {
     text-align: right;
+  }
+
+  .products-meta .product-source-control {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .product-detail-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .product-detail-toolbar .product-source-control {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .products-grid {

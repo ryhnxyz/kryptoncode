@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowClockwise, ArrowRight, ArrowUpRight, Package, Tag, WifiSlash } from '@phosphor-icons/react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -15,6 +15,8 @@ import { Separator } from '../components/ui/separator';
 import { renderIcon } from '../lib/icons';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { productsData } from '../data/productsData';
+import ProductSourceToggle from '../components/ProductSourceToggle';
 
 function ProductSkeleton() {
   return (
@@ -37,15 +39,23 @@ function ProductSkeleton() {
 
 export default function Products() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
+  const source = searchParams.get('source') === 'mock' ? 'mock' : 'live';
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const loadProducts = useCallback(() => {
-    setLoading(true);
     setError(null);
 
+    if (source === 'mock') {
+      setProducts(productsData);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     api.get('/api/products')
       .then((data) => {
         setProducts(data.products || []);
@@ -55,7 +65,11 @@ export default function Products() {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [source]);
+
+  const changeSource = (nextSource) => {
+    setSearchParams(nextSource === 'mock' ? { source: 'mock' } : {}, { replace: true });
+  };
 
   useEffect(() => {
     loadProducts();
@@ -83,6 +97,13 @@ export default function Products() {
         <Separator className="products-separator" />
         <div className="products-meta">
           <span>{t('products.curated')}</span>
+          <ProductSourceToggle
+            source={source}
+            onChange={changeSource}
+            label={t('products.dataSource')}
+            liveLabel={t('products.liveApi')}
+            mockLabel={t('products.mockData')}
+          />
           <span>{loading ? t('products.loadingCollection') : `${products.length} ${t('products.available')}`}</span>
         </div>
       </section>
@@ -165,7 +186,7 @@ export default function Products() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="product-card-button" onClick={() => navigate(`/product/${item.id}`)}>
+                <Button className="product-card-button" onClick={() => navigate(`/product/${item.id}${source === 'mock' ? '?source=mock' : ''}`)}>
                   {t('products.viewDetails')}
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />
                 </Button>

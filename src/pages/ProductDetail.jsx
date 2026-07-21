@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { renderIcon } from '../lib/icons';
 import { ArrowLeft, CheckCircle, LinkSimple, ArrowUpRight } from '@phosphor-icons/react';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { productsData } from '../data/productsData';
+import ProductSourceToggle from '../components/ProductSourceToggle';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
+  const source = searchParams.get('source') === 'mock' ? 'mock' : 'live';
+  const collectionPath = source === 'mock' ? '/products?source=mock' : '/products';
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +21,16 @@ export default function ProductDetail() {
 
   useEffect(() => {
     async function fetchProduct() {
+      setLoading(true);
+      setError(null);
+      setProduct(null);
+
+      if (source === 'mock') {
+        setProduct(productsData.find((item) => item.id === id) || null);
+        setLoading(false);
+        return;
+      }
+
       try {
         const data = await api.get('/api/products/' + id);
         setProduct(data.product);
@@ -26,7 +41,11 @@ export default function ProductDetail() {
       }
     }
     fetchProduct();
-  }, [id]);
+  }, [id, source]);
+
+  const changeSource = (nextSource) => {
+    setSearchParams(nextSource === 'mock' ? { source: 'mock' } : {}, { replace: true });
+  };
 
   if (loading) {
     return (
@@ -41,7 +60,7 @@ export default function ProductDetail() {
       <div className="page-content" style={{ textAlign: 'center', marginTop: '100px' }}>
         <h2 style={{ color: '#ef4444' }}>{t('product.notFound')}</h2>
         <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
-        <button className="btn-light" style={{ marginTop: '20px' }} onClick={() => navigate('/products')}>
+        <button className="btn-light" style={{ marginTop: '20px' }} onClick={() => navigate(collectionPath)}>
           <ArrowLeft /> {t('product.backToCollection')}
         </button>
       </div>
@@ -57,24 +76,21 @@ export default function ProductDetail() {
 
   return (
     <div className="page-content animate-fade-in" style={{ paddingBottom: '80px', padding: '0 16px' }}>
-      <button 
-        onClick={() => navigate('/products')} 
-        style={{ 
-          background: 'transparent', 
-          border: 'none', 
-          color: 'var(--text-secondary)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px',
-          cursor: 'pointer',
-          marginBottom: '32px',
-          fontFamily: 'var(--font-sans)',
-          fontSize: '0.9rem',
-          padding: 0
-        }}
-      >
-        <ArrowLeft weight="bold" /> {t('product.back')}
-      </button>
+      <div className="product-detail-toolbar">
+        <button 
+          onClick={() => navigate(collectionPath)} 
+          className="product-detail-back"
+        >
+          <ArrowLeft weight="bold" /> {t('product.back')}
+        </button>
+        <ProductSourceToggle
+          source={source}
+          onChange={changeSource}
+          label={t('products.dataSource')}
+          liveLabel={t('products.liveApi')}
+          mockLabel={t('products.mockData')}
+        />
+      </div>
 
       <div className="ref-card" style={{ padding: '40px' }}>
         <div className="detail-header" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
