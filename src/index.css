@@ -1516,10 +1516,36 @@ button:focus-visible {
   text-align: center;
 }
 
-.products-state-card [data-slot='card-header'],
+.products-state-card [data-slot='card-header'] {
+  justify-items: center;
+  padding: 38px 30px;
+}
+
 .products-state-card [data-slot='card-footer'] {
   align-items: center;
   justify-content: center;
+}
+
+.products-state-card .products-state-icon {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  margin-bottom: 18px;
+  border-radius: 14px;
+}
+
+.products-state-card [data-slot='card-title'] {
+  color: var(--text-primary);
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.products-state-card [data-slot='card-description'] {
+  max-width: 360px;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  text-align: center;
 }
 
 .products-error-shell {
