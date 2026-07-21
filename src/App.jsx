@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, NavLink } from 'react-router-dom';
-import { TerminalWindow, ArrowUpRight, List, X, Moon, Sun } from '@phosphor-icons/react';
+import { ArrowUpRight, List, X } from '@phosphor-icons/react';
 import './index.css';
 
 import Home from './pages/Home';
@@ -17,13 +17,23 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const { language, changeLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
 
-  const toggleLanguage = () => {
-    changeLanguage(language === 'id' ? 'en' : 'id');
-  };
+  useEffect(() => {
+    document.body.classList.toggle('mobile-menu-open', isMobileMenuOpen);
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <>
@@ -40,21 +50,39 @@ function AppContent() {
             </div>
           </Link>
           
-          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? <X size={28} weight="bold" /> : <List size={28} weight="bold" />}
+          <button
+            className="mobile-menu-btn"
+            type="button"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="primary-navigation"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={26} weight="bold" aria-hidden="true" /> : <List size={26} weight="bold" aria-hidden="true" />}
           </button>
           
-          <div className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
+          <div id="primary-navigation" className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
-              <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>{t('nav.products')}</NavLink>
+              <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>
+                <span className="nav-index">01</span>
+                <span>{t('nav.products')}</span>
+                <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
+              </NavLink>
               <span className="nav-separator"> </span>
-              <NavLink to="/community" className="nav-item-clean" onClick={closeMenu}>{t('nav.community')}</NavLink>
+              <NavLink to="/community" className="nav-item-clean" onClick={closeMenu}>
+                <span className="nav-index">02</span>
+                <span>{t('nav.community')}</span>
+                <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
+              </NavLink>
+            </div>
+
+            <div className="mobile-menu-meta" aria-hidden={!isMobileMenuOpen}>
+              <span>KryptonCode / Navigation</span>
+              <span>Independent digital studio</span>
             </div>
             
-            <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} onClick={closeMenu}>
-              <button className="btn-white-pill nav-try-btn">
-                Try Agent <ArrowUpRight size={18} weight="bold" />
-              </button>
+            <a className="btn-white-pill nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
+              Try Agent <ArrowUpRight size={18} weight="bold" aria-hidden="true" />
             </a>
           </div>
         </nav>
@@ -69,19 +97,35 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
 
-        {/* Indie Footer */}
-        <footer style={{ 
-          marginTop: 'auto', 
-          borderTop: '1px dashed var(--border)', 
-          paddingTop: '20px', 
-          paddingBottom: '20px',
-          textAlign: 'center', 
-          color: 'var(--text-secondary)', 
-          fontFamily: 'var(--font-mono)', 
-          fontSize: '0.85rem' 
-        }}>
-          [ <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>telegram</a> ] 
-          — {t('footer')}
+        <footer className="site-footer">
+          <div className="footer-main">
+            <div className="footer-brand">
+              <Link className="footer-logo" to="/" onClick={closeMenu}>
+                <img src="/splash-logo.png" alt="" width="32" height="32" />
+                <span>KryptonCode</span>
+              </Link>
+              <p>Practical tools and automation for a faster digital workflow.</p>
+            </div>
+
+            <nav className="footer-nav" aria-label="Footer navigation">
+              <p className="footer-label">Explore</p>
+              <Link to="/products">{t('nav.products')}</Link>
+              <Link to="/community">{t('nav.community')}</Link>
+            </nav>
+
+            <div className="footer-connect">
+              <p className="footer-label">Connect</p>
+              <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
+                Telegram
+                <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <span>© {new Date().getFullYear()} KryptonCode</span>
+            <span className="footer-status"><i aria-hidden="true" />{t('footer')}</span>
+          </div>
         </footer>
       </div>
     </>
