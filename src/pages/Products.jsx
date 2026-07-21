@@ -1,9 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag } from '@phosphor-icons/react';
+import { ArrowRight, ArrowUpRight, Package, Tag } from '@phosphor-icons/react';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
 import { renderIcon } from '../lib/icons';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
+
+function ProductSkeleton() {
+  return (
+    <Card className="product-card product-skeleton-card" aria-hidden="true">
+      <CardHeader>
+        <div className="product-card-topline">
+          <div className="skeleton product-icon-skeleton" />
+          <div className="skeleton product-badge-skeleton" />
+        </div>
+        <div className="skeleton product-title-skeleton" />
+        <div className="skeleton product-copy-skeleton" />
+        <div className="skeleton product-copy-skeleton product-copy-skeleton-short" />
+      </CardHeader>
+      <CardFooter>
+        <div className="skeleton product-button-skeleton" />
+      </CardFooter>
+    </Card>
+  );
+}
 
 export default function Products() {
   const navigate = useNavigate();
@@ -13,77 +43,99 @@ export default function Products() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/api/products').then(data => {
-      setProducts(data.products || []);
-      setLoading(false);
-    }).catch(err => {
-      setError(err.message);
-      setLoading(false);
-    });
+    api.get('/api/products')
+      .then((data) => {
+        setProducts(data.products || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
-  
+
   return (
-    <div className="page-content">
-      <h1 className="page-title animate-slide-up">{t('products.title')}</h1>
-      
+    <main className="products-page page-content">
+      <section className="products-intro animate-slide-up" aria-labelledby="products-heading">
+        <div className="products-kicker">
+          <span className="products-status-dot" aria-hidden="true" />
+          Product collection
+        </div>
+        <div className="products-intro-grid">
+          <div>
+            <h1 id="products-heading">Tools made for real workflows.</h1>
+          </div>
+          <div className="products-intro-copy">
+            <p>{t('products.title')} — focused utilities, automation, and digital products built to remove friction from everyday work.</p>
+            <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
+              Request a custom tool
+              <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+        <Separator className="products-separator" />
+        <div className="products-meta">
+          <span>Curated by KryptonCode</span>
+          <span>{loading ? 'Loading collection' : `${products.length} products available`}</span>
+        </div>
+      </section>
+
       {loading ? (
-        <div className="cards-grid">
-          {[1, 2, 3, 4].map(n => (
-            <div key={n} className="ref-card" style={{ boxShadow: 'none', borderColor: 'transparent' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px' }}>
-                <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
-                <div className="skeleton" style={{ height: '20px', width: '120px' }} />
-              </div>
-              <div className="skeleton" style={{ height: '60px', width: '100px', borderRadius: '16px', marginBottom: '24px' }} />
-              <div className="skeleton" style={{ height: '28px', width: '80%', marginBottom: '12px' }} />
-              <div className="skeleton" style={{ height: '20px', width: '100%', marginBottom: '8px' }} />
-              <div className="skeleton" style={{ height: '20px', width: '90%', marginBottom: '32px' }} />
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="skeleton skeleton-btn" style={{ height: '40px', borderRadius: '12px' }} />
-                <div className="skeleton skeleton-btn" style={{ height: '40px', borderRadius: '12px' }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <section className="products-grid" aria-label="Loading products" aria-busy="true">
+          {[1, 2, 3, 4].map((item) => <ProductSkeleton key={item} />)}
+        </section>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
-          {t('products.error')}: {error}
-        </div>
+        <Card className="products-state-card" role="alert">
+          <CardHeader>
+            <div className="products-state-icon"><Package size={22} weight="duotone" aria-hidden="true" /></div>
+            <CardTitle>{t('products.error')}</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+          </CardFooter>
+        </Card>
+      ) : products.length === 0 ? (
+        <Card className="products-state-card">
+          <CardHeader>
+            <div className="products-state-icon"><Package size={22} weight="duotone" aria-hidden="true" /></div>
+            <CardTitle>No products yet</CardTitle>
+            <CardDescription>The next KryptonCode release is currently being prepared.</CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
-        <div className="cards-grid">
-          {products.map((item, idx) => {
-            const delayClass = `delay-${Math.min((idx + 1) * 100, 500)}`;
-            return (
-              <div key={item.id || idx} className={`ref-card animate-slide-up ${delayClass}`}>
-                <div className="ref-card-header">
-                  <div className="ref-card-logo">
-                    <div className="ref-card-icon">{renderIcon(item.icon_name)}</div>
-                    {item.company}
-                  </div>
+        <section className="products-grid" aria-label="Product collection">
+          {products.map((item, index) => (
+            <Card key={item.id || index} className={`product-card animate-slide-up delay-${Math.min((index + 1) * 100, 500)}`}>
+              <CardHeader>
+                <div className="product-card-topline">
+                  <div className="product-card-icon" aria-hidden="true">{renderIcon(item.icon_name)}</div>
+                  <Badge variant="outline">
+                    <Tag size={13} weight="bold" aria-hidden="true" />
+                    {item.type}
+                  </Badge>
                 </div>
-                
-                <div className="ref-info-blocks">
-                  <div className="ref-info-box" style={{ flex: 'none', width: 'fit-content', paddingRight: '20px' }}>
-                    <div className="ref-info-label">
-                      <Tag weight="bold" size={14} />
-                      {t('products.category')}
-                    </div>
-                    <div className="ref-info-value">{item.type}</div>
-                  </div>
+                <div className="product-card-company">{item.company}</div>
+                <CardTitle>{item.title}</CardTitle>
+                <CardDescription>{item.desc}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Separator />
+                <div className="product-card-detail">
+                  <span>Digital product</span>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
                 </div>
-                
-                <h3 className="ref-card-title">{item.title}</h3>
-                <p className="ref-card-desc">{item.desc}</p>
-                
-                <div className="ref-card-actions">
-                  <button className="btn-light" onClick={() => navigate('/product/' + item.id)}>{t('products.viewDetails')}</button>
-                  <button className="btn-dark" onClick={() => navigate('/product/' + item.id)}>{t('products.openProject')}</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="product-card-button" onClick={() => navigate(`/product/${item.id}`)}>
+                  {t('products.viewDetails')}
+                  <ArrowRight data-icon="inline-end" aria-hidden="true" />
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </section>
       )}
-    </div>
+    </main>
   );
 }
