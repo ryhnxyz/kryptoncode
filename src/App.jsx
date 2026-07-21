@@ -46,13 +46,14 @@ function AppContent() {
           
           <div className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
-              <NavLink to="/products" className="nav-item" onClick={closeMenu}>{t('nav.products')}</NavLink>
-              <NavLink to="/community" className="nav-item" onClick={closeMenu}>{t('nav.community')}</NavLink>
+              <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>{t('nav.products')}</NavLink>
+              <span className="nav-separator"> </span>
+              <NavLink to="/community" className="nav-item-clean" onClick={closeMenu}>{t('nav.community')}</NavLink>
             </div>
             
             <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} onClick={closeMenu}>
-              <button className="btn-secondary btn-sm nav-telegram-btn">
-                {t('nav.joinTelegram')} <ArrowUpRight weight="bold" />
+              <button className="btn-white-pill nav-try-btn">
+                Try Agent <ArrowUpRight size={18} weight="bold" />
               </button>
             </a>
           </div>
