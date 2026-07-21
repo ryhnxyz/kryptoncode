@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Package, Tag } from '@phosphor-icons/react';
+import { ArrowClockwise, ArrowRight, ArrowUpRight, Package, Tag, WifiSlash } from '@phosphor-icons/react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import {
@@ -42,7 +42,10 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadProducts = useCallback(() => {
+    setLoading(true);
+    setError(null);
+
     api.get('/api/products')
       .then((data) => {
         setProducts(data.products || []);
@@ -53,6 +56,10 @@ export default function Products() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   return (
     <main className="products-page page-content">
@@ -85,16 +92,49 @@ export default function Products() {
           {[1, 2, 3, 4].map((item) => <ProductSkeleton key={item} />)}
         </section>
       ) : error ? (
-        <Card className="products-state-card" role="alert">
-          <CardHeader>
-            <div className="products-state-icon"><Package size={22} weight="duotone" aria-hidden="true" /></div>
-            <CardTitle>{t('products.error')}</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
-          </CardFooter>
-        </Card>
+        <section className="products-error-shell" role="alert" aria-labelledby="products-error-title">
+          <Card className="products-error-card">
+            <CardHeader>
+              <div className="products-error-topline">
+                <div className="products-state-icon products-error-icon">
+                  <WifiSlash size={22} weight="duotone" aria-hidden="true" />
+                </div>
+                <Badge variant="outline">API unavailable</Badge>
+              </div>
+              <CardTitle id="products-error-title">Collection temporarily offline.</CardTitle>
+              <CardDescription>
+                We couldn&apos;t reach the KryptonCode product service. Your connection may be unstable, or the API may be taking a short break.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="products-error-route" aria-label="Failed connection path">
+                <div>
+                  <span className="products-error-node">You</span>
+                  <small>Browser</small>
+                </div>
+                <span className="products-error-line" aria-hidden="true"><i /></span>
+                <div>
+                  <span className="products-error-node products-error-node-muted">API</span>
+                  <small>Unreachable</small>
+                </div>
+              </div>
+              <div className="products-error-detail">
+                <span>Error detail</span>
+                <code>{error}</code>
+              </div>
+            </CardContent>
+            <CardFooter className="products-error-actions">
+              <Button onClick={loadProducts}>
+                <ArrowClockwise data-icon="inline-start" aria-hidden="true" />
+                Try again
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')}>
+                Back to home
+              </Button>
+            </CardFooter>
+          </Card>
+          <p className="products-error-note">No data was changed. You can safely retry this request.</p>
+        </section>
       ) : products.length === 0 ? (
         <Card className="products-state-card">
           <CardHeader>

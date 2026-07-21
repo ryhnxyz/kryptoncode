@@ -1522,6 +1522,170 @@ button:focus-visible {
   justify-content: center;
 }
 
+.products-error-shell {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.products-error-card {
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background: rgba(20, 20, 21, 0.82);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.products-error-card [data-slot='card-header'] {
+  padding: 30px 30px 12px;
+}
+
+.products-error-card [data-slot='card-content'] {
+  padding: 20px 30px 8px;
+}
+
+.products-error-card [data-slot='card-footer'] {
+  padding: 24px 30px 30px;
+}
+
+.products-error-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 34px;
+}
+
+.products-error-topline [data-slot='badge'] {
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+}
+
+.products-error-card [data-slot='card-title'] {
+  max-width: 520px;
+  color: var(--text-primary);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.products-error-card [data-slot='card-description'] {
+  max-width: 570px;
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.products-error-icon {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.products-error-route {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.products-error-route > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.products-error-route > div:last-child {
+  align-items: flex-end;
+}
+
+.products-error-node {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.products-error-node-muted,
+.products-error-route small {
+  color: var(--text-secondary);
+}
+
+.products-error-route small {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.products-error-line {
+  position: relative;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.13);
+  overflow: hidden;
+}
+
+.products-error-line i {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  animation: api-connection-check 1.8s ease-in-out infinite;
+}
+
+@keyframes api-connection-check {
+  0% { left: 0; opacity: 0; }
+  20% { opacity: 1; }
+  70% { left: 72%; opacity: 1; }
+  100% { left: 72%; opacity: 0; }
+}
+
+.products-error-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 14px;
+  padding: 0 4px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.products-error-detail code {
+  max-width: 65%;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.products-error-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.products-error-actions button {
+  min-height: 46px;
+  border-radius: 12px;
+}
+
+.products-error-note {
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  text-align: center;
+}
+
 .product-skeleton-card .skeleton {
   border-radius: 8px;
 }
@@ -1635,6 +1799,42 @@ button:focus-visible {
 
   .product-card-topline {
     margin-bottom: 42px;
+  }
+}
+
+@media (max-width: 600px) {
+  .products-error-card [data-slot='card-header'],
+  .products-error-card [data-slot='card-content'],
+  .products-error-card [data-slot='card-footer'] {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .products-error-topline {
+    margin-bottom: 28px;
+  }
+
+  .products-error-route {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .products-error-detail {
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .products-error-detail code {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .products-error-actions {
+    flex-direction: column;
+  }
+
+  .products-error-actions button {
+    width: 100%;
   }
 }
 
