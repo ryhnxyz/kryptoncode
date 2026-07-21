@@ -1,30 +1,73 @@
 {
+  "language": {
+    "label": "Select language",
+    "menuLabel": "Interface language"
+  },
+  "brand": {
+    "description": "Independent digital studio",
+    "footerDescription": "Practical tools and automation for a faster digital workflow."
+  },
   "nav": {
     "products": "/products",
     "community": "/community",
-    "joinTelegram": "join /telegram"
+    "joinTelegram": "join /telegram",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "navigation": "Navigation",
+    "tryAgent": "Try Agent"
+  },
+  "footerNav": {
+    "label": "Footer navigation",
+    "explore": "Explore",
+    "connect": "Connect"
   },
   "home": {
+    "eyebrow": "Independent digital studio",
     "title1": "Smart ",
     "titleHighlight": "automation",
     "title2": " solutions",
     "title3": "to make your work more relaxed.",
-    "subtitle": "Kryptoncode is here to help you handle repetitive tasks. Discover various bot scripts for Telegram, Discord, and Web that are simple, super fast, and ready to use!",
+    "subtitle": "KryptonCode helps you handle repetitive tasks. Discover simple, fast, and ready-to-use bots for Telegram, Discord, and the web.",
     "ctaPrimary": "cd ./products",
-    "ctaSecondary": "cat /telegram"
+    "ctaSecondary": "cat /telegram",
+    "note": "Automation, tools, and community — built for people who ship."
   },
   "products": {
     "title": "Product Collection",
+    "kicker": "Product collection",
+    "heading": "Tools made for real workflows.",
+    "description": "Focused utilities, automation, and digital products built to remove friction from everyday work.",
+    "requestCustom": "Request a custom tool",
+    "curated": "Curated by KryptonCode",
+    "loadingCollection": "Loading collection",
+    "available": "products available",
     "loading": "Loading products...",
     "error": "Error",
     "category": "Category",
     "viewDetails": "View details",
-    "openProject": "Open Project"
+    "openProject": "Open Project",
+    "apiUnavailable": "API unavailable",
+    "offlineTitle": "Collection temporarily offline.",
+    "offlineDescription": "We couldn't reach the KryptonCode product service. Your connection may be unstable, or the API may be taking a short break.",
+    "failedPath": "Failed connection path",
+    "you": "You",
+    "browser": "Browser",
+    "unreachable": "Unreachable",
+    "errorDetail": "Error detail",
+    "tryAgain": "Try again",
+    "backHome": "Back to home",
+    "retryNote": "No data was changed. You can safely retry this request.",
+    "emptyTitle": "No products yet",
+    "emptyDescription": "The next KryptonCode release is currently being prepared.",
+    "digitalProduct": "Digital product"
   },
   "community": {
+    "eyebrow": "A space for builders",
     "title": "Community Terminal",
     "subtitle": "Connect with other developers, get early access to new releases, and help shape the future of our tools.",
-    "join": "Join Telegram Group",
+    "join": "Join Telegram group",
+    "explore": "Explore products",
+    "note": "Open discussion, product updates, and direct support from the community.",
     "discord": "Discord Server (Soon)",
     "rules": {
       "title": "Community Protocol",
@@ -34,86 +77,15 @@
     }
   },
   "buy": {
-    "loading": "Loading...",
-    "errorPlan": "Plan not found",
-    "errorLoad": "Failed to load plan",
-    "paymentConfirmed": "Payment Confirmed",
-    "saveSeed": "Save your Krypton Seed below",
-    "seedWarning": "SAVE THIS SEED. IT WILL NEVER BE SHOWN AGAIN.",
-    "loginAwdex": "Login to AWDEX",
-    "orderExpired": "Order Expired",
-    "orderExpiredDesc": "Your order has expired. Create a new one.",
-    "createNewOrder": "Create New Order",
-    "dayAccess": "day access",
-    "creatingOrder": "Creating order...",
-    "sendUsdc": "SEND USDC ON BASE NETWORK",
-    "walletAddress": "WALLET ADDRESS",
-    "exactAmount": "EXACT AMOUNT",
-    "exactWarning": "must transfer EXACT amount — no more, no less",
-    "scanQr": "scan — auto-fills address on Base",
-    "waiting": "Waiting for payment...",
-    "transferExactly": "Transfer exactly",
-    "noRounding": "No rounding.",
-    "checking": "checking...",
-    "checkPayment": "check payment",
-    "failedCreate": "Failed to create order"
+    "loading": "Loading...", "errorPlan": "Plan not found", "errorLoad": "Failed to load plan", "paymentConfirmed": "Payment Confirmed", "saveSeed": "Save your Krypton Seed below", "seedWarning": "SAVE THIS SEED. IT WILL NEVER BE SHOWN AGAIN.", "loginAwdex": "Log in to AWDEX", "orderExpired": "Order Expired", "orderExpiredDesc": "Your order has expired. Create a new one.", "createNewOrder": "Create New Order", "dayAccess": "day access", "creatingOrder": "Creating order...", "sendUsdc": "SEND USDC ON BASE NETWORK", "walletAddress": "WALLET ADDRESS", "exactAmount": "EXACT AMOUNT", "exactWarning": "you must transfer the EXACT amount — no more, no less", "scanQr": "scan — auto-fills the address on Base", "waiting": "Waiting for payment...", "transferExactly": "Transfer exactly", "noRounding": "No rounding.", "checking": "checking...", "checkPayment": "check payment", "failedCreate": "Failed to create order"
   },
   "premium": {
-    "title": "Premium Access",
-    "subtitle": "Choose a plan for the bot or product you want. Pay with USDC, get a license key.",
-    "paymentNetwork": "Payment via USDC on Base Network",
-    "loading": "Loading plans...",
-    "noPlans": "No plans available yet.",
-    "lifetime": "Lifetime",
-    "days": "days",
-    "featAccess": "Full access to this bot",
-    "featUpdate": "Free updates",
-    "featSupport": "Telegram support",
-    "processing": "Processing...",
-    "buyNow": "Buy Now",
-    "howItWorks": "How It Works",
-    "step1Title": "Choose Plan",
-    "step1Desc": "Select a plan for the bot you want",
-    "step2Title": "Pay USDC",
-    "step2Desc": "Transfer USDC on Base Network with unique memo",
-    "step3Title": "Get Key",
-    "step3Desc": "License key is automatically generated for you",
-    "step4Title": "Activate Bot",
-    "step4Desc": "Type /activate <key> in the Telegram bot",
-    "confirmed": "Payment Confirmed!",
-    "confirmedDesc": "Your license key is now active. Save the key below and activate it in the Telegram bot.",
-    "instruction": "Payment Instructions",
-    "instructionDesc": "Send USDC on the Base network to the following address",
-    "scanDesc": "Scan QR or copy details manually",
-    "walletLabel": "Wallet Address (Base Network)",
-    "amountLabel": "Amount",
-    "memoLabel": "Memo / Note (REQUIRED)",
-    "memoDesc": "Include this memo in the transaction note so payment can be detected",
-    "keyLabel": "License Key",
-    "waiting": "Waiting for payment...",
-    "keyActive": "Key active! Type /activate ",
-    "inBot": " in the Telegram bot",
-    "keyPending": "Key will activate automatically once payment is detected. Type /activate <key> in the Telegram bot",
-    "backToPlans": "Back to Plans",
-    "errorCreate": "Failed to create order: ",
-    "errorNetwork": "Network error: "
+    "title": "Premium Access", "subtitle": "Choose a plan for the bot or product you want. Pay with USDC and get a license key.", "paymentNetwork": "Payment via USDC on Base Network", "loading": "Loading plans...", "noPlans": "No plans available yet.", "lifetime": "Lifetime", "days": "days", "featAccess": "Full access to this bot", "featUpdate": "Free updates", "featSupport": "Telegram support", "processing": "Processing...", "buyNow": "Buy Now", "howItWorks": "How It Works", "step1Title": "Choose Plan", "step1Desc": "Select a plan for the bot you want", "step2Title": "Pay USDC", "step2Desc": "Transfer USDC on Base Network with a unique memo", "step3Title": "Get Key", "step3Desc": "A license key is automatically generated for you", "step4Title": "Activate Bot", "step4Desc": "Type /activate <key> in the Telegram bot", "confirmed": "Payment Confirmed!", "confirmedDesc": "Your license key is now active. Save the key below and activate it in the Telegram bot.", "instruction": "Payment Instructions", "instructionDesc": "Send USDC on the Base network to the following address", "scanDesc": "Scan the QR code or copy the details manually", "walletLabel": "Wallet Address (Base Network)", "amountLabel": "Amount", "memoLabel": "Memo / Note (REQUIRED)", "memoDesc": "Include this memo in the transaction note so the payment can be detected", "keyLabel": "License Key", "waiting": "Waiting for payment...", "keyActive": "Key active! Type /activate ", "inBot": " in the Telegram bot", "keyPending": "The key will activate automatically once payment is detected. Type /activate <key> in the Telegram bot", "backToPlans": "Back to Plans", "errorCreate": "Failed to create order: ", "errorNetwork": "Network error: "
   },
   "product": {
-    "loading": "Loading product data...",
-    "notFound": "Product not found or an error occurred",
-    "backToCollection": "Back to collection",
-    "back": "Back",
-    "mainFeatures": "Key Features",
-    "projectLink": "Project Link",
-    "projectDesc": "Access this project directly to see its performance and results in real-time.",
-    "visitProject": "Visit Project",
-    "buyFullAccess": "Buy Full Access",
-    "viewDocs": "View Documentation"
+    "loading": "Loading product data...", "notFound": "Product not found or an error occurred", "backToCollection": "Back to collection", "back": "Back", "mainFeatures": "Key Features", "projectLink": "Project Link", "projectDesc": "Access this project directly to see its performance and results in real time.", "visitProject": "Visit Project", "buyFullAccess": "Buy Full Access", "viewDocs": "View Documentation", "by": "by"
   },
-  "notFound": {
-    "title": "Page Not Found",
-    "desc": "The directory or file you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
-    "back": "Back to Base"
-  },
+  "notFound": { "title": "Page Not Found", "desc": "The directory or file you are looking for might have been removed, renamed, or entered incorrectly.", "back": "Back to Home" },
+  "welcome": { "selectLanguage": "Select system language", "indonesian": "Bahasa Indonesia", "english": "English" },
   "footer": "built independently by KryptonCode"
 }

@@ -66,29 +66,29 @@ export default function Products() {
       <section className="products-intro animate-slide-up" aria-labelledby="products-heading">
         <div className="products-kicker">
           <span className="products-status-dot" aria-hidden="true" />
-          Product collection
+          {t('products.kicker')}
         </div>
         <div className="products-intro-grid">
           <div>
-            <h1 id="products-heading">Tools made for real workflows.</h1>
+            <h1 id="products-heading">{t('products.heading')}</h1>
           </div>
           <div className="products-intro-copy">
-            <p>{t('products.title')} — focused utilities, automation, and digital products built to remove friction from everyday work.</p>
+            <p>{t('products.description')}</p>
             <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
-              Request a custom tool
+              {t('products.requestCustom')}
               <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
             </a>
           </div>
         </div>
         <Separator className="products-separator" />
         <div className="products-meta">
-          <span>Curated by KryptonCode</span>
-          <span>{loading ? 'Loading collection' : `${products.length} products available`}</span>
+          <span>{t('products.curated')}</span>
+          <span>{loading ? t('products.loadingCollection') : `${products.length} ${t('products.available')}`}</span>
         </div>
       </section>
 
       {loading ? (
-        <section className="products-grid" aria-label="Loading products" aria-busy="true">
+        <section className="products-grid" aria-label={t('products.loading')} aria-busy="true">
           {[1, 2, 3, 4].map((item) => <ProductSkeleton key={item} />)}
         </section>
       ) : error ? (
@@ -99,52 +99,50 @@ export default function Products() {
                 <div className="products-state-icon products-error-icon">
                   <WifiSlash size={22} weight="duotone" aria-hidden="true" />
                 </div>
-                <Badge variant="outline">API unavailable</Badge>
+                <Badge variant="outline">{t('products.apiUnavailable')}</Badge>
               </div>
-              <CardTitle id="products-error-title">Collection temporarily offline.</CardTitle>
-              <CardDescription>
-                We couldn&apos;t reach the KryptonCode product service. Your connection may be unstable, or the API may be taking a short break.
-              </CardDescription>
+              <CardTitle id="products-error-title">{t('products.offlineTitle')}</CardTitle>
+              <CardDescription>{t('products.offlineDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="products-error-route" aria-label="Failed connection path">
+              <div className="products-error-route" aria-label={t('products.failedPath')}>
                 <div>
-                  <span className="products-error-node">You</span>
-                  <small>Browser</small>
+                  <span className="products-error-node">{t('products.you')}</span>
+                  <small>{t('products.browser')}</small>
                 </div>
                 <span className="products-error-line" aria-hidden="true"><i /></span>
                 <div>
                   <span className="products-error-node products-error-node-muted">API</span>
-                  <small>Unreachable</small>
+                  <small>{t('products.unreachable')}</small>
                 </div>
               </div>
               <div className="products-error-detail">
-                <span>Error detail</span>
+                <span>{t('products.errorDetail')}</span>
                 <code>{error}</code>
               </div>
             </CardContent>
             <CardFooter className="products-error-actions">
               <Button onClick={loadProducts}>
                 <ArrowClockwise data-icon="inline-start" aria-hidden="true" />
-                Try again
+                {t('products.tryAgain')}
               </Button>
               <Button variant="outline" onClick={() => navigate('/')}>
-                Back to home
+                {t('products.backHome')}
               </Button>
             </CardFooter>
           </Card>
-          <p className="products-error-note">No data was changed. You can safely retry this request.</p>
+          <p className="products-error-note">{t('products.retryNote')}</p>
         </section>
       ) : products.length === 0 ? (
         <Card className="products-state-card">
           <CardHeader>
             <div className="products-state-icon"><Package size={22} weight="duotone" aria-hidden="true" /></div>
-            <CardTitle>No products yet</CardTitle>
-            <CardDescription>The next KryptonCode release is currently being prepared.</CardDescription>
+            <CardTitle>{t('products.emptyTitle')}</CardTitle>
+            <CardDescription>{t('products.emptyDescription')}</CardDescription>
           </CardHeader>
         </Card>
       ) : (
-        <section className="products-grid" aria-label="Product collection">
+        <section className="products-grid" aria-label={t('products.kicker')}>
           {products.map((item, index) => (
             <Card key={item.id || index} className={`product-card animate-slide-up delay-${Math.min((index + 1) * 100, 500)}`}>
               <CardHeader>
@@ -162,7 +160,7 @@ export default function Products() {
               <CardContent>
                 <Separator />
                 <div className="product-card-detail">
-                  <span>Digital product</span>
+                  <span>{t('products.digitalProduct')}</span>
                   <span>{String(index + 1).padStart(2, '0')}</span>
                 </div>
               </CardContent>

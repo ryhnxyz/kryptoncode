@@ -1,7 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowUpRight } from '@phosphor-icons/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import ActionLink from '../components/ActionLink';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -9,7 +8,7 @@ export default function Home() {
   return (
     <main className="hero-section">
       <div className="hero-copy">
-        <p className="hero-eyebrow animate-slide-up">Independent digital studio</p>
+        <p className="hero-eyebrow animate-slide-up">{t('home.eyebrow')}</p>
         <h1 className="hero-title animate-slide-up">
           {t('home.title1')}<span className="highlight">{t('home.titleHighlight')}</span>{t('home.title2')}<br />
           {t('home.title3')}
@@ -21,18 +20,14 @@ export default function Home() {
       </div>
 
       <div className="hero-actions animate-slide-up delay-200">
-        <Link className="btn-primary hero-cta" to="/products">
-          <span>{t('home.ctaPrimary')}</span>
-          <ArrowUpRight className="button-arrow" size={19} weight="bold" aria-hidden="true" />
-        </Link>
-        <a className="btn-secondary hero-cta" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
-          <span>{t('home.ctaSecondary')}</span>
-          <ArrowUpRight className="button-arrow" size={19} weight="bold" aria-hidden="true" />
-        </a>
+        <ActionLink to="/products">{t('home.ctaPrimary')}</ActionLink>
+        <ActionLink variant="secondary" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
+          {t('home.ctaSecondary')}
+        </ActionLink>
       </div>
 
       <p className="hero-note animate-slide-up delay-300">
-        Automation, tools, and community — built for people who ship.
+        {t('home.note')}
       </p>
     </main>
   );

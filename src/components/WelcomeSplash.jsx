@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 export default function WelcomeSplash({ onComplete }) {
   const [stage, setStage] = useState('intro'); // intro -> lang-select -> done
-  const { changeLanguage } = useLanguage();
+  const { changeLanguage, t } = useLanguage();
 
   const titleText = "KryptonCode".split('');
 
@@ -106,11 +106,11 @@ export default function WelcomeSplash({ onComplete }) {
                 transition={{ duration: 0.5 }}
                 style={{ fontFamily: 'var(--font-sans)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '1.4rem' }}
               >
-                Select System Language
+                {t('welcome.selectLanguage')}
               </motion.h2>
               
               <div style={{ display: 'flex', gap: '20px' }}>
-                {[{id: 'id', label: 'Indonesia'}, {id: 'en', label: 'English'}].map((lang, idx) => (
+                {[{ id: 'id', label: t('welcome.indonesian') }, { id: 'en', label: t('welcome.english') }].map((lang) => (
                   <motion.button
                     key={lang.id}
                     className="btn-dark"
