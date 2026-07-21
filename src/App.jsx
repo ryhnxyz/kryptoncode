@@ -16,10 +16,18 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 28);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('mobile-menu-open', isMobileMenuOpen);
@@ -42,7 +50,7 @@ function AppContent() {
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       <div className="app-container" style={{ opacity: showSplash ? 0 : 1, transition: 'opacity 0.8s ease-in' }}>
         {/* Navbar */}
-        <nav className="navbar">
+        <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
             <div className="logo" style={{ color: '#C0C0C0' }}>
               <img src="/splash-logo.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
