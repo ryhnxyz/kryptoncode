@@ -50,7 +50,12 @@ function AppContent() {
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       <div className="app-container" style={{ opacity: showSplash ? 0 : 1, transition: 'opacity 0.8s ease-in' }}>
         {/* Navbar */}
-        <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} ${isMobileMenuOpen ? 'navbar-menu-open' : ''}`}>
+        <nav
+          className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} ${isMobileMenuOpen ? 'navbar-menu-open' : ''}`}
+          style={isScrolled && !isMobileMenuOpen
+            ? { backdropFilter: 'blur(22px) saturate(145%)', WebkitBackdropFilter: 'blur(22px) saturate(145%)' }
+            : undefined}
+        >
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
             <div className="logo" style={{ color: '#C0C0C0' }}>
               <img src="/splash-logo.png" alt="logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
