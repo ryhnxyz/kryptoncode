@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, NavLink } from 'react-router-dom';
-import { TerminalWindow, ArrowUpRight, List, X, Moon, Sun } from '@phosphor-icons/react';
+import { ArrowUpRight, List, X } from '@phosphor-icons/react';
 import './index.css';
 
 import Home from './pages/Home';
@@ -17,13 +17,9 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const { language, changeLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
-
-  const toggleLanguage = () => {
-    changeLanguage(language === 'id' ? 'en' : 'id');
-  };
 
   return (
     <>
@@ -40,11 +36,18 @@ function AppContent() {
             </div>
           </Link>
           
-          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? <X size={28} weight="bold" /> : <List size={28} weight="bold" />}
+          <button
+            className="mobile-menu-btn"
+            type="button"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="primary-navigation"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={26} weight="bold" aria-hidden="true" /> : <List size={26} weight="bold" aria-hidden="true" />}
           </button>
           
-          <div className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
+          <div id="primary-navigation" className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
               <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>{t('nav.products')}</NavLink>
               <span className="nav-separator"> </span>
@@ -69,19 +72,35 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
 
-        {/* Indie Footer */}
-        <footer style={{ 
-          marginTop: 'auto', 
-          borderTop: '1px dashed var(--border)', 
-          paddingTop: '20px', 
-          paddingBottom: '20px',
-          textAlign: 'center', 
-          color: 'var(--text-secondary)', 
-          fontFamily: 'var(--font-mono)', 
-          fontSize: '0.85rem' 
-        }}>
-          [ <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>telegram</a> ] 
-          — {t('footer')}
+        <footer className="site-footer">
+          <div className="footer-main">
+            <div className="footer-brand">
+              <Link className="footer-logo" to="/" onClick={closeMenu}>
+                <img src="/splash-logo.png" alt="" width="32" height="32" />
+                <span>KryptonCode</span>
+              </Link>
+              <p>Practical tools and automation for a faster digital workflow.</p>
+            </div>
+
+            <nav className="footer-nav" aria-label="Footer navigation">
+              <p className="footer-label">Explore</p>
+              <Link to="/products">{t('nav.products')}</Link>
+              <Link to="/community">{t('nav.community')}</Link>
+            </nav>
+
+            <div className="footer-connect">
+              <p className="footer-label">Connect</p>
+              <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
+                Telegram
+                <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <span>© {new Date().getFullYear()} KryptonCode</span>
+            <span className="footer-status"><i aria-hidden="true" />{t('footer')}</span>
+          </div>
         </footer>
       </div>
     </>
