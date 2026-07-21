@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Lightning, Copy, Check, Wallet, ArrowsClockwise, Spinner } from '@phosphor-icons/react';
+import { Zap as Lightning, Copy, Check, Wallet, RefreshCw as ArrowsClockwise, LoaderCircle as Spinner } from 'lucide-react';
 import QRCode from 'qrcode';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';

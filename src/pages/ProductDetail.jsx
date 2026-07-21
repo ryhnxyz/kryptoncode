@@ -1,159 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowUpRight, Check, Link, TriangleAlert } from 'lucide-react';
 import { renderIcon } from '../lib/icons';
-import { ArrowLeft, CheckCircle, LinkSimple, ArrowUpRight } from '@phosphor-icons/react';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { productsData } from '../data/productsData';
+import ProductSourceToggle from '../components/ProductSourceToggle';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
-  
+  const source = searchParams.get('source') === 'mock' ? 'mock' : 'live';
+  const collectionPath = source === 'mock' ? '/products?source=mock' : '/products';
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchProduct() {
-      try {
-        const data = await api.get('/api/products/' + id);
-        setProduct(data.product);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true); setError(null); setProduct(null);
+      if (source === 'mock') { setProduct(productsData.find((item) => item.id === id) || null); setLoading(false); return; }
+      try { const data = await api.get(`/api/products/${id}`); setProduct(data.product); }
+      catch (requestError) { setError(requestError.message); }
+      finally { setLoading(false); }
     }
     fetchProduct();
-  }, [id]);
+  }, [id, source]);
 
-  if (loading) {
-    return (
-      <div className="page-content" style={{ textAlign: 'center', marginTop: '100px', color: 'var(--text-secondary)' }}>
-        {t('product.loading')}
-      </div>
-    );
-  }
+  const changeSource = (next) => setSearchParams(next === 'mock' ? { source: 'mock' } : {}, { replace: true });
 
-  if (error || !product) {
-    return (
-      <div className="page-content" style={{ textAlign: 'center', marginTop: '100px' }}>
-        <h2 style={{ color: '#ef4444' }}>{t('product.notFound')}</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
-        <button className="btn-light" style={{ marginTop: '20px' }} onClick={() => navigate('/products')}>
-          <ArrowLeft /> {t('product.backToCollection')}
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <main className="product-detail-page page-content" aria-busy="true"><div className="skeleton detail-toolbar-skeleton" /><article className="detail-hero-card liquid-panel"><div className="detail-hero"><span className="skeleton detail-icon-skeleton" /><div className="detail-heading-copy"><span className="skeleton detail-line-sm" /><span className="skeleton detail-line-lg" /><span className="skeleton detail-line-md" /></div></div></article></main>;
+
+  if (error || !product) return <main className="product-detail-page page-content"><article className="detail-state liquid-panel"><TriangleAlert aria-hidden="true" /><h1>{t('product.notFound')}</h1>{error && <p>{error}</p>}<button className="product-button product-button-primary" onClick={() => navigate(collectionPath)}><ArrowLeft aria-hidden="true" />{t('product.backToCollection')}</button></article></main>;
 
   let features = [];
-  try {
-    features = typeof product.features === 'string' ? JSON.parse(product.features) : product.features || [];
-  } catch {
-    features = [];
-  }
+  try { features = typeof product.features === 'string' ? JSON.parse(product.features) : product.features || []; } catch { features = []; }
 
-  return (
-    <div className="page-content animate-fade-in" style={{ paddingBottom: '80px', padding: '0 16px' }}>
-      <button 
-        onClick={() => navigate('/products')} 
-        style={{ 
-          background: 'transparent', 
-          border: 'none', 
-          color: 'var(--text-secondary)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px',
-          cursor: 'pointer',
-          marginBottom: '32px',
-          fontFamily: 'var(--font-sans)',
-          fontSize: '0.9rem',
-          padding: 0
-        }}
-      >
-        <ArrowLeft weight="bold" /> {t('product.back')}
-      </button>
-
-      <div className="ref-card" style={{ padding: '40px' }}>
-        <div className="detail-header" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
-          <div style={{ 
-            fontSize: '3rem', 
-            background: 'var(--bg-secondary)', 
-            padding: '20px', 
-            borderRadius: '24px',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
-            display: 'flex'
-          }}>
-            {renderIcon(product.icon_name)}
-          </div>
-          <div>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              <span style={{ 
-                background: 'var(--text-primary)', 
-                color: 'var(--bg-color)', 
-                padding: '4px 12px', 
-                borderRadius: '100px', 
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                {product.type}
-              </span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
-                {t('common.by')} {product.company}
-              </span>
-            </div>
-            <h1 style={{ margin: 0, fontSize: '2.5rem', color: 'var(--text-primary)', lineHeight: '1.2' }}>{product.title}</h1>
-          </div>
-        </div>
-
-        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '40px' }}>
-          {product.desc}
-        </p>
-
-        <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-          <div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'var(--text-primary)' }}>{t('product.mainFeatures')}</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {features.map((feat, idx) => (
-                <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--text-secondary)' }}>
-                  <CheckCircle weight="fill" color="var(--text-primary)" size={20} style={{ flexShrink: 0, marginTop: '2px' }} /> 
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LinkSimple /> {t('product.projectLink')}
-            </h3>
-            <div style={{ 
-              background: '#1c1917', 
-              color: '#a8a29e', 
-              padding: '24px', 
-              borderRadius: '12px',
-              fontSize: '0.95rem',
-              lineHeight: '1.6',
-              border: '1px solid var(--border)'
-            }}>
-              {t('product.projectDesc')}
-              <br/><br/>
-              <a href={product.project_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
-                {t('product.visitProject')} <ArrowUpRight size={16} />
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <div className="ref-card-actions detail-actions" style={{ marginTop: '40px', borderTop: '1px dashed var(--border)', paddingTop: '32px' }}>
-          <button className="btn-dark" onClick={() => window.open(product.project_link, '_blank')}>{t('product.buyFullAccess')}</button>
-          <button className="btn-light">{t('product.viewDocs')}</button>
-        </div>
+  return <main className="product-detail-page page-content animate-fade-in">
+    <div className="product-detail-toolbar"><button className="product-detail-back" onClick={() => navigate(collectionPath)}><ArrowLeft aria-hidden="true" />{t('product.back')}</button><ProductSourceToggle source={source} onChange={changeSource} label={t('products.dataSource')} liveLabel={t('products.liveApi')} mockLabel={t('products.mockData')} /></div>
+    <article className="detail-layout">
+      <section className="detail-hero-card liquid-panel"><div className="detail-hero"><span className="detail-product-icon" aria-hidden="true">{renderIcon(product.icon_name)}</span><div className="detail-heading-copy"><div className="detail-eyebrow"><span className="product-badge">{product.type}</span><span>{t('common.by')} {product.company}</span></div><h1>{product.title}</h1><p>{product.desc}</p></div></div></section>
+      <div className="detail-content-grid">
+        <section className="detail-section-card" aria-labelledby="features-title"><header className="detail-section-heading"><span className="detail-section-index">01</span><h2 id="features-title">{t('product.mainFeatures')}</h2></header><ul>{features.map((feature) => <li key={feature}><span className="detail-check"><Check aria-hidden="true" /></span><span>{feature}</span></li>)}</ul></section>
+        <section className="detail-section-card detail-link-card" aria-labelledby="project-link-title"><header className="detail-section-heading"><span className="detail-section-index">02</span><h2 id="project-link-title"><Link aria-hidden="true" />{t('product.projectLink')}</h2></header><p>{t('product.projectDesc')}</p><a href={product.project_link} target="_blank" rel="noreferrer">{t('product.visitProject')}<ArrowUpRight aria-hidden="true" /></a></section>
       </div>
-    </div>
-  );
+      <footer className="detail-action-card liquid-panel"><div className="detail-action-copy"><span>{product.type}</span><strong>{product.title}</strong></div><div className="detail-action-buttons"><button className="product-button product-button-primary" onClick={() => window.open(product.project_link, '_blank', 'noopener,noreferrer')}>{t('product.buyFullAccess')}<ArrowUpRight aria-hidden="true" /></button><button className="product-button">{t('product.viewDocs')}</button></div></footer>
+    </article>
+  </main>;
 }

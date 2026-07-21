@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, NavLink } from 'react-router-dom';
-import { ArrowUpRight, List, X } from '@phosphor-icons/react';
+import { ArrowUpRight, Menu as List, X } from 'lucide-react';
 import './index.css';
 
 import Home from './pages/Home';

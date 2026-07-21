@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, GlobeHemisphereWest } from '@phosphor-icons/react';
+import { Check, Globe2 as GlobeHemisphereWest } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
 import {
