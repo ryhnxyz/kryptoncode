@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, NavLink } from 'react-router-dom';
 import { ArrowUpRight, List, X } from '@phosphor-icons/react';
 import './index.css';
@@ -20,6 +20,20 @@ function AppContent() {
   const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  useEffect(() => {
+    document.body.classList.toggle('mobile-menu-open', isMobileMenuOpen);
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <>
@@ -49,15 +63,26 @@ function AppContent() {
           
           <div id="primary-navigation" className={`nav-content ${isMobileMenuOpen ? 'open' : ''}`}>
             <div className="nav-links">
-              <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>{t('nav.products')}</NavLink>
+              <NavLink to="/products" className="nav-item-clean" onClick={closeMenu}>
+                <span className="nav-index">01</span>
+                <span>{t('nav.products')}</span>
+                <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
+              </NavLink>
               <span className="nav-separator"> </span>
-              <NavLink to="/community" className="nav-item-clean" onClick={closeMenu}>{t('nav.community')}</NavLink>
+              <NavLink to="/community" className="nav-item-clean" onClick={closeMenu}>
+                <span className="nav-index">02</span>
+                <span>{t('nav.community')}</span>
+                <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
+              </NavLink>
+            </div>
+
+            <div className="mobile-menu-meta" aria-hidden={!isMobileMenuOpen}>
+              <span>KryptonCode / Navigation</span>
+              <span>Independent digital studio</span>
             </div>
             
-            <a href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }} onClick={closeMenu}>
-              <button className="btn-white-pill nav-try-btn">
-                Try Agent <ArrowUpRight size={18} weight="bold" />
-              </button>
+            <a className="btn-white-pill nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
+              Try Agent <ArrowUpRight size={18} weight="bold" aria-hidden="true" />
             </a>
           </div>
         </nav>
