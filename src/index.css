@@ -16,7 +16,7 @@
   --card-border: rgba(255,255,255,0.05);
   --radius: 0.5rem;
   --font-mono: 'Geist Variable', monospace;
-  --font-sans: 'Instrument Sans Variable', sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
   --ink: currentColor;
   --ink-2: #d6d3d1;
   --ink-3: #78716c;
@@ -44,7 +44,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Instrument Sans Variable', sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
   --font-mono: 'Geist Variable', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
