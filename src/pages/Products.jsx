@@ -166,26 +166,28 @@ export default function Products() {
         <section className="products-grid" aria-label={t('products.collectionLabel')}>
           {products.map((item, index) => (
             <Card key={item.id || index} className={`product-card animate-slide-up delay-${Math.min((index + 1) * 100, 500)}`}>
-              <CardHeader>
+              <CardHeader className="product-card-header">
                 <div className="product-card-topline">
                   <div className="product-card-icon" aria-hidden="true">{renderIcon(item.icon_name)}</div>
                   <Badge variant="outline">
-                    <Tag size={13} weight="bold" aria-hidden="true" />
+                    <Tag aria-hidden="true" />
                     {item.type}
                   </Badge>
                 </div>
-                <div className="product-card-company">{item.company}</div>
-                <CardTitle>{item.title}</CardTitle>
-                <CardDescription>{item.desc}</CardDescription>
+                <div className="product-card-copy">
+                  <div className="product-card-company">{item.company}</div>
+                  <CardTitle>{item.title}</CardTitle>
+                  <CardDescription>{item.desc}</CardDescription>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="product-card-meta">
                 <Separator />
                 <div className="product-card-detail">
                   <span>{t('products.digitalProduct')}</span>
                   <span>{String(index + 1).padStart(2, '0')}</span>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="product-card-footer">
                 <Button className="product-card-button" onClick={() => navigate(`/product/${item.id}${source === 'mock' ? '?source=mock' : ''}`)}>
                   {t('products.viewDetails')}
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />

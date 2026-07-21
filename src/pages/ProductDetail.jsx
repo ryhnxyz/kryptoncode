@@ -51,8 +51,8 @@ export default function ProductDetail() {
       <main className="product-detail-page page-content" aria-busy="true">
         <Skeleton className="detail-toolbar-skeleton" />
         <Card className="detail-shell liquid-panel">
-          <CardHeader className="detail-hero"><Skeleton className="detail-icon-skeleton" /><div><Skeleton className="h-4 w-28" /><Skeleton className="mt-3 h-9 w-64 max-w-full" /></div></CardHeader>
-          <CardContent><Skeleton className="h-4 w-full" /><Skeleton className="mt-3 h-4 w-4/5" /></CardContent>
+          <CardHeader className="detail-hero"><Skeleton className="detail-icon-skeleton" /><div className="detail-heading-copy"><Skeleton className="h-4 w-28" /><Skeleton className="mt-3 h-9 w-64 max-w-full" /></div></CardHeader>
+          <CardContent className="detail-skeleton-content"><Skeleton className="h-4 w-full" /><Skeleton className="mt-3 h-4 w-4/5" /></CardContent>
         </Card>
       </main>
     );
@@ -79,35 +79,54 @@ export default function ProductDetail() {
         <ProductSourceToggle source={source} onChange={changeSource} label={t('products.dataSource')} liveLabel={t('products.liveApi')} mockLabel={t('products.mockData')} />
       </div>
 
-      <Card className="detail-shell liquid-panel">
-        <CardHeader className="detail-hero">
-          <div className="detail-product-icon" aria-hidden="true">{renderIcon(product.icon_name)}</div>
-          <div className="detail-heading-copy">
-            <div className="detail-eyebrow"><Badge>{product.type}</Badge><span>{t('common.by')} {product.company}</span></div>
-            <CardTitle>{product.title}</CardTitle>
-            <CardDescription>{product.desc}</CardDescription>
-          </div>
-        </CardHeader>
+      <article className="detail-layout">
+        <Card className="detail-hero-card liquid-panel">
+          <CardHeader className="detail-hero">
+            <div className="detail-product-icon" aria-hidden="true">{renderIcon(product.icon_name)}</div>
+            <div className="detail-heading-copy">
+              <div className="detail-eyebrow"><Badge variant="outline">{product.type}</Badge><span>{t('common.by')} {product.company}</span></div>
+              <CardTitle>{product.title}</CardTitle>
+              <CardDescription>{product.desc}</CardDescription>
+            </div>
+          </CardHeader>
+        </Card>
 
-        <CardContent className="detail-content-grid">
-          <section className="detail-section" aria-labelledby="features-title">
-            <span className="detail-section-index">01</span>
-            <h2 id="features-title">{t('product.mainFeatures')}</h2>
-            <ul>{features.map((feature) => <li key={feature}><span><Check aria-hidden="true" /></span>{feature}</li>)}</ul>
-          </section>
-          <section className="detail-section detail-link-section" aria-labelledby="project-link-title">
-            <span className="detail-section-index">02</span>
-            <h2 id="project-link-title"><Link aria-hidden="true" />{t('product.projectLink')}</h2>
-            <p>{t('product.projectDesc')}</p>
-            <a href={product.project_link} target="_blank" rel="noreferrer">{t('product.visitProject')}<ArrowUpRight aria-hidden="true" /></a>
-          </section>
-        </CardContent>
+        <div className="detail-content-grid">
+          <Card className="detail-section-card">
+            <CardHeader className="detail-section-heading">
+              <span className="detail-section-index">01</span>
+              <CardTitle id="features-title">{t('product.mainFeatures')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul aria-labelledby="features-title">{features.map((feature) => <li key={feature}><span><Check aria-hidden="true" /></span><span>{feature}</span></li>)}</ul>
+            </CardContent>
+          </Card>
 
-        <CardFooter className="detail-actions">
-          <Button onClick={() => window.open(product.project_link, '_blank', 'noopener,noreferrer')}>{t('product.buyFullAccess')}<ArrowUpRight data-icon="inline-end" /></Button>
-          <Button variant="outline">{t('product.viewDocs')}</Button>
-        </CardFooter>
-      </Card>
+          <Card className="detail-section-card detail-link-card">
+            <CardHeader className="detail-section-heading">
+              <span className="detail-section-index">02</span>
+              <CardTitle id="project-link-title"><Link aria-hidden="true" />{t('product.projectLink')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{t('product.projectDesc')}</p>
+              <a href={product.project_link} target="_blank" rel="noreferrer">{t('product.visitProject')}<ArrowUpRight aria-hidden="true" /></a>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="detail-action-card liquid-panel">
+          <CardFooter className="detail-actions">
+            <div className="detail-action-copy">
+              <span>{product.type}</span>
+              <strong>{product.title}</strong>
+            </div>
+            <div className="detail-action-buttons">
+              <Button onClick={() => window.open(product.project_link, '_blank', 'noopener,noreferrer')}>{t('product.buyFullAccess')}<ArrowUpRight data-icon="inline-end" /></Button>
+              <Button variant="outline">{t('product.viewDocs')}</Button>
+            </div>
+          </CardFooter>
+        </Card>
+      </article>
     </main>
   );
 }
