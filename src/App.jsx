@@ -8,7 +8,6 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
-import Pool from './pages/Pool';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
@@ -57,7 +56,7 @@ function AppContent() {
           transition: 'opacity 0.8s ease-in',
         }}
         aria-hidden={showSplash}
-        inert={showSplash || undefined}
+        inert={showSplash ? '' : undefined}
       >
         {/* Navbar */}
         <nav
@@ -120,7 +119,6 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/buy/:planId" element={<BuyAccess />} />
           <Route path="/community" element={<Community />} />
-          <Route path="/pool" element={<Pool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
 
