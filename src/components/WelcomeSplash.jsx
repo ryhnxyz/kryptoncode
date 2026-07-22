@@ -80,31 +80,66 @@ export default function WelcomeSplash({ onComplete }) {
       transition={{ duration: reducedMotion ? 0.2 : 1, ease: [0.76, 0, 0.24, 1] }}
       aria-label={t('intro.label')}
     >
-      <ParticleField scene={phase === 'story' ? scene : -1} reducedMotion={reducedMotion} />
-      <div className="intro-vignette" aria-hidden="true" />
-      <div className="intro-scanline" aria-hidden="true" />
+      {phase !== 'opening' && (
+        <>
+          <ParticleField scene={phase === 'story' ? scene : -1} reducedMotion={reducedMotion} />
+          <div className="intro-vignette" aria-hidden="true" />
+          <div className="intro-scanline" aria-hidden="true" />
 
-      <header className="intro-topbar">
-        <div className="intro-brand">
-          <img src="/splash-logo.png" alt="" width="28" height="28" />
-          <span>KryptonCode</span>
-        </div>
-        <div className="intro-top-actions">
-          {phase !== 'opening' && phase !== 'ready' && (
-            <button className="intro-icon-button" type="button" onClick={toggleAudio} aria-label={muted ? t('intro.unmute') : t('intro.mute')}>
-              {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
-            </button>
-          )}
-          {phase === 'story' && <button className="intro-skip" type="button" onClick={finish}>{t('intro.skip')}</button>}
-        </div>
-      </header>
+          <header className="intro-topbar">
+            <div className="intro-brand">
+              <img src="/splash-logo.png" alt="" width="28" height="28" />
+              <span>KryptonCode</span>
+            </div>
+            <div className="intro-top-actions">
+              {phase !== 'ready' && (
+                <button className="intro-icon-button" type="button" onClick={toggleAudio} aria-label={muted ? t('intro.unmute') : t('intro.mute')}>
+                  {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+                </button>
+              )}
+              {phase === 'story' && <button className="intro-skip" type="button" onClick={finish}>{t('intro.skip')}</button>}
+            </div>
+          </header>
+        </>
+      )}
 
       <AnimatePresence mode="wait">
         {phase === 'opening' && (
-          <motion.div className="intro-opening" key="opening" exit={{ opacity: 0, scale: 1.08 }}>
-            <motion.div className="intro-logo-core" initial={{ opacity: 0, scale: 0.65 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
-              <img src="/welcome-logo.png" alt="KryptonCode" />
-              <i aria-hidden="true" />
+          <motion.div
+            className="intro-opening"
+            key="opening"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, ease: 'easeInOut' }}
+              style={{ position: 'relative', width: '140px', height: '140px' }}
+            >
+              {/* Static pure logo underneath */}
+              <img
+                src="/welcome-logo.png"
+                alt="KryptonCode"
+                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain' }}
+              />
+              {/* Animated chrome shimmer masked to the logo shape */}
+              <motion.div
+                className="fx-chrome-logo"
+                aria-hidden="true"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  WebkitMaskImage: 'url(/welcome-logo.png)',
+                  maskImage: 'url(/welcome-logo.png)',
+                }}
+              />
             </motion.div>
           </motion.div>
         )}
