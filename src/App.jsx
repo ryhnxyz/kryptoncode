@@ -18,7 +18,7 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => window.localStorage.getItem('krypton_intro_v2') !== 'complete');
   const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
@@ -48,7 +48,16 @@ function AppContent() {
     <>
       <BackgroundGlow />
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
-      <div className="app-container" style={{ opacity: showSplash ? 0 : 1, transition: 'opacity 0.8s ease-in' }}>
+      <div
+        className="app-container"
+        style={{
+          opacity: showSplash ? 0 : 1,
+          visibility: showSplash ? 'hidden' : 'visible',
+          transition: 'opacity 0.8s ease-in',
+        }}
+        aria-hidden={showSplash}
+        inert={showSplash ? '' : undefined}
+      >
         {/* Navbar */}
         <nav
           className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} ${isMobileMenuOpen ? 'navbar-menu-open' : ''}`}
@@ -135,6 +144,9 @@ function AppContent() {
                 Telegram
                 <ArrowUpRight size={16} weight="bold" aria-hidden="true" />
               </a>
+              <button className="footer-replay" type="button" onClick={() => setShowSplash(true)}>
+                {t('footer.replayIntro')}
+              </button>
             </div>
           </div>
 

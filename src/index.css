@@ -2787,3 +2787,170 @@ button:focus-visible {
     font-size: clamp(3.75rem, 5vw, 4.5rem);
   }
 }
+
+/* Cinematic first-visit experience */
+.cinematic-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  color: #f4f5f7;
+  background: #08090b;
+  isolation: isolate;
+}
+
+.intro-particle-canvas,
+.intro-vignette,
+.intro-scanline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.intro-particle-canvas { z-index: -3; opacity: 0.88; }
+.intro-vignette { z-index: -2; background: radial-gradient(circle at 55% 46%, transparent 0 18%, rgba(8, 9, 11, 0.22) 48%, #08090b 92%); }
+.intro-scanline { z-index: -1; opacity: 0.12; background: repeating-linear-gradient(90deg, transparent 0 119px, rgba(244, 245, 247, 0.12) 120px); }
+
+.intro-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 36px;
+}
+
+.intro-brand,
+.intro-top-actions,
+.intro-nav-buttons,
+.intro-scene-tags {
+  display: flex;
+  align-items: center;
+}
+
+.intro-brand { gap: 10px; font-size: 0.85rem; font-weight: 650; letter-spacing: -0.02em; }
+.intro-brand img { object-fit: contain; }
+.intro-top-actions { gap: 10px; }
+
+.intro-icon-button,
+.intro-skip,
+.intro-nav-buttons button {
+  border: 1px solid rgba(244, 245, 247, 0.18);
+  color: #f4f5f7;
+  background: rgba(8, 9, 11, 0.62);
+  backdrop-filter: blur(16px);
+}
+
+.intro-icon-button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.intro-skip { min-height: 42px; padding: 0 18px; border-radius: 999px; font-size: 0.8rem; }
+.intro-opening { display: grid; flex: 1; place-items: center; }
+
+.intro-logo-core { position: relative; width: clamp(120px, 12vw, 180px); aspect-ratio: 1; }
+.intro-logo-core img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 34px rgba(244, 245, 247, 0.28)); }
+.intro-logo-core i { position: absolute; inset: -50%; border: 1px solid rgba(244, 245, 247, 0.13); border-radius: 50%; animation: intro-orbit 9s linear infinite; }
+.intro-logo-core i::after { content: ''; position: absolute; top: 15%; left: 9%; width: 6px; height: 6px; border-radius: 50%; background: #f4f5f7; box-shadow: 0 0 20px #f4f5f7; }
+
+.intro-center-panel {
+  display: flex;
+  width: min(700px, calc(100% - 40px));
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin: auto;
+  padding-bottom: 80px;
+  text-align: center;
+}
+
+.intro-center-panel h1,
+.intro-scene-copy h1 {
+  color: #f4f5f7;
+  font-size: clamp(3rem, 6vw, 6.8rem);
+  font-weight: 650;
+  line-height: 0.94;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+
+.intro-center-panel h1 { font-size: clamp(2.8rem, 5vw, 5.4rem); }
+.intro-eyebrow { color: #9ca3ad; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.intro-lead { max-width: 600px; color: #b7bbc2; font-size: clamp(0.95rem, 1.4vw, 1.12rem); line-height: 1.65; text-wrap: pretty; }
+
+.intro-start {
+  display: inline-flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 28px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 26px 0 30px;
+  color: #08090b;
+  background: #f4f5f7;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.intro-center-panel small { color: #777d87; font-size: 0.72rem; }
+.intro-story { display: flex; flex: 1; align-items: center; padding: 20px clamp(32px, 7vw, 112px) 132px; }
+.intro-scene-copy { display: flex; width: min(900px, 72vw); flex-direction: column; align-items: flex-start; gap: 24px; }
+.intro-scene-copy h1 { max-width: 920px; text-align: left; }
+.intro-scene-copy .intro-lead { max-width: 570px; text-align: left; }
+.intro-scene-tags { flex-wrap: wrap; gap: 8px; }
+.intro-scene-tags span { border-left: 1px solid rgba(244, 245, 247, 0.3); padding: 4px 16px; color: #9ca3ad; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+.intro-controls {
+  position: absolute;
+  right: clamp(32px, 4vw, 64px);
+  bottom: 30px;
+  left: clamp(32px, 7vw, 112px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.intro-progress { display: flex; width: min(560px, 50vw); gap: 8px; }
+.intro-progress button { flex: 1; border: 0; color: #777d87; background: transparent; text-align: left; }
+.intro-progress button span { display: block; height: 2px; margin-bottom: 10px; background: rgba(244, 245, 247, 0.16); overflow: hidden; }
+.intro-progress button span::after { content: ''; display: block; width: 0; height: 100%; background: #f4f5f7; transition: width 550ms ease; }
+.intro-progress button.is-active span::after,
+.intro-progress button.is-complete span::after { width: 100%; }
+.intro-progress button.is-active { color: #f4f5f7; }
+.intro-progress button b { font-family: var(--font-mono); font-size: 0.65rem; font-weight: 500; }
+.intro-nav-buttons { gap: 8px; }
+.intro-nav-buttons button { display: inline-flex; min-width: 48px; min-height: 48px; align-items: center; justify-content: center; gap: 18px; border-radius: 999px; padding: 0 16px; }
+.intro-nav-buttons button:disabled { opacity: 0.3; }
+.intro-nav-buttons .intro-next { padding: 0 22px; color: #08090b; background: #f4f5f7; }
+
+.footer-replay { border: 0; padding: 0; color: var(--text-primary); background: transparent; font: inherit; font-size: 0.88rem; cursor: pointer; }
+.footer-replay:hover { color: var(--text-secondary); }
+
+@keyframes intro-orbit { to { transform: rotate(360deg); } }
+
+@media (max-width: 700px) {
+  .intro-topbar { padding: 20px; }
+  .intro-story { align-items: flex-end; padding: 20px 20px 190px; }
+  .intro-scene-copy { width: 100%; gap: 16px; }
+  .intro-scene-copy h1 { font-size: clamp(2.65rem, 13vw, 4.3rem); }
+  .intro-controls { right: 20px; bottom: 22px; left: 20px; flex-direction: column; align-items: stretch; }
+  .intro-progress { width: 100%; }
+  .intro-nav-buttons { justify-content: flex-end; }
+  .intro-scene-tags span { padding-inline: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo-core i { animation: none; }
+  .cinematic-intro *, .cinematic-intro *::before, .cinematic-intro *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
