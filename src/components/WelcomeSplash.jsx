@@ -18,7 +18,7 @@ export default function WelcomeSplash({ onComplete }) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setPhase('ready'), reducedMotion ? 250 : 1500);
+    const timer = window.setTimeout(() => finish(), reducedMotion ? 800 : 2200);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -26,6 +26,7 @@ export default function WelcomeSplash({ onComplete }) {
       document.body.style.overflow = previousOverflow;
       audioRef.current?.stop();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
 
   useEffect(() => {
