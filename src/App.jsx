@@ -8,6 +8,7 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
+import Pool from './pages/Pool';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
@@ -119,6 +120,7 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/buy/:planId" element={<BuyAccess />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/pool" element={<Pool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
 
