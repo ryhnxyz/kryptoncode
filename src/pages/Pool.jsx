@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Activity, Cpu, Zap, DollarSign, Server, Boxes, Copy, Check } from 'lucide-react';
+import { Activity, Cpu, Zap, DollarSign, Boxes, Copy, Check } from 'lucide-react';
 
 const API_BASE = 'https://api.kryptoncode.xyz/api/pool';
 
@@ -165,7 +165,6 @@ export default function Pool() {
   }
 
   const stats = data?.stats || {};
-  const providers = data?.providers || [];
   const models = Array.isArray(data?.models) ? data.models : [];
   const usageDaily = data?.usageDaily || [];
   const usageRecent = data?.usageRecent || [];
@@ -218,49 +217,9 @@ export default function Pool() {
       }}>
         <StatCard icon={Activity} label="Total Requests" value={fmt(lifetime.requests)} sub={`${fmt(lifetime.promptTokens)} prompt tokens`} />
         <StatCard icon={Zap} label="Today" value={fmt(today.requests)} sub={fmtCost(today.cost) + ' today'} accent="#fbbf24" />
-        <StatCard icon={Server} label="Active Providers" value={`${stats.activeProviders - stats.rateLimitedProviders}/${stats.activeProviders}`} sub={stats.rateLimitedProviders > 0 ? `${stats.rateLimitedProviders} rate-limited` : 'all healthy'} accent="#34d399" />
-        <StatCard icon={Boxes} label="Models Available" value={String(models.length)} sub={`across ${new Set(models.map(m => m.owned_by)).size} provider(s)`} accent="#60a5fa" />
+        <StatCard icon={Boxes} label="Models Available" value={String(models.length)} sub="all powered by KryptonCode" accent="#60a5fa" />
         <StatCard icon={DollarSign} label="Lifetime Cost" value={fmtCost(lifetime.cost)} sub={`${fmt(lifetime.completionTokens)} completion tokens`} accent="#f87171" />
       </div>
-
-      {/* Providers */}
-      <section style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-secondary)' }}>PROVIDER POOLS</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{providers.length} connections</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {providers.map((p, i) => (
-            <div key={i} style={{
-              display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
-              gap: '1rem', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-              borderRadius: 'var(--radius)', padding: '0.875rem 1rem',
-              transition: 'border-color 150ms ease-out, background-color 150ms ease-out',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.background = 'var(--card-bg)'; }}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: '0.375rem',
-                background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)',
-              }}>{(p.name || '?').slice(0, 2).toUpperCase()}</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.125rem' }}>
-                  {p.name} <span style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: '0.75rem' }}>· {p.provider}</span>
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-                  {p.id.slice(0, 8)}
-                  {p.lastError && <span style={{ marginLeft: '0.5rem', color: '#f87171' }}>· {p.lastError}</span>}
-                </div>
-              </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>P{p.priority}</span>
-              <StatusBadge status={p.status} backoffLevel={p.backoffLevel} />
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Models */}
       <section style={{ marginBottom: '2rem' }}>
