@@ -64,34 +64,28 @@ function fmtTime(ts) {
 }
 
 const chartConfig = {
-  requests: { label: 'Requests', color: 'var(--chart-1)' },
-  cost: { label: 'Cost (USD)', color: 'var(--chart-2)' },
+  requests: { label: 'Requests', color: 'var(--text-primary)' },
+  cost: { label: 'Cost (USD)', color: 'var(--text-tertiary)' },
 }
 
-function KpiCard({ icon: Icon, label, value, sub, tone = 'chart-1' }) {
+function KpiCard({ icon: Icon, label, value, sub }) {
   return (
-    <Card
-      size="sm"
-      className="pool-kpi-card gap-0 rounded-xl ring-0 border border-border/60 py-0"
-    >
-      <CardContent className="flex flex-col gap-2.5 p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
+    <Card size="sm" className="pool-kpi-card gap-0 py-0 ring-0">
+      <CardContent className="flex min-h-32 flex-col justify-between gap-5 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             {label}
           </span>
-          <span
-            className="flex size-7 items-center justify-center rounded-md"
-            style={{ backgroundColor: `color-mix(in oklch, var(--${tone}) 16%, transparent)` }}
-          >
-            <Icon className="size-3.5" style={{ color: `var(--${tone})` }} />
+          <span className="flex size-8 items-center justify-center rounded-md border border-border bg-muted">
+            <Icon className="size-3.5" />
           </span>
         </div>
-        <div className="font-mono text-2xl font-medium leading-none tabular-nums text-foreground">
-          {value}
+        <div className="flex flex-col gap-2">
+          <div className="font-mono text-2xl font-medium leading-none tabular-nums text-foreground sm:text-3xl">
+            {value}
+          </div>
+          {sub ? <div className="text-xs tabular-nums text-muted-foreground">{sub}</div> : null}
         </div>
-        {sub ? (
-          <div className="text-xs tabular-nums text-muted-foreground">{sub}</div>
-        ) : null}
       </CardContent>
     </Card>
   )
@@ -311,19 +305,31 @@ export default function Pool() {
 
   if (error && !data) {
     return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-6xl flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
-          <Activity className="size-5 text-destructive" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-foreground">Failed to load pool data</p>
-          <p className="font-mono text-xs text-muted-foreground">{error}</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={loadData}>
-          <RefreshCw data-icon="inline-start" />
-          Retry
-        </Button>
-      </div>
+      <main className="pool-page px-5 pb-24 pt-14 sm:px-8 sm:pt-20">
+        <header className="mb-10 flex max-w-2xl flex-col gap-4">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted-foreground">
+            KryptonCode / Shared infrastructure
+          </span>
+          <h1 className="text-balance text-4xl font-semibold leading-none text-foreground sm:text-5xl">
+            AI Pool
+          </h1>
+        </header>
+        <Card className="pool-panel gap-0 py-0 ring-0">
+          <CardContent className="flex min-h-56 flex-col items-start justify-center gap-5 p-6 sm:p-8">
+            <div className="flex size-10 items-center justify-center rounded-md border border-border bg-muted">
+              <Activity className="size-4 text-muted-foreground" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium text-foreground">Pool data is temporarily unavailable</p>
+              <p className="font-mono text-xs text-muted-foreground">{error}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={loadData}>
+              <RefreshCw data-icon="inline-start" />
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
     )
   }
 
@@ -342,31 +348,28 @@ export default function Pool() {
   }))
 
   return (
-    <div className="pool-page relative mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6">
-      {/* Header */}
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-base font-semibold tracking-tight text-primary-foreground">
-            K
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold leading-tight tracking-tight text-foreground">
+    <main className="pool-page px-5 pb-24 pt-14 sm:px-8 sm:pt-20">
+      <header className="mb-10 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+        <div className="flex max-w-2xl flex-col gap-4">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted-foreground">
+            KryptonCode / Shared infrastructure
+          </span>
+          <div className="flex flex-col gap-3">
+            <h1 className="text-balance text-4xl font-semibold leading-none text-foreground sm:text-5xl">
               AI Pool
             </h1>
-            <p className="text-[0.8125rem] leading-tight text-muted-foreground">
-              Free shared AI infrastructure
+            <p className="max-w-xl text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
+              A live view of the models, usage, and capacity powering KryptonCode&apos;s shared AI infrastructure.
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
-            <span className="pool-live-dot size-1.5 rounded-full bg-[color:var(--chart-3)]" />
-            <span className="font-mono text-xs text-muted-foreground">
-              {lastUpdated || '—'}
-            </span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 font-mono text-xs text-muted-foreground">
+            <span className="pool-live-dot size-1.5 rounded-full" />
+            Live · {lastUpdated || '—'}
+          </span>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-sm"
             onClick={loadData}
             disabled={refreshing}
@@ -470,16 +473,6 @@ export default function Pool() {
                 className="aspect-auto h-56 w-full sm:h-64"
               >
                 <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 8 }}>
-                  <defs>
-                    <linearGradient id="poolReq" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-requests)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--color-requests)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="poolCost" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-cost)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="var(--color-cost)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
@@ -512,15 +505,16 @@ export default function Pool() {
                     type="monotone"
                     stroke="var(--color-requests)"
                     strokeWidth={2}
-                    fill="url(#poolReq)"
+                    fill="transparent"
                   />
                   <Area
                     yAxisId="cost"
                     dataKey="cost"
                     type="monotone"
                     stroke="var(--color-cost)"
-                    strokeWidth={2}
-                    fill="url(#poolCost)"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    fill="transparent"
                   />
                 </AreaChart>
               </ChartContainer>
@@ -680,6 +674,6 @@ export default function Pool() {
           </Card>
         )}
       </section>
-    </div>
+    </main>
   )
 }
