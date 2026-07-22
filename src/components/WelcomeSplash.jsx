@@ -1,119 +1,168 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createCinematicAudio } from '../lib/cinematicAudio';
 import LanguageSelector from './LanguageSelector';
+import ParticleField from './ParticleField';
+
+const sceneKeys = ['welcome', 'systems', 'ship'];
 
 export default function WelcomeSplash({ onComplete }) {
-  const [stage, setStage] = useState('intro'); // intro -> lang-select -> done
   const { t } = useLanguage();
+  const [phase, setPhase] = useState('opening');
+  const [scene, setScene] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const audioRef = useRef(null);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('app_language');
-    const timer = setTimeout(() => {
-      if (savedLang) {
-        setStage('done');
-        setTimeout(onComplete, 1200);
-      } else {
-        setStage('lang-select');
-      }
-    }, 2800);
-    
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+    const timer = window.setTimeout(() => setPhase('ready'), reducedMotion ? 250 : 1500);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.clearTimeout(timer);
+      document.body.style.overflow = previousOverflow;
+      audioRef.current?.stop();
+    };
+  }, [reducedMotion]);
 
-  const handleSelectLanguage = () => {
-    setStage('done');
-    setTimeout(onComplete, 1200);
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (phase !== 'story') return;
+      if (event.key === 'ArrowRight') goToScene(Math.min(scene + 1, 2));
+      if (event.key === 'ArrowLeft') goToScene(Math.max(scene - 1, 0));
+      if (event.key === 'Escape') finish();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
+  const startExperience = async () => {
+    audioRef.current = createCinematicAudio();
+    await audioRef.current?.start();
+    setPhase(localStorage.getItem('app_language') ? 'story' : 'language');
   };
 
+  const startStory = () => {
+    setPhase('story');
+    audioRef.current?.cue(0);
+  };
+
+  const goToScene = (nextScene) => {
+    if (nextScene === scene) return;
+    setScene(nextScene);
+    audioRef.current?.cue(nextScene);
+  };
+
+  const finish = () => {
+    if (leaving) return;
+    setLeaving(true);
+    localStorage.setItem('krypton_intro_v2', 'complete');
+    audioRef.current?.stop();
+    window.setTimeout(onComplete, reducedMotion ? 250 : 1100);
+  };
+
+  const toggleAudio = () => {
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    audioRef.current?.setMuted(nextMuted);
+  };
+
+  const activeKey = sceneKeys[scene];
+
   return (
-    <AnimatePresence>
-      {stage !== 'done' && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'var(--bg-color)',
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden'
-          }}
-        >
-          <motion.div
-            key="intro"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-          >
-            <div style={{ 
-              position: 'relative', 
-              width: '140px', 
-              height: '140px', 
-              marginBottom: stage === 'lang-select' ? '40px' : '0', 
-              transition: 'margin 0.6s cubic-bezier(0.4, 0, 0.2, 1)' 
-            }}>
-              {/* Static pure logo underneath */}
-              <img 
-                src={stage === 'intro' ? "/welcome-logo.png" : "/lang-logo.png"} 
-                alt="logo" 
-                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain', transition: 'all 0.5s ease' }} 
-              />
-              
-              {/* Animated Chromia effect that fades out smoothly */}
-              <motion.div 
-                className="fx-chrome-logo" 
-                initial={{ opacity: 1 }}
-                animate={{ opacity: stage === 'intro' ? 1 : 0 }}
-                transition={{ duration: 0.6 }}
-                style={{ 
-                  width: '100%', height: '100%', position: 'absolute', top: 0, left: 0,
-                  WebkitMaskImage: stage === 'intro' ? 'url(/welcome-logo.png)' : undefined,
-                  maskImage: stage === 'intro' ? 'url(/welcome-logo.png)' : undefined
-                }} 
-              />
+    <motion.section
+      className={`cinematic-intro ${leaving ? 'is-leaving' : ''}`}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: leaving ? 0 : 1 }}
+      transition={{ duration: reducedMotion ? 0.2 : 1, ease: [0.76, 0, 0.24, 1] }}
+      aria-label={t('intro.label')}
+    >
+      <ParticleField scene={phase === 'story' ? scene : -1} reducedMotion={reducedMotion} />
+      <div className="intro-vignette" aria-hidden="true" />
+      <div className="intro-scanline" aria-hidden="true" />
+
+      <header className="intro-topbar">
+        <div className="intro-brand">
+          <img src="/splash-logo.png" alt="" width="28" height="28" />
+          <span>KryptonCode</span>
+        </div>
+        <div className="intro-top-actions">
+          {phase !== 'opening' && phase !== 'ready' && (
+            <button className="intro-icon-button" type="button" onClick={toggleAudio} aria-label={muted ? t('intro.unmute') : t('intro.mute')}>
+              {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+            </button>
+          )}
+          {phase === 'story' && <button className="intro-skip" type="button" onClick={finish}>{t('intro.skip')}</button>}
+        </div>
+      </header>
+
+      <AnimatePresence mode="wait">
+        {phase === 'opening' && (
+          <motion.div className="intro-opening" key="opening" exit={{ opacity: 0, scale: 1.08 }}>
+            <motion.div className="intro-logo-core" initial={{ opacity: 0, scale: 0.65 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
+              <img src="/welcome-logo.png" alt="KryptonCode" />
+              <i aria-hidden="true" />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {phase === 'ready' && (
+          <motion.div className="intro-center-panel" key="ready" initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+            <p className="intro-eyebrow">KRYPTON / 00—03</p>
+            <h1>{t('intro.readyTitle')}</h1>
+            <p className="intro-lead">{t('intro.readyDescription')}</p>
+            <button className="intro-start" type="button" onClick={startExperience}>
+              <span>{t('intro.start')}</span><ArrowRight size={20} aria-hidden="true" />
+            </button>
+            <small>{t('intro.audioNote')}</small>
+          </motion.div>
+        )}
+
+        {phase === 'language' && (
+          <motion.div className="intro-center-panel" key="language" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <p className="intro-eyebrow">KRYPTON / LANGUAGE</p>
+            <h1>{t('language.welcomeTitle')}</h1>
+            <p className="intro-lead">{t('language.welcomeDescription')}</p>
+            <LanguageSelector mode="welcome" onSelect={startStory} />
+          </motion.div>
+        )}
+
+        {phase === 'story' && (
+          <motion.div className="intro-story" key={scene} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.55 }}>
+            <div className="intro-scene-copy">
+              <motion.p className="intro-eyebrow" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{`0${scene + 1} / 03 · ${t(`intro.${activeKey}.kicker`)}`}</motion.p>
+              <motion.h1 initial={{ y: 70 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>{t(`intro.${activeKey}.title`)}</motion.h1>
+              <motion.p className="intro-lead" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>{t(`intro.${activeKey}.description`)}</motion.p>
+              <motion.div className="intro-scene-tags" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+                {[0, 1, 2].map((item) => <span key={item}>{t(`intro.${activeKey}.tag${item + 1}`)}</span>)}
+              </motion.div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
 
-          {stage === 'lang-select' && (
-            <motion.div
-              key="lang-select"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '30px'
-              }}
-            >
-              <div className="welcome-language-copy">
-                <span className="welcome-language-kicker">KryptonCode / {t('language.menuLabel')}</span>
-                <motion.h2 
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {t('language.welcomeTitle')}
-                </motion.h2>
-                <p>{t('language.welcomeDescription')}</p>
-              </div>
-              <LanguageSelector mode="welcome" onSelect={handleSelectLanguage} />
-            </motion.div>
-          )}
-        </motion.div>
+      {phase === 'story' && (
+        <footer className="intro-controls">
+          <div className="intro-progress" aria-label={t('intro.progress')}>
+            {sceneKeys.map((key, index) => (
+              <button key={key} className={index === scene ? 'is-active' : index < scene ? 'is-complete' : ''} type="button" onClick={() => goToScene(index)} aria-label={`${t('intro.step')} ${index + 1}`} aria-current={index === scene ? 'step' : undefined}>
+                <span /><b>{`0${index + 1}`}</b>
+              </button>
+            ))}
+          </div>
+          <div className="intro-nav-buttons">
+            <button type="button" onClick={() => goToScene(scene - 1)} disabled={scene === 0} aria-label={t('intro.back')}><ArrowLeft size={20} aria-hidden="true" /></button>
+            {scene < 2 ? (
+              <button className="intro-next" type="button" onClick={() => goToScene(scene + 1)}>{t('intro.next')}<ArrowRight size={20} aria-hidden="true" /></button>
+            ) : (
+              <button className="intro-next" type="button" onClick={finish}>{t('intro.enter')}<ArrowRight size={20} aria-hidden="true" /></button>
+            )}
+          </div>
+        </footer>
       )}
-    </AnimatePresence>
+    </motion.section>
   );
 }
