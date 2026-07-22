@@ -8,8 +8,8 @@ export default function Community() {
   const { t } = useLanguage();
 
   return (
-    <main className="hero-section" style={{ marginTop: '80px', paddingBottom: '40px' }}>
-      <h1 className="hero-title animate-slide-up" style={{ fontSize: '3.5rem', marginBottom: '16px' }}>
+    <main className="hero-section community-hero">
+      <h1 className="hero-title animate-slide-up">
         {t('community.title').split(' ')[0]} <span className="highlight">{t('community.title').split(' ').slice(1).join(' ')}</span>
       </h1>
       <p className="hero-subtitle animate-slide-up delay-100">
