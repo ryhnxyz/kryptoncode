@@ -42,6 +42,13 @@
   --accent: oklch(0.28 0 0);
   --accent-foreground: oklch(0.97 0 0);
 
+  /* Pool-page aliases (map pool CSS onto the real token set) */
+  --border-primary: var(--card-border);
+  --border-hover: rgba(255, 255, 255, 0.14);
+  --card-hover: rgba(255, 255, 255, 0.03);
+  --font-display: 'Geist Variable', sans-serif;
+  --transition-fast: 150ms ease-out;
+
   /* Chart palette (limited, theme-matched) */
   --chart-1: oklch(0.7 0.13 215);
   --chart-2: oklch(0.78 0.13 85);
