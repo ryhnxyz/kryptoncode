@@ -1,354 +1,599 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Activity, Cpu, Zap, DollarSign, Boxes, Copy, Check } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+  Activity,
+  Zap,
+  DollarSign,
+  Boxes,
+  Copy,
+  Check,
+  RefreshCw,
+  Eye,
+  Wrench,
+  Brain,
+  ArrowUpRight,
+} from 'lucide-react'
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
-const API_BASE = 'https://api.kryptoncode.xyz/api/pool';
+import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
+
+const API_BASE = 'https://api.kryptoncode.xyz/api/pool'
+const CONNECT_URL = 'https://base.kryptoncode.xyz/v1'
 
 function fmt(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return String(n || 0);
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B'
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
+  return String(n || 0)
 }
 
 function fmtCost(c) {
-  if (c >= 100) return '$' + c.toFixed(2);
-  if (c >= 1) return '$' + c.toFixed(2);
-  return '$' + (c || 0).toFixed(4);
+  if (c >= 1) return '$' + c.toFixed(2)
+  return '$' + (c || 0).toFixed(4)
 }
 
 function fmtCtx(n) {
-  if (n >= 1e6) return (n / 1e6).toFixed(0) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
-  return String(n || 0);
+  if (n >= 1e6) return (n / 1e6).toFixed(0) + 'M'
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K'
+  return String(n || 0)
 }
 
 function fmtTime(ts) {
-  const d = new Date(ts);
-  const now = new Date();
-  const diff = (now - d) / 1000;
-  if (diff < 60) return Math.floor(diff) + 's';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h';
-  return d.toLocaleDateString();
+  const d = new Date(ts)
+  const now = new Date()
+  const diff = (now - d) / 1000
+  if (diff < 60) return Math.floor(diff) + 's'
+  if (diff < 3600) return Math.floor(diff / 60) + 'm'
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h'
+  return d.toLocaleDateString()
 }
 
-function StatCard({ icon: Icon, label, value, sub, accent }) {
-  return (
-    <div style={{
-      background: 'var(--card-bg)',
-      border: '1px solid var(--card-border)',
-      borderRadius: 'var(--radius)',
-      padding: '1.25rem',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-        <Icon size={14} style={{ color: accent || 'var(--ink-3)' }} />
-        <span style={{
-          fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.03em',
-          textTransform: 'uppercase', color: 'var(--ink-3)',
-        }}>{label}</span>
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 500,
-        letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.1,
-        fontVariantNumeric: 'tabular-nums',
-      }}>{value}</div>
-      {sub && <div style={{
-        fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem',
-        fontVariantNumeric: 'tabular-nums',
-      }}>{sub}</div>}
-    </div>
-  );
+const chartConfig = {
+  requests: { label: 'Requests', color: 'var(--chart-1)' },
+  cost: { label: 'Cost (USD)', color: 'var(--chart-2)' },
 }
 
-function StatusBadge({ status, backoffLevel }) {
-  const config = {
-    active: { bg: 'rgba(52,211,153,0.1)', color: '#34d399', border: 'rgba(52,211,153,0.2)', label: 'Active' },
-    rate_limited: { bg: 'rgba(248,113,113,0.1)', color: '#f87171', border: 'rgba(248,113,113,0.2)', label: `Rate Limited L${backoffLevel || ''}` },
-    unavailable: { bg: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: 'rgba(251,191,36,0.2)', label: 'Unavailable' },
-    disabled: { bg: 'rgba(120,113,108,0.1)', color: '#78716c', border: 'rgba(120,113,108,0.2)', label: 'Disabled' },
-  };
-  const c = config[status] || config.disabled;
+function KpiCard({ icon: Icon, label, value, sub, tone = 'chart-1' }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-      padding: '0.25rem 0.625rem', borderRadius: '9999px',
-      fontSize: '0.6875rem', fontWeight: 500, whiteSpace: 'nowrap',
-      background: c.bg, color: c.color, border: `1px solid ${c.border}`,
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
-      {c.label}
-    </span>
-  );
+    <Card
+      size="sm"
+      className="pool-kpi-card gap-0 rounded-xl ring-0 border border-border/60 py-0"
+    >
+      <CardContent className="flex flex-col gap-2.5 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </span>
+          <span
+            className="flex size-7 items-center justify-center rounded-md"
+            style={{ backgroundColor: `color-mix(in oklch, var(--${tone}) 16%, transparent)` }}
+          >
+            <Icon className="size-3.5" style={{ color: `var(--${tone})` }} />
+          </span>
+        </div>
+        <div className="font-mono text-2xl font-medium leading-none tabular-nums text-foreground">
+          {value}
+        </div>
+        {sub ? (
+          <div className="text-xs tabular-nums text-muted-foreground">{sub}</div>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
 }
 
-function CapTag({ label, active }) {
+function CapTag({ icon: Icon, label, active }) {
   return (
-    <span style={{
-      fontSize: '0.625rem', padding: '0.125rem 0.5rem', borderRadius: '9999px',
-      fontWeight: 500,
-      background: active ? 'rgba(168,162,158,0.08)' : 'transparent',
-      border: active ? '1px solid rgba(168,162,158,0.12)' : '1px solid var(--card-border)',
-      color: active ? 'var(--text-primary)' : 'var(--ink-3)',
-    }}>{label}</span>
-  );
+    <Badge
+      variant={active ? 'secondary' : 'outline'}
+      className={cn(
+        'gap-1 font-normal',
+        active ? 'text-foreground' : 'text-muted-foreground/60',
+      )}
+    >
+      <Icon className={cn('size-3', active ? 'opacity-100' : 'opacity-50')} />
+      {label}
+    </Badge>
+  )
+}
+
+function StatusBadge({ status }) {
+  const ok = status === 'ok'
+  return (
+    <Badge
+      variant={ok ? 'secondary' : 'destructive'}
+      className={cn('font-mono text-[0.7rem]', ok && 'text-foreground')}
+    >
+      {ok ? 'OK' : status || 'err'}
+    </Badge>
+  )
 }
 
 function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
   return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-        fontFamily: 'var(--font-mono)', fontSize: '0.8125rem',
-        background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)',
-        padding: '0.25rem 0.625rem', borderRadius: 'var(--radius)',
-        color: 'var(--text-primary)', cursor: 'pointer',
-        transition: 'border-color 150ms ease-out',
+    <Button
+      variant="outline"
+      size="sm"
+      className="font-mono"
+      onClick={() => {
+        navigator.clipboard?.writeText(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
       }}
+      aria-label={copied ? 'Copied API base URL' : 'Copy API base URL'}
     >
-      {copied ? <Check size={12} style={{ color: '#34d399' }} /> : <Copy size={12} style={{ color: 'var(--ink-3)' }} />}
-      {copied ? 'Copied!' : text}
-    </button>
-  );
+      {copied ? (
+        <Check data-icon="inline-start" className="text-[color:var(--chart-3)]" />
+      ) : (
+        <Copy data-icon="inline-start" />
+      )}
+      <span className="max-[420px]:hidden">{copied ? 'Copied!' : text}</span>
+      <span className="hidden max-[420px]:inline">{copied ? 'Copied!' : 'Copy URL'}</span>
+    </Button>
+  )
+}
+
+function SectionHeading({ title, meta }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h2>
+      {meta ? (
+        <span className="font-mono text-xs text-muted-foreground/70">{meta}</span>
+      ) : null}
+    </div>
+  )
+}
+
+function PoolSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6">
+      <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-9 rounded-lg" />
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+        </div>
+        <Skeleton className="h-8 w-24" />
+      </div>
+      <Skeleton className="mb-6 h-14 w-full rounded-xl" />
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="mb-6 h-72 w-full rounded-xl" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function Pool() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
   const loadData = useCallback(async () => {
+    setRefreshing(true)
     try {
-      const res = await fetch(API_BASE);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
-      setError(null);
-      setLastUpdated(new Date().toLocaleTimeString());
+      const res = await fetch(API_BASE)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      setData(json)
+      setError(null)
+      setLastUpdated(new Date().toLocaleTimeString())
     } catch (e) {
-      setError(e.message);
+      setError(e.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
+      setRefreshing(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+    loadData()
+    const interval = setInterval(loadData, 30000)
+    return () => clearInterval(interval)
+  }, [loadData])
 
-  if (loading) {
+  if (loading) return <PoolSkeleton />
+
+  if (error && !data) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--ink-3)', fontSize: '0.875rem' }}>Loading AI Pool...</div>
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-6xl flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+          <Activity className="size-5 text-destructive" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">Failed to load pool data</p>
+          <p className="font-mono text-xs text-muted-foreground">{error}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={loadData}>
+          <RefreshCw data-icon="inline-start" />
+          Retry
+        </Button>
       </div>
-    );
+    )
   }
 
-  if (error) {
-    return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ color: '#f87171', fontSize: '0.875rem' }}>Failed to load pool data</div>
-        <div style={{ color: 'var(--ink-3)', fontSize: '0.75rem' }}>{error}</div>
-        <button onClick={loadData} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.8125rem' }}>Retry</button>
-      </div>
-    );
-  }
+  const stats = data?.stats || {}
+  const models = Array.isArray(data?.models) ? data.models : []
+  const usageDaily = data?.usageDaily || []
+  const usageRecent = data?.usageRecent || []
+  const lifetime = stats.lifetime || {}
+  const today = stats.today || {}
 
-  const stats = data?.stats || {};
-  const models = Array.isArray(data?.models) ? data.models : [];
-  const usageDaily = data?.usageDaily || [];
-  const usageRecent = data?.usageRecent || [];
-  const lifetime = stats.lifetime || {};
-  const today = stats.today || {};
+  const chartData = [...usageDaily].reverse().map((d) => ({
+    date: (d.dateKey || '').slice(5),
+    dateKey: d.dateKey,
+    requests: d.requests || 0,
+    cost: Number((d.cost || 0).toFixed(4)),
+  }))
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
+    <div className="pool-page relative mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6">
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        paddingBottom: '2rem', borderBottom: '1px solid var(--card-border)', marginBottom: '2rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '0.375rem',
-            background: 'linear-gradient(135deg, oklch(0.62 0.18 200), oklch(0.55 0.2 250))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 600, fontSize: '1rem', color: '#1A1A1A', letterSpacing: '-0.02em',
-          }}>K</div>
-          <div>
-            <h1 style={{ fontSize: '1.125rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-primary)' }}>AI Pool</h1>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>Free shared AI infrastructure</p>
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-base font-semibold tracking-tight text-primary-foreground">
+            K
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-semibold leading-tight tracking-tight text-foreground">
+              AI Pool
+            </h1>
+            <p className="text-[0.8125rem] leading-tight text-muted-foreground">
+              Free shared AI infrastructure
+            </p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', animation: 'pulse 2s ease-in-out infinite' }} />
-          <span style={{ fontSize: '0.8125rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{lastUpdated || '—'}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
+            <span className="pool-live-dot size-1.5 rounded-full bg-[color:var(--chart-3)]" />
+            <span className="font-mono text-xs text-muted-foreground">
+              {lastUpdated || '—'}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={loadData}
+            disabled={refreshing}
+            aria-label="Refresh pool data"
+          >
+            <RefreshCw className={cn(refreshing && 'animate-spin')} />
+          </Button>
         </div>
-      </div>
+      </header>
 
-      {/* Connection info */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
-        padding: '1rem 1.25rem', background: 'var(--card-bg)',
-        border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', marginBottom: '2rem',
-        flexWrap: 'wrap',
-      }}>
-        <span style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--ink-3)', fontWeight: 500 }}>API Base URL</span>
-        <CopyButton text="https://base.kryptoncode.xyz/v1" />
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--ink-3)', fontWeight: 500 }}>Status</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: '#34d399' }}>Operational</span>
-      </div>
-
-      {/* Stats grid */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '0.75rem', marginBottom: '2rem',
-      }}>
-        <StatCard icon={Activity} label="Total Requests" value={fmt(lifetime.requests)} sub={`${fmt(lifetime.promptTokens)} prompt tokens`} />
-        <StatCard icon={Zap} label="Today" value={fmt(today.requests)} sub={fmtCost(today.cost) + ' today'} accent="#fbbf24" />
-        <StatCard icon={Boxes} label="Models Available" value={String(models.length)} sub="all powered by KryptonCode" accent="#60a5fa" />
-        <StatCard icon={DollarSign} label="Lifetime Cost" value={fmtCost(lifetime.cost)} sub={`${fmt(lifetime.completionTokens)} completion tokens`} accent="#f87171" />
-      </div>
-
-      {/* Models */}
-      <section style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-secondary)' }}>AVAILABLE MODELS</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{models.length} models</span>
-        </div>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.5rem',
-        }}>
-          {models.map((m, i) => (
-            <div key={i} style={{
-              background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-              borderRadius: 'var(--radius)', padding: '1rem',
-              transition: 'border-color 150ms ease-out, background-color 150ms ease-out',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.background = 'var(--card-bg)'; }}
+      {/* Connection bar */}
+      <Card className="pool-panel mb-6 rounded-xl ring-0 border border-border/60 py-0">
+        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
+              API Base URL
+            </span>
+            <CopyButton text={CONNECT_URL} />
+          </div>
+          <Separator orientation="vertical" className="hidden h-8 sm:block" />
+          <div className="flex flex-col gap-1">
+            <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground">
+              Status
+            </span>
+            <span className="flex items-center gap-1.5 font-mono text-sm text-[color:var(--chart-3)]">
+              <span className="pool-live-dot size-1.5 rounded-full bg-[color:var(--chart-3)]" />
+              Operational
+            </span>
+          </div>
+          <div className="ms-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              render={<a href={CONNECT_URL} target="_blank" rel="noreferrer" />}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{m.id}</span>
-                <span style={{ fontSize: '0.625rem', color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.owned_by}</span>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.75rem' }}>
-                <CapTag label="Vision" active={m.vision} />
-                <CapTag label="Tools" active={m.tools} />
-                <CapTag label="Reasoning" active={m.reasoning} />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.6875rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
-                <span><b style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>ctx</b> {fmtCtx(m.contextWindow)}</span>
-                <span><b style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>max</b> {fmtCtx(m.maxOutput)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+              Endpoint
+              <ArrowUpRight data-icon="inline-end" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs */}
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard
+          icon={Activity}
+          label="Total Requests"
+          value={fmt(lifetime.requests)}
+          sub={`${fmt(lifetime.promptTokens)} prompt tokens`}
+          tone="chart-1"
+        />
+        <KpiCard
+          icon={Zap}
+          label="Today"
+          value={fmt(today.requests)}
+          sub={`${fmtCost(today.cost)} spent today`}
+          tone="chart-2"
+        />
+        <KpiCard
+          icon={Boxes}
+          label="Models"
+          value={String(models.length)}
+          sub="powered by KryptonCode"
+          tone="chart-3"
+        />
+        <KpiCard
+          icon={DollarSign}
+          label="Lifetime Cost"
+          value={fmtCost(lifetime.cost)}
+          sub={`${fmt(lifetime.completionTokens)} completion tokens`}
+          tone="chart-4"
+        />
+      </div>
 
       {/* Usage chart */}
-      <section style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-secondary)' }}>USAGE (DAILY REQUESTS)</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{usageDaily.length} days</span>
-        </div>
-        <div style={{
-          background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-          borderRadius: 'var(--radius)', padding: '1.25rem', overflowX: 'auto',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 120, minWidth: 400 }}>
-            {(() => {
-              const sorted = [...usageDaily].reverse();
-              const maxReqs = Math.max(...sorted.map(d => d.requests || 0), 1);
-              return sorted.map((d, i) => {
-                const pct = ((d.requests || 0) / maxReqs * 100).toFixed(1);
-                return (
-                  <div key={i} title={`${d.dateKey}: ${fmt(d.requests)} requests, ${fmtCost(d.cost)}`}
-                    style={{
-                      flex: 1, minWidth: 12, position: 'relative',
-                      background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)',
-                      borderRadius: '0.375rem 0.375rem 0 0', cursor: 'default',
-                      transition: 'background-color 150ms ease-out',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(96,165,250,0.15)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-                  >
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: '#60a5fa', borderRadius: '0.375rem 0.375rem 0 0',
-                      opacity: 0.8, height: `${pct}%`, transition: 'height 300ms ease-out',
-                    }} />
+      <section className="mb-8">
+        <SectionHeading
+          title="Daily Usage"
+          meta={`${usageDaily.length} days`}
+        />
+        <Card className="pool-panel rounded-xl ring-0 border border-border/60">
+          <CardHeader className="flex-row items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="text-sm">Requests &amp; cost trend</CardTitle>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-sm bg-[color:var(--chart-1)]" />
+                  Requests
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-sm bg-[color:var(--chart-2)]" />
+                  Cost
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {chartData.length ? (
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-auto h-56 w-full sm:h-64"
+              >
+                <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 8 }}>
+                  <defs>
+                    <linearGradient id="poolReq" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-requests)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--color-requests)" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="poolCost" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-cost)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="var(--color-cost)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={16}
+                  />
+                  <YAxis
+                    yAxisId="requests"
+                    tickLine={false}
+                    axisLine={false}
+                    width={36}
+                    tickFormatter={(v) => fmt(v)}
+                  />
+                  <YAxis yAxisId="cost" orientation="right" hide />
+                  <ChartTooltip
+                    cursor={{ stroke: 'var(--border)' }}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(_, payload) =>
+                          payload?.[0]?.payload?.dateKey || ''
+                        }
+                      />
+                    }
+                  />
+                  <Area
+                    yAxisId="requests"
+                    dataKey="requests"
+                    type="monotone"
+                    stroke="var(--color-requests)"
+                    strokeWidth={2}
+                    fill="url(#poolReq)"
+                  />
+                  <Area
+                    yAxisId="cost"
+                    dataKey="cost"
+                    type="monotone"
+                    stroke="var(--color-cost)"
+                    strokeWidth={2}
+                    fill="url(#poolCost)"
+                  />
+                </AreaChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+                No usage data yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Models */}
+      <section className="mb-8">
+        <SectionHeading title="Available Models" meta={`${models.length} models`} />
+        {models.length ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {models.map((m, i) => (
+              <Card
+                key={i}
+                size="sm"
+                className="pool-model-card gap-0 rounded-xl ring-0 border border-border/60 py-0"
+              >
+                <CardContent className="flex flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0 truncate font-mono text-sm font-medium text-foreground">
+                      {m.id}
+                    </span>
+                    <span className="shrink-0 text-[0.625rem] uppercase tracking-wider text-muted-foreground">
+                      {m.owned_by}
+                    </span>
                   </div>
-                );
-              });
-            })()}
-          </div>
-          <div style={{ display: 'flex', gap: 4, marginTop: '0.5rem', minWidth: 400 }}>
-            {[...usageDaily].reverse().map((d, i) => (
-              <div key={i} style={{
-                flex: 1, minWidth: 12, textAlign: 'center',
-                fontSize: '0.625rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)',
-              }}>{d.dateKey.slice(5)}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <CapTag icon={Eye} label="Vision" active={m.vision} />
+                    <CapTag icon={Wrench} label="Tools" active={m.tools} />
+                    <CapTag icon={Brain} label="Reasoning" active={m.reasoning} />
+                  </div>
+                  <div className="flex gap-4 font-mono text-[0.6875rem] tabular-nums text-muted-foreground">
+                    <span>
+                      <span className="text-foreground/80">ctx</span> {fmtCtx(m.contextWindow)}
+                    </span>
+                    <span>
+                      <span className="text-foreground/80">max</span> {fmtCtx(m.maxOutput)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
+        ) : (
+          <Card className="pool-panel rounded-xl ring-0 border border-border/60 py-0">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No models available
+            </CardContent>
+          </Card>
+        )}
       </section>
 
       {/* Recent requests */}
-      <section style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-secondary)' }}>RECENT REQUESTS</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{usageRecent.length} recent</span>
-        </div>
-        <div style={{
-          background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-          borderRadius: 'var(--radius)', overflow: 'hidden',
-        }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-              <thead>
-                <tr>
-                  {['Time', 'Model', 'Provider', 'Prompt', 'Completion', 'Cached', 'Cost', 'Status'].map(h => (
-                    <th key={h} style={{
-                      textAlign: 'left', padding: '0.625rem 1rem', fontWeight: 500,
-                      fontSize: '0.6875rem', letterSpacing: '0.03em', textTransform: 'uppercase',
-                      color: 'var(--ink-3)', borderBottom: '1px solid var(--card-border)', whiteSpace: 'nowrap',
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {usageRecent.map((r, i) => (
-                  <tr key={i} style={{ transition: 'background-color 100ms' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{fmtTime(r.timestamp)}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{r.model || '—'}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}>{r.provider || '—'}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.promptTokens)}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.completionTokens)}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.cachedTokens)}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>{fmtCost(r.cost)}</td>
-                    <td style={{ padding: '0.625rem 1rem', borderBottom: '1px solid var(--card-border)', color: r.status === 'ok' ? '#34d399' : '#f87171', fontWeight: 500 }}>{r.status === 'ok' ? 'OK' : r.status}</td>
+      <section>
+        <SectionHeading title="Recent Requests" meta={`${usageRecent.length} recent`} />
+        {usageRecent.length ? (
+          <Card className="pool-panel overflow-hidden rounded-xl ring-0 border border-border/60 py-0">
+            {/* Desktop table */}
+            <div className="pool-desktop-table overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60">
+                    {['Time', 'Model', 'Provider', 'Prompt', 'Completion', 'Cached', 'Cost', 'Status'].map((h) => (
+                      <th
+                        key={h}
+                        className="whitespace-nowrap px-4 py-2.5 text-left text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {usageRecent.map((r, i) => (
+                    <tr
+                      key={i}
+                      className="border-b border-border/40 last:border-0 transition-colors hover:bg-muted/40"
+                    >
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-muted-foreground">
+                        {fmtTime(r.timestamp)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-foreground">
+                        {r.model || '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{r.provider || '—'}</td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-muted-foreground">
+                        {fmt(r.promptTokens)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-muted-foreground">
+                        {fmt(r.completionTokens)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-muted-foreground/70">
+                        {fmt(r.cachedTokens)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-muted-foreground">
+                        {fmtCost(r.cost)}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <StatusBadge status={r.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="pool-mobile-requests gap-0">
+              {usageRecent.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col gap-2 border-b border-border/40 p-4 last:border-0"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate font-mono text-xs font-medium text-foreground">
+                      {r.model || '—'}
+                    </span>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{r.provider || '—'}</span>
+                    <span className="font-mono">{fmtTime(r.timestamp)}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 border-t border-border/40 pt-2 font-mono text-[0.6875rem] tabular-nums">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground/60">prompt</span>
+                      <span className="text-foreground/90">{fmt(r.promptTokens)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground/60">compl</span>
+                      <span className="text-foreground/90">{fmt(r.completionTokens)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground/60">cached</span>
+                      <span className="text-foreground/90">{fmt(r.cachedTokens)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground/60">cost</span>
+                      <span className="text-foreground/90">{fmtCost(r.cost)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <Card className="pool-panel rounded-xl ring-0 border border-border/60 py-0">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No recent requests
+            </CardContent>
+          </Card>
+        )}
       </section>
     </div>
-  );
+  )
 }

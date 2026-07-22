@@ -41,6 +41,13 @@
   --popover-foreground: oklch(0.97 0 0);
   --accent: oklch(0.28 0 0);
   --accent-foreground: oklch(0.97 0 0);
+
+  /* Chart palette (limited, theme-matched) */
+  --chart-1: oklch(0.7 0.13 215);
+  --chart-2: oklch(0.78 0.13 85);
+  --chart-3: oklch(0.72 0.09 160);
+  --chart-4: oklch(0.68 0.16 25);
+  --chart-5: oklch(0.6 0.02 260);
 }
 
 @theme inline {
@@ -65,6 +72,11 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
 }
@@ -2953,4 +2965,90 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .intro-logo-core i { animation: none; }
   .cinematic-intro *, .cinematic-intro *::before, .cinematic-intro *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Pool dashboard */
+.pool-page {
+  isolation: isolate;
+}
+
+.pool-page::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 280px;
+  border-bottom: 1px solid color-mix(in oklch, var(--foreground) 5%, transparent);
+  background-image: linear-gradient(color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklch, var(--foreground) 3%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.pool-live-dot {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--chart-3) 12%, transparent);
+  animation: pool-live 2.2s ease-in-out infinite;
+}
+
+.pool-kpi-card,
+.pool-model-card,
+.pool-panel {
+  background: color-mix(in oklch, var(--card) 84%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.pool-kpi-card {
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.pool-kpi-card:hover {
+  border-color: color-mix(in oklch, var(--chart-1) 28%, var(--border));
+  transform: translateY(-2px);
+}
+
+.pool-model-card {
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.pool-model-card:hover {
+  border-color: color-mix(in oklch, var(--foreground) 18%, transparent);
+  background: color-mix(in oklch, var(--muted) 72%, transparent);
+}
+
+.pool-mobile-requests {
+  display: none;
+}
+
+@keyframes pool-live {
+  50% { opacity: 0.55; }
+}
+
+@media (max-width: 700px) {
+  .pool-page::before {
+    height: 220px;
+    background-size: 24px 24px;
+  }
+
+  .pool-desktop-table {
+    display: none;
+  }
+
+  .pool-mobile-requests {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pool-live-dot {
+    animation: none;
+  }
+
+  .pool-kpi-card,
+  .pool-model-card {
+    transition: none;
+  }
+
+  .pool-kpi-card:hover {
+    transform: none;
+  }
 }
