@@ -102,9 +102,32 @@ export default function WelcomeSplash({ onComplete }) {
       <AnimatePresence mode="wait">
         {phase === 'opening' && (
           <motion.div className="intro-opening" key="opening" exit={{ opacity: 0, scale: 1.08 }}>
-            <motion.div className="intro-logo-core" initial={{ opacity: 0, scale: 0.65 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
-              <img src="/welcome-logo.png" alt="KryptonCode" />
-              <i aria-hidden="true" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              style={{ position: 'relative', width: '140px', height: '140px' }}
+            >
+              {/* Static pure logo underneath */}
+              <img
+                src="/welcome-logo.png"
+                alt="KryptonCode"
+                style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, objectFit: 'contain' }}
+              />
+              {/* Animated chrome shimmer masked to the logo shape */}
+              <div
+                className="fx-chrome-logo"
+                aria-hidden="true"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  WebkitMaskImage: 'url(/welcome-logo.png)',
+                  maskImage: 'url(/welcome-logo.png)',
+                }}
+              />
             </motion.div>
           </motion.div>
         )}
