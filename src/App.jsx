@@ -18,7 +18,7 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showSplash, setShowSplash] = useState(() => window.localStorage.getItem('krypton_intro_v2') !== 'complete');
+  const [showSplash, setShowSplash] = useState(true);
   const { t } = useLanguage();
 
   const closeMenu = () => setIsMobileMenuOpen(false);
