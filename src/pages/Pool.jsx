@@ -191,17 +191,17 @@ export default function Pool() {
           </p>
         </div>
         <div className="pool-header-right">
-          <span className="pool-live">
+          <span className="pool-live-pill">
             <span className="pool-live-dot" />
             Live · {lastUpdated || '—'}
           </span>
           <button
-            className="pool-btn pool-btn--icon"
+            className="pool-icon-btn"
             onClick={loadData}
             disabled={refreshing}
             aria-label="Refresh"
           >
-            <RefreshCw size={14} strokeWidth={1.5} className={refreshing ? 'pool-spin' : ''} />
+            <RefreshCw size={15} strokeWidth={1.5} className={refreshing ? 'pool-spin' : ''} />
           </button>
         </div>
       </header>
