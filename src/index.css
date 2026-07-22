@@ -2688,3 +2688,102 @@ button:focus-visible {
     font-size: clamp(1.55rem, 8vw, 2.15rem);
   }
 }
+
+/* Desktop layout system: keep primary surfaces aligned to one 1200px shell. */
+@media (min-width: 1024px) {
+  .app-container {
+    width: min(100%, 1248px);
+    max-width: none;
+    padding: 24px;
+  }
+
+  .navbar {
+    width: 100%;
+    max-width: 1200px;
+    min-height: 64px;
+    margin: 12px auto 0;
+  }
+
+  .navbar-scrolled {
+    max-width: 1040px;
+  }
+
+  .hero-section {
+    min-height: 680px;
+    padding: 88px 48px 104px;
+  }
+
+  .hero-copy {
+    width: 100%;
+  }
+
+  .hero-title {
+    width: 100%;
+    max-width: 1040px;
+    margin-bottom: 24px;
+    font-size: clamp(4.25rem, 5.25vw, 4.75rem);
+    line-height: 1.02;
+  }
+
+  .hero-subtitle {
+    max-width: 620px;
+    margin-bottom: 36px;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-cta {
+    min-width: 210px;
+  }
+
+  .site-footer,
+  .products-page,
+  .product-detail-page {
+    width: 100%;
+    max-width: 1200px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .site-footer {
+    padding-top: 0;
+  }
+
+  .footer-main {
+    padding: 48px;
+  }
+
+  .footer-bottom {
+    padding: 18px 48px;
+  }
+
+  .products-page {
+    padding-top: 80px;
+  }
+
+  .products-intro {
+    padding: 44px 48px;
+  }
+
+  .products-intro h1 {
+    font-size: clamp(3.5rem, 5vw, 4.75rem);
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .community-hero {
+    min-height: 600px;
+    padding-top: 80px;
+    padding-bottom: 96px;
+  }
+
+  .community-hero .hero-title {
+    max-width: 900px;
+    font-size: clamp(3.75rem, 5vw, 4.5rem);
+  }
+}
