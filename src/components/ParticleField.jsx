@@ -2,71 +2,73 @@ import React, { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const COLS = 54;
-const ROWS = 30;
+const COLS = 68;
+const ROWS = 38;
+const damp = (current, target, speed, delta) => THREE.MathUtils.lerp(current, target, 1 - Math.exp(-speed * delta));
 
-function DotSurface({ timeline, reducedMotion }) {
-  const points = useRef();
-  const material = useRef();
+function DotRoom({ timeline, reducedMotion }) {
+  const points = useRef(null);
   const positions = useMemo(() => new Float32Array(COLS * ROWS * 3), []);
-  const sizes = useMemo(() => new Float32Array(COLS * ROWS), []);
-
-  useFrame(({ clock, pointer, camera }) => {
-    if (!points.current) return;
-    const time = clock.elapsedTime;
-    const scene = timeline.current.scene;
-    const local = timeline.current.local;
-    let index = 0;
-
+  const base = useMemo(() => {
+    const values = new Float32Array(COLS * ROWS * 3);
+    let i = 0;
     for (let row = 0; row < ROWS; row += 1) {
       for (let col = 0; col < COLS; col += 1) {
-        const x = (col - (COLS - 1) / 2) * 0.34;
-        const y = ((ROWS - 1) / 2 - row) * 0.34;
-        const distance = Math.hypot(x, y);
-        const wave = Math.sin(distance * 1.15 - time * 1.2) * 0.42;
-        const ribbon = Math.sin(x * 0.75 + time * 0.7) * Math.cos(y * 0.52 - time * 0.35) * 0.7;
-        const tunnel = -Math.exp(-distance * 0.22) * 4.2 + Math.sin(distance * 1.8 - time) * 0.22;
-        const zTargets = [wave, ribbon, tunnel];
-        const nextTarget = zTargets[Math.min(scene + 1, 2)];
-        const morph = THREE.MathUtils.smootherstep(local, 0.7, 1);
-        let z = THREE.MathUtils.lerp(zTargets[scene], nextTarget, morph);
-        if (!reducedMotion) z += (pointer.x * x + pointer.y * y) * 0.045;
-
-        positions[index * 3] = x;
-        positions[index * 3 + 1] = y;
-        positions[index * 3 + 2] = z;
-        sizes[index] = 3 + Math.max(0, z + 1.4) * 3.2 + Math.sin(time * 1.4 + index * 0.07) * 0.7;
-        index += 1;
+        values[i * 3] = (col - (COLS - 1) / 2) * 0.245;
+        values[i * 3 + 1] = ((ROWS - 1) / 2 - row) * 0.245;
+        values[i * 3 + 2] = -0.28 + Math.sin(col * 0.31) * 0.035;
+        i += 1;
       }
     }
+    return values;
+  }, []);
+  const sizes = useMemo(() => {
+    const values = new Float32Array(COLS * ROWS);
+    for (let i = 0; i < values.length; i += 1) values[i] = 1.35 + ((i * 17) % 9) * 0.035;
+    return values;
+  }, []);
+  const pointer = useRef(new THREE.Vector2(20, 20));
+  const cameraTarget = useRef(new THREE.Vector3());
 
+  useFrame((state, delta) => {
+    if (!points.current) return;
+    const progress = timeline.current.progress || 0;
+    const activePointer = state.pointer;
+    pointer.current.x = damp(pointer.current.x, activePointer.x * 8.2, 3.2, delta);
+    pointer.current.y = damp(pointer.current.y, activePointer.y * 4.6, 3.2, delta);
+
+    for (let i = 0; i < COLS * ROWS; i += 1) {
+      const x = base[i * 3];
+      const y = base[i * 3 + 1];
+      const distance = Math.hypot(x - pointer.current.x, y - pointer.current.y);
+      const localPush = reducedMotion ? 0 : Math.exp(-distance * distance * 0.72) * 0.7;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = damp(positions[i * 3 + 2] || base[i * 3 + 2], base[i * 3 + 2] - localPush, 5, delta);
+    }
     points.current.geometry.attributes.position.needsUpdate = true;
-    points.current.geometry.attributes.aSize.needsUpdate = true;
-    points.current.rotation.z = Math.sin(time * 0.12) * 0.035;
-    camera.position.z = 10.5 - scene * 0.65 - local * 0.25;
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, pointer.x * 0.32, 0.025);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, pointer.y * 0.2, 0.025);
-    camera.lookAt(0, 0, -0.5);
-  });
 
-  const vertexShader = `
-    attribute float aSize;
-    varying float vDepth;
-    void main() {
-      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-      vDepth = clamp((position.z + 4.0) / 7.0, 0.0, 1.0);
-      gl_PointSize = aSize * (18.0 / -mvPosition.z);
-      gl_Position = projectionMatrix * mvPosition;
+    let x = 0;
+    let y = 0;
+    let z = 10.8;
+    let tx = 0;
+    if (progress < 0.34) {
+      const p = THREE.MathUtils.smootherstep(progress / 0.34, 0, 1);
+      x = p * 3.4; z = 10.8 - p * 0.8; tx = 1.25 * p;
+    } else if (progress < 0.67) {
+      const p = THREE.MathUtils.smootherstep((progress - 0.34) / 0.33, 0, 1);
+      x = 3.4 - p * 5.8; y = Math.sin(p * Math.PI) * 0.55; z = 10 - p * 1.25; tx = 1.25 - p * 2.1;
+    } else {
+      const p = THREE.MathUtils.smootherstep((progress - 0.67) / 0.33, 0, 1);
+      x = -2.4 + p * 2.4; z = 8.75 - p * 4.1; tx = -0.85 + p * 0.85;
     }
-  `;
-  const fragmentShader = `
-    varying float vDepth;
-    void main() {
-      vec2 uv = gl_PointCoord - 0.5;
-      float circle = 1.0 - smoothstep(0.38, 0.5, length(uv));
-      gl_FragColor = vec4(vec3(0.94 + vDepth * 0.06), circle * (0.38 + vDepth * 0.62));
-    }
-  `;
+    if (reducedMotion) { x = 0; y = 0; z = 10.5; tx = 0; }
+    state.camera.position.x = damp(state.camera.position.x, x, 2.4, delta);
+    state.camera.position.y = damp(state.camera.position.y, y, 2.4, delta);
+    state.camera.position.z = damp(state.camera.position.z, z, 2.4, delta);
+    cameraTarget.current.x = damp(cameraTarget.current.x, tx, 2.4, delta);
+    state.camera.lookAt(cameraTarget.current.x, cameraTarget.current.y, -0.4);
+  });
 
   return (
     <points ref={points}>
@@ -74,7 +76,23 @@ function DotSurface({ timeline, reducedMotion }) {
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
         <bufferAttribute attach="attributes-aSize" args={[sizes, 1]} />
       </bufferGeometry>
-      <shaderMaterial ref={material} vertexShader={vertexShader} fragmentShader={fragmentShader} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      <shaderMaterial transparent depthWrite={false} vertexShader={`
+        attribute float aSize;
+        varying float vAlpha;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vAlpha = clamp(1.25 - (-mv.z * 0.045), .35, .9);
+          gl_PointSize = aSize * (13.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `} fragmentShader={`
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - .5);
+          float dot = 1.0 - smoothstep(.32, .5, d);
+          gl_FragColor = vec4(vec3(.96), dot * vAlpha);
+        }
+      `} />
     </points>
   );
 }
@@ -82,8 +100,8 @@ function DotSurface({ timeline, reducedMotion }) {
 export default function ParticleField({ timeline, reducedMotion = false }) {
   return (
     <div className="intro-particle-canvas" aria-hidden="true">
-      <Canvas camera={{ position: [0, 0, 10.5], fov: 54 }} dpr={[1, 1.5]} gl={{ antialias: false, alpha: true }}>
-        <DotSurface timeline={timeline} reducedMotion={reducedMotion} />
+      <Canvas camera={{ position: [0, 0, 10.8], fov: 48 }} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}>
+        <DotRoom timeline={timeline} reducedMotion={reducedMotion} />
       </Canvas>
     </div>
   );
