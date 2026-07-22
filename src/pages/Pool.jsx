@@ -164,29 +164,115 @@ function SectionHeading({ title, meta }) {
 
 function PoolSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-9 rounded-lg" />
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-3 w-40" />
+    <div
+      className="pool-page relative min-h-screen"
+      aria-busy="true"
+      aria-label="Loading pool statistics"
+    >
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-24 pt-8 sm:px-6 sm:pt-10">
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Skeleton className="size-10 shrink-0 rounded-lg" />
+            <div className="flex min-w-0 flex-col gap-2">
+              <Skeleton className="h-5 w-32 sm:w-40" />
+              <Skeleton className="h-3 w-44 max-w-full sm:w-56" />
+            </div>
           </div>
-        </div>
-        <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-20 shrink-0 rounded-md sm:w-24" />
+        </header>
+
+        <Card className="pool-panel gap-0 rounded-xl border-border/60 py-0 ring-0">
+          <CardContent className="flex items-center justify-between gap-4 p-3 sm:p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Skeleton className="size-8 shrink-0 rounded-md" />
+              <div className="flex min-w-0 flex-col gap-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-36 max-w-full sm:w-48" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-20 shrink-0 rounded-md sm:w-32" />
+          </CardContent>
+        </Card>
+
+        <section aria-label="Loading overview statistics">
+          <Skeleton className="mb-3 h-3 w-20" />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="pool-kpi-card gap-0 rounded-xl border-border/60 py-0 ring-0">
+                <CardContent className="flex h-28 flex-col justify-between p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <Skeleton className="h-3 w-16 sm:w-20" />
+                    <Skeleton className="size-7 shrink-0 rounded-md" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-6 w-20 sm:w-24" />
+                    <Skeleton className="h-3 w-14 sm:w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section aria-label="Loading usage chart">
+          <Skeleton className="mb-3 h-3 w-24" />
+          <Card className="pool-panel gap-0 rounded-xl border-border/60 py-0 ring-0">
+            <CardHeader className="flex-row items-center justify-between gap-4 border-b border-border/50 p-4">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+              <Skeleton className="h-6 w-16 rounded-md" />
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="flex h-52 items-end gap-2 sm:h-60 sm:gap-3">
+                {[34, 52, 42, 68, 48, 78, 58, 88, 64, 74, 54, 82].map((height, i) => (
+                  <Skeleton
+                    key={i}
+                    className="min-w-0 flex-1 rounded-t-sm rounded-b-none"
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 flex justify-between">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-2.5 w-8" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section aria-label="Loading available models">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-14" />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="pool-model-card gap-0 rounded-xl border-border/60 py-0 ring-0">
+                <CardContent className="flex h-32 flex-col justify-between p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-5 w-12 rounded-md" />
+                  </div>
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-14 rounded-md" />
+                      <Skeleton className="h-5 w-14 rounded-md" />
+                    </div>
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
       </div>
-      <Skeleton className="mb-6 h-14 w-full rounded-xl" />
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
-        ))}
-      </div>
-      <Skeleton className="mb-6 h-72 w-full rounded-xl" />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-xl" />
-        ))}
-      </div>
+      <span className="sr-only">Loading pool data</span>
     </div>
   )
 }
