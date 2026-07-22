@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createCinematicAudio } from '../lib/cinematicAudio';
-import ParticleField from './ParticleField';
+
+const ParticleField = lazy(() => import('./ParticleField'));
 
 const sceneKeys = ['welcome', 'systems', 'ship'];
 const SCENE_DURATION = 7200;
@@ -91,7 +92,9 @@ export default function WelcomeSplash({ onComplete }) {
   const key = sceneKeys[scene];
   return (
     <motion.section className="cinematic-intro intro-film" animate={{ opacity: leaving ? 0 : 1, scale: leaving ? 1.08 : 1 }} transition={{ duration: 1.15, ease: [0.76, 0, 0.24, 1] }} aria-label={t('intro.label')}>
-      <ParticleField timeline={timeline} reducedMotion={reducedMotion} />
+      <Suspense fallback={null}>
+        <ParticleField timeline={timeline} reducedMotion={reducedMotion} />
+      </Suspense>
       <div className="intro-vignette" aria-hidden="true" />
       <div className="intro-film-grain" aria-hidden="true" />
 

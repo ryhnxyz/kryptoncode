@@ -56,7 +56,7 @@ function AppContent() {
           transition: 'opacity 0.8s ease-in',
         }}
         aria-hidden={showSplash}
-        inert={showSplash ? '' : undefined}
+        inert={showSplash || undefined}
       >
         {/* Navbar */}
         <nav
