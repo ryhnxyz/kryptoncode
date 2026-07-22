@@ -1,139 +1,90 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 
-const TAU = Math.PI * 2;
+const COLS = 54;
+const ROWS = 30;
 
-function targetFor(scene, index, count, width, height) {
-  const t = index / count;
-  if (scene === 0) {
-    const ring = index % 4;
-    const angle = t * TAU * 5 + ring * 0.3;
-    const radius = Math.min(width, height) * (0.12 + ring * 0.035);
-    return { x: width * 0.5 + Math.cos(angle) * radius, y: height * 0.48 + Math.sin(angle) * radius };
-  }
-  if (scene === 1) {
-    const centers = [[0.28, 0.43], [0.53, 0.3], [0.72, 0.58]];
-    const center = centers[index % centers.length];
-    const angle = t * TAU * 13;
-    const radius = 18 + ((index * 17) % 120);
-    return { x: width * center[0] + Math.cos(angle) * radius, y: height * center[1] + Math.sin(angle) * radius * 0.62 };
-  }
-  const lane = index % 5;
-  return {
-    x: width * (0.14 + t * 0.74),
-    y: height * 0.48 + Math.sin(t * TAU * 3 + lane) * (34 + lane * 8),
-  };
+function DotSurface({ timeline, reducedMotion }) {
+  const points = useRef();
+  const material = useRef();
+  const positions = useMemo(() => new Float32Array(COLS * ROWS * 3), []);
+  const sizes = useMemo(() => new Float32Array(COLS * ROWS), []);
+
+  useFrame(({ clock, pointer, camera }) => {
+    if (!points.current) return;
+    const time = clock.elapsedTime;
+    const scene = timeline.current.scene;
+    const local = timeline.current.local;
+    let index = 0;
+
+    for (let row = 0; row < ROWS; row += 1) {
+      for (let col = 0; col < COLS; col += 1) {
+        const x = (col - (COLS - 1) / 2) * 0.34;
+        const y = ((ROWS - 1) / 2 - row) * 0.34;
+        const distance = Math.hypot(x, y);
+        const wave = Math.sin(distance * 1.15 - time * 1.2) * 0.42;
+        const ribbon = Math.sin(x * 0.75 + time * 0.7) * Math.cos(y * 0.52 - time * 0.35) * 0.7;
+        const tunnel = -Math.exp(-distance * 0.22) * 4.2 + Math.sin(distance * 1.8 - time) * 0.22;
+        const zTargets = [wave, ribbon, tunnel];
+        const nextTarget = zTargets[Math.min(scene + 1, 2)];
+        const morph = THREE.MathUtils.smootherstep(local, 0.7, 1);
+        let z = THREE.MathUtils.lerp(zTargets[scene], nextTarget, morph);
+        if (!reducedMotion) z += (pointer.x * x + pointer.y * y) * 0.045;
+
+        positions[index * 3] = x;
+        positions[index * 3 + 1] = y;
+        positions[index * 3 + 2] = z;
+        sizes[index] = 3 + Math.max(0, z + 1.4) * 3.2 + Math.sin(time * 1.4 + index * 0.07) * 0.7;
+        index += 1;
+      }
+    }
+
+    points.current.geometry.attributes.position.needsUpdate = true;
+    points.current.geometry.attributes.aSize.needsUpdate = true;
+    points.current.rotation.z = Math.sin(time * 0.12) * 0.035;
+    camera.position.z = 10.5 - scene * 0.65 - local * 0.25;
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, pointer.x * 0.32, 0.025);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, pointer.y * 0.2, 0.025);
+    camera.lookAt(0, 0, -0.5);
+  });
+
+  const vertexShader = `
+    attribute float aSize;
+    varying float vDepth;
+    void main() {
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vDepth = clamp((position.z + 4.0) / 7.0, 0.0, 1.0);
+      gl_PointSize = aSize * (18.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+  const fragmentShader = `
+    varying float vDepth;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float circle = 1.0 - smoothstep(0.38, 0.5, length(uv));
+      gl_FragColor = vec4(vec3(0.94 + vDepth * 0.06), circle * (0.38 + vDepth * 0.62));
+    }
+  `;
+
+  return (
+    <points ref={points}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-aSize" args={[sizes, 1]} />
+      </bufferGeometry>
+      <shaderMaterial ref={material} vertexShader={vertexShader} fragmentShader={fragmentShader} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
 }
 
-export default function ParticleField({ scene, reducedMotion = false }) {
-  const canvasRef = useRef(null);
-  const sceneRef = useRef(scene);
-
-  useEffect(() => { sceneRef.current = scene; }, [scene]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d', { alpha: true });
-    const pointer = { x: 0, y: 0, active: false };
-    let frame = 0;
-    let particles = [];
-    let width = 0;
-    let height = 0;
-    let running = true;
-
-    const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = reducedMotion ? 120 : Math.min(760, Math.max(300, Math.floor(width * height / 2600)));
-      particles = Array.from({ length: count }, (_, index) => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: 0,
-        vy: 0,
-        size: 0.7 + Math.random() * 1.7,
-        phase: Math.random() * TAU,
-        index,
-      }));
-    };
-
-    const onPointerMove = (event) => {
-      pointer.x = event.clientX;
-      pointer.y = event.clientY;
-      pointer.active = true;
-    };
-    const onPointerLeave = () => { pointer.active = false; };
-    const onVisibility = () => { running = !document.hidden; if (running) frame = requestAnimationFrame(draw); };
-
-    const draw = (time = 0) => {
-      if (!running) return;
-      context.clearRect(0, 0, width, height);
-      const activeScene = Math.max(0, sceneRef.current);
-      const gather = sceneRef.current >= 0;
-
-      particles.forEach((particle) => {
-        const target = targetFor(activeScene, particle.index, particles.length, width, height);
-        if (gather && !reducedMotion) {
-          particle.vx += (target.x - particle.x) * 0.0015;
-          particle.vy += (target.y - particle.y) * 0.0015;
-        } else if (gather) {
-          particle.x += (target.x - particle.x) * 0.08;
-          particle.y += (target.y - particle.y) * 0.08;
-        } else {
-          particle.vx += Math.cos(particle.phase + time * 0.0002) * 0.008;
-          particle.vy += Math.sin(particle.phase + time * 0.00016) * 0.008;
-        }
-
-        if (pointer.active && !reducedMotion) {
-          const dx = particle.x - pointer.x;
-          const dy = particle.y - pointer.y;
-          const distance = Math.max(30, Math.hypot(dx, dy));
-          if (distance < 190) {
-            const force = (190 - distance) / 190;
-            particle.vx += (dx / distance) * force * 0.26;
-            particle.vy += (dy / distance) * force * 0.26;
-          }
-        }
-
-        particle.vx *= 0.965;
-        particle.vy *= 0.965;
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        if (particle.x < -20) particle.x = width + 20;
-        if (particle.x > width + 20) particle.x = -20;
-        if (particle.y < -20) particle.y = height + 20;
-        if (particle.y > height + 20) particle.y = -20;
-
-        const pulse = 0.45 + Math.sin(time * 0.0015 + particle.phase) * 0.22;
-        context.beginPath();
-        context.fillStyle = `rgba(220, 228, 238, ${pulse})`;
-        context.arc(particle.x, particle.y, particle.size, 0, TAU);
-        context.fill();
-      });
-
-      frame = requestAnimationFrame(draw);
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    document.addEventListener('mouseleave', onPointerLeave);
-    document.addEventListener('visibilitychange', onVisibility);
-    frame = requestAnimationFrame(draw);
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('pointermove', onPointerMove);
-      document.removeEventListener('mouseleave', onPointerLeave);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [reducedMotion]);
-
-  return <canvas ref={canvasRef} className="intro-particle-canvas" aria-hidden="true" />;
+export default function ParticleField({ timeline, reducedMotion = false }) {
+  return (
+    <div className="intro-particle-canvas" aria-hidden="true">
+      <Canvas camera={{ position: [0, 0, 10.5], fov: 54 }} dpr={[1, 1.5]} gl={{ antialias: false, alpha: true }}>
+        <DotSurface timeline={timeline} reducedMotion={reducedMotion} />
+      </Canvas>
+    </div>
+  );
 }
