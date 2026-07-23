@@ -165,9 +165,17 @@ export default function Pool() {
   }
 
   const stats = data?.stats || {}
-  const models = Array.isArray(data?.models) ? data.models : []
+  const models = (Array.isArray(data?.models) ? data.models : []).filter((m) => {
+    const id = String(m?.id || m?.apiName || '').toLowerCase()
+    const owned = String(m?.owned_by || m?.provider || '').toLowerCase()
+    return id.includes('grok') || owned.includes('grok') || owned === 'gcli' || owned === 'xai'
+  })
   const usageDaily = data?.usageDaily || []
-  const usageRecent = data?.usageRecent || []
+  const usageRecent = (data?.usageRecent || []).filter((r) => {
+    const p = String(r?.provider || '').toLowerCase()
+    const m = String(r?.model || '').toLowerCase()
+    return p.includes('grok') || m.includes('grok')
+  })
   const lifetime = stats.lifetime || {}
   const today = stats.today || {}
 
@@ -341,7 +349,7 @@ export default function Pool() {
               <div key={i} className="pool-card pool-model">
                 <div className="pool-model-head">
                   <span className="pool-model-id">{m.id}</span>
-                  <span className="pool-model-owner">{m.owned_by}</span>
+                  <span className="pool-model-owner">{m.owned_by || m.provider || 'grok'}</span>
                 </div>
                 <div className="pool-model-caps">
                   <CapTag icon={Eye} label="Vision" active={m.vision} />
@@ -385,7 +393,7 @@ export default function Pool() {
                     <tr key={i}>
                       <td className="pool-mono">{fmtTime(r.timestamp)}</td>
                       <td className="pool-mono">{r.model || '—'}</td>
-                      <td>{r.provider || '—'}</td>
+                      <td>{(r.provider || '').includes('grok') ? 'grok' : (r.provider || '—')}</td>
                       <td className="pool-mono">{fmt(r.promptTokens)}</td>
                       <td className="pool-mono">{fmt(r.completionTokens)}</td>
                       <td className="pool-mono pool-dim">{fmt(r.cachedTokens)}</td>
@@ -407,7 +415,7 @@ export default function Pool() {
                     <StatusBadge status={r.status} />
                   </div>
                   <div className="pool-mobile-card-mid">
-                    <span>{r.provider || '—'}</span>
+                    <span>{(r.provider || '').includes('grok') ? 'grok' : (r.provider || '—')}</span>
                     <span className="pool-mono">{fmtTime(r.timestamp)}</span>
                   </div>
                   <div className="pool-mobile-card-grid">
