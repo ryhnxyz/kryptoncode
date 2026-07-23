@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Wrench,
   Zap,
+  Gauge,
 } from 'lucide-react'
 import {
   Area,
@@ -103,6 +104,67 @@ function CopyButton({ text }) {
   )
 }
 
+
+function CapacityBar({ capacity }) {
+  if (!capacity) return null
+  const remaining = Number(capacity.remainingPct ?? 0)
+  const used = Number(capacity.usedPct ?? 0)
+  const total = Number(capacity.accountsTotal || 0)
+  const healthy = Number(capacity.accountsHealthy || 0)
+  const exhausted = Number(capacity.accountsExhausted || 0)
+  const tokensUsed = Number(capacity.tokensUsed || 0)
+  const tone =
+    remaining >= 60 ? 'good' : remaining >= 25 ? 'warn' : 'crit'
+  return (
+    <div className="pool-card pool-capacity">
+      <div className="pool-capacity-head">
+        <div>
+          <span className="pool-capacity-eyebrow">Pool capacity</span>
+          <h3 className="pool-capacity-title">Token pool remaining</h3>
+          <p className="pool-capacity-text">
+            Across all Grok accounts in 9router. Remaining % = healthy accounts still
+            with credits (402 out-of-credits = depleted).
+          </p>
+        </div>
+        <div className={`pool-capacity-pct pool-capacity-pct--${tone}`}>
+          <Gauge size={18} strokeWidth={1.5} />
+          <span>{remaining.toFixed(remaining % 1 === 0 ? 0 : 1)}%</span>
+        </div>
+      </div>
+
+      <div className="pool-capacity-bar" role="progressbar" aria-valuenow={remaining} aria-valuemin={0} aria-valuemax={100}>
+        <div
+          className={`pool-capacity-fill pool-capacity-fill--${tone}`}
+          style={{ width: `${Math.max(0, Math.min(100, remaining))}%` }}
+        />
+      </div>
+
+      <div className="pool-capacity-meta">
+        <div>
+          <span className="pool-capacity-meta-label">Healthy</span>
+          <span className="pool-capacity-meta-value pool-mono">
+            {healthy}/{total}
+          </span>
+        </div>
+        <div>
+          <span className="pool-capacity-meta-label">Exhausted</span>
+          <span className="pool-capacity-meta-value pool-mono">
+            {exhausted} · {used.toFixed(used % 1 === 0 ? 0 : 1)}%
+          </span>
+        </div>
+        <div>
+          <span className="pool-capacity-meta-label">Tokens used</span>
+          <span className="pool-capacity-meta-value pool-mono">{fmt(tokensUsed)}</span>
+        </div>
+        <div>
+          <span className="pool-capacity-meta-label">Grok requests</span>
+          <span className="pool-capacity-meta-value pool-mono">{fmt(capacity.requests || 0)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SectionHeading({ title, meta }) {
   return (
     <div className="pool-section-head">
@@ -186,6 +248,7 @@ export default function Pool() {
   })
   const lifetime = stats.lifetime || {}
   const today = stats.today || {}
+  const capacity = data?.capacity || null
 
   const chartData = [...usageDaily].reverse().map((d) => ({
     date: (d.dateKey || '').slice(5),
@@ -272,6 +335,9 @@ export default function Pool() {
         </div>
       </div>
 
+      {/* Capacity remaining across all grok accounts */}
+      <CapacityBar capacity={capacity} />
+
       {/* KPIs */}
       <div className="pool-kpi-grid">
         <KpiCard
@@ -290,13 +356,27 @@ export default function Pool() {
           icon={Boxes}
           label="Models"
           value={String(models.length)}
-          sub="powered by KryptonCode"
+          sub={
+            capacity
+              ? `${capacity.accountsHealthy || 0}/${capacity.accountsTotal || 0} accounts healthy`
+              : 'powered by KryptonCode'
+          }
         />
         <KpiCard
           icon={DollarSign}
           label="Lifetime Cost"
           value={fmtCost(lifetime.cost)}
           sub={`${fmt(lifetime.completionTokens)} completion tokens`}
+        />
+        <KpiCard
+          icon={Gauge}
+          label="Pool remaining"
+          value={capacity ? `${Number(capacity.remainingPct || 0).toFixed(Number(capacity.remainingPct || 0) % 1 === 0 ? 0 : 1)}%` : '—'}
+          sub={
+            capacity
+              ? `${fmt(capacity.tokensUsed || 0)} tokens used · ${capacity.accountsExhausted || 0} exhausted`
+              : 'account health'
+          }
         />
       </div>
 

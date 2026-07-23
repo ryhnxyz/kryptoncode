@@ -3682,3 +3682,112 @@ button:focus-visible {
     min-width: 0;
   }
 }
+
+/* --- Pool capacity indicator --- */
+.pool-capacity {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.pool-capacity-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.pool-capacity-eyebrow {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3, #8b8b9a);
+  margin-bottom: 4px;
+  font-family: var(--font-mono, monospace);
+}
+.pool-capacity-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #f2f2f5);
+}
+.pool-capacity-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3, #8b8b9a);
+  max-width: 48ch;
+}
+.pool-capacity-pct {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--card-border, #2a2a32);
+}
+.pool-capacity-pct--good { color: #4ade80; }
+.pool-capacity-pct--warn { color: #fbbf24; }
+.pool-capacity-pct--crit { color: #f87171; }
+.pool-capacity-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  border: 1px solid var(--card-border, #2a2a32);
+}
+.pool-capacity-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.pool-capacity-fill--good {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+.pool-capacity-fill--warn {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+.pool-capacity-fill--crit {
+  background: linear-gradient(90deg, #dc2626, #f87171);
+}
+.pool-capacity-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.pool-capacity-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--card-border, #2a2a32);
+}
+.pool-capacity-meta-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3, #8b8b9a);
+  font-family: var(--font-mono, monospace);
+}
+.pool-capacity-meta-value {
+  font-size: 13px;
+  color: var(--text-primary, #f2f2f5);
+}
+@media (max-width: 720px) {
+  .pool-capacity-head { flex-direction: column; }
+  .pool-capacity-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pool-capacity-pct { font-size: 22px; }
+}
+/* 5 KPI cards: wrap cleanly */
+.pool-kpi-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
