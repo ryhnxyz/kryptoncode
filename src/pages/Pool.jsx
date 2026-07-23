@@ -110,7 +110,11 @@ function CopyButton({ text, label }) {
 function CapacityBar({ capacity }) {
   if (!capacity) return null
   const remaining = Number(capacity.remainingPct ?? 0)
-  const used = Number(capacity.usedPct ?? 0)
+  const used = Number(
+    capacity.usedPct != null
+      ? capacity.usedPct
+      : Math.max(0, Math.min(100, 100 - Number(capacity.remainingPct ?? 0))),
+  )
   const total = Number(capacity.accountsTotal || 0)
   const healthy = Number(capacity.accountsHealthy || 0)
   const exhausted = Number(capacity.accountsExhausted || 0)
@@ -124,7 +128,7 @@ function CapacityBar({ capacity }) {
           <span className="pool-capacity-eyebrow">Pool capacity</span>
           <h3 className="pool-capacity-title">Token remaining</h3>
           <p className="pool-capacity-text">
-            All <strong>grok-cli</strong> accounts · remaining = healthy with credits
+            All <strong>grok-cli</strong> accounts · bar fills as accounts run out of credits
           </p>
         </div>
         <div className={`pool-capacity-pct pool-capacity-pct--${tone}`}>
@@ -133,10 +137,10 @@ function CapacityBar({ capacity }) {
         </div>
       </div>
 
-      <div className="pool-capacity-bar" role="progressbar" aria-valuenow={remaining} aria-valuemin={0} aria-valuemax={100}>
+      <div className="pool-capacity-bar" role="progressbar" aria-valuenow={used} aria-valuemin={0} aria-valuemax={100}>
         <div
           className={`pool-capacity-fill pool-capacity-fill--${tone}`}
-          style={{ width: `${Math.max(0, Math.min(100, remaining))}%` }}
+          style={{ width: `${Math.max(0, Math.min(100, used))}%` }}
         />
       </div>
 
