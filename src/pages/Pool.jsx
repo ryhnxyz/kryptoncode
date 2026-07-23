@@ -167,8 +167,16 @@ export default function Pool() {
   const stats = data?.stats || {}
   const models = (Array.isArray(data?.models) ? data.models : []).filter((m) => {
     const id = String(m?.id || m?.apiName || '').toLowerCase()
-    const owned = String(m?.owned_by || m?.provider || '').toLowerCase()
-    return id.includes('grok') || owned.includes('grok') || owned === 'gcli' || owned === 'xai'
+    const owned = String(m?.owned_by || '').toLowerCase()
+    const prov = String(m?.provider || '').toLowerCase()
+    return (
+      id.includes('grok') ||
+      owned.includes('grok') ||
+      owned === 'krypton' ||
+      prov.includes('grok') ||
+      prov === 'gcli' ||
+      prov === 'xai'
+    )
   })
   const usageDaily = data?.usageDaily || []
   const usageRecent = (data?.usageRecent || []).filter((r) => {
@@ -349,7 +357,7 @@ export default function Pool() {
               <div key={i} className="pool-card pool-model">
                 <div className="pool-model-head">
                   <span className="pool-model-id">{m.id}</span>
-                  <span className="pool-model-owner">{m.owned_by || m.provider || 'grok'}</span>
+                  <span className="pool-model-owner">{m.owned_by || 'krypton'}</span>
                 </div>
                 <div className="pool-model-caps">
                   <CapTag icon={Eye} label="Vision" active={m.vision} />
@@ -393,7 +401,7 @@ export default function Pool() {
                     <tr key={i}>
                       <td className="pool-mono">{fmtTime(r.timestamp)}</td>
                       <td className="pool-mono">{r.model || '—'}</td>
-                      <td>{(r.provider || '').includes('grok') ? 'grok' : (r.provider || '—')}</td>
+                      <td>{(r.provider || '').includes('grok') || (r.model || '').includes('grok') ? 'grok' : (r.provider || '—')}</td>
                       <td className="pool-mono">{fmt(r.promptTokens)}</td>
                       <td className="pool-mono">{fmt(r.completionTokens)}</td>
                       <td className="pool-mono pool-dim">{fmt(r.cachedTokens)}</td>
