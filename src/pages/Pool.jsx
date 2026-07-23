@@ -87,11 +87,13 @@ function StatusBadge({ status }) {
   )
 }
 
-function CopyButton({ text }) {
+function CopyButton({ text, label }) {
   const [copied, setCopied] = useState(false)
+  const shown = label || text
   return (
     <button
       className="pool-btn pool-btn--mono"
+      title={text}
       onClick={() => {
         navigator.clipboard?.writeText(text)
         setCopied(true)
@@ -99,7 +101,7 @@ function CopyButton({ text }) {
       }}
     >
       {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.5} />}
-      <span>{copied ? 'Copied!' : text}</span>
+      <span>{copied ? 'Copied!' : shown}</span>
     </button>
   )
 }
@@ -120,10 +122,9 @@ function CapacityBar({ capacity }) {
       <div className="pool-capacity-head">
         <div>
           <span className="pool-capacity-eyebrow">Pool capacity</span>
-          <h3 className="pool-capacity-title">Token pool remaining</h3>
+          <h3 className="pool-capacity-title">Token remaining</h3>
           <p className="pool-capacity-text">
-            Across all Grok accounts in 9router. Remaining % = healthy accounts still
-            with credits (402 out-of-credits = depleted).
+            All <strong>grok-cli</strong> accounts · remaining = healthy with credits
           </p>
         </div>
         <div className={`pool-capacity-pct pool-capacity-pct--${tone}`}>
@@ -289,7 +290,7 @@ export default function Pool() {
       <div className="pool-card pool-conn">
         <div className="pool-conn-item">
           <span className="pool-conn-label">API Base URL</span>
-          <CopyButton text={CONNECT_URL} />
+          <CopyButton text={CONNECT_URL} label="base.kryptoncode.xyz/v1" />
         </div>
         <div className="pool-conn-divider" />
         <div className="pool-conn-item">
@@ -367,16 +368,6 @@ export default function Pool() {
           label="Lifetime Cost"
           value={fmtCost(lifetime.cost)}
           sub={`${fmt(lifetime.completionTokens)} completion tokens`}
-        />
-        <KpiCard
-          icon={Gauge}
-          label="Pool remaining"
-          value={capacity ? `${Number(capacity.remainingPct || 0).toFixed(Number(capacity.remainingPct || 0) % 1 === 0 ? 0 : 1)}%` : '—'}
-          sub={
-            capacity
-              ? `${fmt(capacity.tokensUsed || 0)} tokens used · ${capacity.accountsExhausted || 0} exhausted`
-              : 'account health'
-          }
         />
       </div>
 
@@ -512,7 +503,7 @@ export default function Pool() {
                     <tr key={i}>
                       <td className="pool-mono">{fmtTime(r.timestamp)}</td>
                       <td className="pool-mono">{r.model || '—'}</td>
-                      <td>{(r.provider || '').includes('grok') || (r.model || '').includes('grok') ? 'grok' : (r.provider || '—')}</td>
+                      <td className="pool-mono">{(r.provider || '').includes('grok') ? 'grok-cli' : (r.provider || '—')}</td>
                       <td className="pool-mono">{fmt(r.promptTokens)}</td>
                       <td className="pool-mono">{fmt(r.completionTokens)}</td>
                       <td className="pool-mono pool-dim">{fmt(r.cachedTokens)}</td>
@@ -534,7 +525,7 @@ export default function Pool() {
                     <StatusBadge status={r.status} />
                   </div>
                   <div className="pool-mobile-card-mid">
-                    <span>{(r.provider || '').includes('grok') ? 'grok' : (r.provider || '—')}</span>
+                    <span className="pool-mono">{(r.provider || '').includes('grok') ? 'grok-cli' : (r.provider || '—')}</span>
                     <span className="pool-mono">{fmtTime(r.timestamp)}</span>
                   </div>
                   <div className="pool-mobile-card-grid">

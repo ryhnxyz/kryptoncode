@@ -3581,7 +3581,9 @@ button:focus-visible {
 }
 
 
-/* ── Pool UI: solid cards (no blur glass) ── */
+/* ── Pool UI fixes (solid cards, capacity, access, layout) ── */
+
+/* Solid surfaces ONLY on real cards — never paint buttons/pills */
 .pool-page .pool-card,
 .pool-page .pool-kpi,
 .pool-page .pool-conn,
@@ -3590,204 +3592,371 @@ button:focus-visible {
 .pool-page .pool-table-wrap,
 .pool-page .pool-empty,
 .pool-page .pool-mobile-card,
-.pool-page .pool-live-pill,
-.pool-page .pool-btn,
-.pool-page .pool-icon-btn {
+.pool-page .pool-capacity {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  background: var(--bg-secondary, rgba(18, 18, 22, 0.96)) !important;
-}
-.pool-page .pool-card {
-  border: 1px solid var(--card-border, rgba(255,255,255,0.08));
+  background: #121216 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-
-/* ── Pool API access CTA ── */
-.pool-access {
+.pool-page {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+  padding: 5.5rem 1.25rem 3.5rem;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.25rem;
-  padding: 1.15rem 1.25rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 1.15rem;
+  box-sizing: border-box;
 }
-.pool-access-copy {
-  flex: 1 1 280px;
+
+.pool-page > section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.pool-page .pool-header {
+  margin-bottom: 0.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.pool-page .pool-conn,
+.pool-page .pool-access,
+.pool-page .pool-capacity,
+.pool-page .pool-kpi-grid,
+.pool-page .pool-chart-wrap,
+.pool-page .pool-models-grid,
+.pool-page .pool-table-wrap {
+  margin-bottom: 0 !important;
+}
+
+/* Connection bar */
+.pool-page .pool-conn {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 0.8fr) auto;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.15rem;
+}
+
+.pool-page .pool-conn-item {
   min-width: 0;
 }
-.pool-access-eyebrow {
-  display: inline-block;
-  color: var(--ink-3, #9aa0a6);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.35rem;
+
+.pool-page .pool-conn .pool-btn--mono {
+  max-width: 100%;
 }
-.pool-access-title {
-  margin: 0 0 0.4rem;
+
+.pool-page .pool-conn .pool-btn--mono span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(52vw, 360px);
+}
+
+.pool-page .pool-btn--outline {
+  margin-left: 0;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+/* Access CTA */
+.pool-page .pool-access {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.15rem 1.25rem;
+}
+
+.pool-page .pool-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.pool-page .pool-access-title {
+  margin: 0 0 0.35rem;
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary, #f3f4f6);
 }
-.pool-access-text {
-  margin: 0 0 0.75rem;
+
+.pool-page .pool-access-text {
+  margin: 0 0 0.7rem;
   color: var(--ink-2, #c4c7cc);
-  font-size: 0.9rem;
-  line-height: 1.45;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
-.pool-access-text code,
-.pool-access-steps code {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.84em;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 0.35rem;
-  padding: 0.05rem 0.35rem;
-}
-.pool-access-steps {
+
+.pool-page .pool-access-steps {
   margin: 0;
   padding-left: 1.1rem;
   color: var(--ink-2, #c4c7cc);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.55;
 }
-.pool-access-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  align-items: stretch;
-  min-width: 210px;
+
+.pool-page .pool-access-eyebrow {
+  display: inline-block;
+  color: var(--ink-3, #9aa0a6);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+  font-family: var(--font-mono, monospace);
 }
-.pool-btn--primary {
+
+.pool-page .pool-access-text code,
+.pool-page .pool-access-steps code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.84em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.35rem;
+  padding: 0.05rem 0.35rem;
+}
+
+/* Primary button must stay blue (not overwritten by solid-card rule) */
+.pool-page .pool-btn {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.pool-page .pool-btn--primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: #3b82f6;
+  width: 100%;
+  background: #3b82f6 !important;
   color: #fff !important;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   text-decoration: none;
-  padding: 0.55rem 0.85rem;
+  padding: 0.6rem 0.9rem;
   border-radius: 999px;
   font-size: 0.86rem;
   font-weight: 600;
 }
-.pool-btn--primary:hover {
+
+.pool-page .pool-btn--primary:hover {
   filter: brightness(1.08);
-}
-@media (max-width: 720px) {
-  .pool-access-actions {
-    width: 100%;
-    min-width: 0;
-  }
+  background: #3b82f6 !important;
 }
 
-/* --- Pool capacity indicator --- */
-.pool-capacity {
+.pool-page .pool-access-actions .pool-btn--mono {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Capacity card */
+.pool-page .pool-capacity {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 0.9rem;
+  padding: 1.15rem 1.25rem;
 }
-.pool-capacity-head {
+
+.pool-page .pool-capacity-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 1rem;
 }
-.pool-capacity-eyebrow {
+
+.pool-page .pool-capacity-eyebrow {
   display: block;
-  font-size: 11px;
+  font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3, #8b8b9a);
-  margin-bottom: 4px;
+  margin-bottom: 0.3rem;
   font-family: var(--font-mono, monospace);
 }
-.pool-capacity-title {
-  margin: 0 0 6px;
-  font-size: 16px;
+
+.pool-page .pool-capacity-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary, #f2f2f5);
 }
-.pool-capacity-text {
+
+.pool-page .pool-capacity-text {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-3, #8b8b9a);
-  max-width: 48ch;
+  max-width: 52ch;
 }
-.pool-capacity-pct {
+
+.pool-page .pool-capacity-pct {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.45rem;
   font-family: var(--font-mono, monospace);
-  font-size: 28px;
+  font-size: 1.55rem;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--card-border, #2a2a32);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
-.pool-capacity-pct--good { color: #4ade80; }
-.pool-capacity-pct--warn { color: #fbbf24; }
-.pool-capacity-pct--crit { color: #f87171; }
-.pool-capacity-bar {
+
+.pool-page .pool-capacity-pct--good { color: #4ade80; }
+.pool-page .pool-capacity-pct--warn { color: #fbbf24; }
+.pool-page .pool-capacity-pct--crit { color: #f87171; }
+
+.pool-page .pool-capacity-bar {
   height: 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  border: 1px solid var(--card-border, #2a2a32);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
-.pool-capacity-fill {
+
+.pool-page .pool-capacity-fill {
   height: 100%;
   border-radius: 999px;
   transition: width 0.4s ease;
 }
-.pool-capacity-fill--good {
+
+.pool-page .pool-capacity-fill--good {
   background: linear-gradient(90deg, #16a34a, #4ade80);
 }
-.pool-capacity-fill--warn {
+.pool-page .pool-capacity-fill--warn {
   background: linear-gradient(90deg, #d97706, #fbbf24);
 }
-.pool-capacity-fill--crit {
+.pool-page .pool-capacity-fill--crit {
   background: linear-gradient(90deg, #dc2626, #f87171);
 }
-.pool-capacity-meta {
+
+.pool-page .pool-capacity-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0.6rem;
 }
-.pool-capacity-meta > div {
+
+.pool-page .pool-capacity-meta > div {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid var(--card-border, #2a2a32);
+  gap: 0.25rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
 }
-.pool-capacity-meta-label {
-  font-size: 10.5px;
+
+.pool-page .pool-capacity-meta-label {
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-3, #8b8b9a);
   font-family: var(--font-mono, monospace);
 }
-.pool-capacity-meta-value {
-  font-size: 13px;
+
+.pool-page .pool-capacity-meta-value {
+  font-size: 0.84rem;
   color: var(--text-primary, #f2f2f5);
-}
-@media (max-width: 720px) {
-  .pool-capacity-head { flex-direction: column; }
-  .pool-capacity-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pool-capacity-pct { font-size: 22px; }
-}
-/* 5 KPI cards: wrap cleanly */
-.pool-kpi-grid {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* KPI: fixed 4-col desktop, 2-col tablet — drop 5th clutter or wrap clean */
+.pool-page .pool-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.pool-page .pool-kpi {
+  padding: 1.05rem 1.1rem;
+  min-width: 0;
+}
+
+.pool-page .pool-kpi-value {
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pool-page .pool-kpi-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Models + chart spacing */
+.pool-page .pool-models-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.pool-page .pool-model {
+  min-width: 0;
+}
+
+.pool-page .pool-chart-head {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Live pill / icon btn keep glass-free but distinct from cards */
+.pool-page .pool-live-pill,
+.pool-page .pool-icon-btn {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+@media (max-width: 900px) {
+  .pool-page .pool-conn {
+    grid-template-columns: 1fr;
+  }
+  .pool-page .pool-conn-divider { display: none; }
+  .pool-page .pool-btn--outline {
+    justify-self: stretch;
+    justify-content: center;
+  }
+  .pool-page .pool-conn .pool-btn--mono span {
+    max-width: 100%;
+  }
+  .pool-page .pool-access {
+    grid-template-columns: 1fr;
+  }
+  .pool-page .pool-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pool-page .pool-capacity-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .pool-page {
+    padding: 5rem 0.9rem 2.5rem;
+    gap: 0.95rem;
+  }
+  .pool-page .pool-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .pool-page .pool-capacity-head {
+    flex-direction: column;
+  }
+  .pool-page .pool-capacity-pct {
+    font-size: 1.35rem;
+    align-self: flex-start;
+  }
+  .pool-page .pool-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
