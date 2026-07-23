@@ -241,6 +241,37 @@ export default function Pool() {
         </a>
       </div>
 
+      {/* API access CTA → Telegram bot */}
+      <div className="pool-card pool-access">
+        <div className="pool-access-copy">
+          <span className="pool-access-eyebrow">Need API access?</span>
+          <h3 className="pool-access-title">Generate your API key via Telegram</h3>
+          <p className="pool-access-text">
+            Open <strong>@kryptoncode_bot</strong>, press <strong>Start</strong>, then run{" "}
+            <code>/genapi</code>. The bot creates a personal 9router key for{" "}
+            <code>base.kryptoncode.xyz/v1</code>.
+          </p>
+          <ol className="pool-access-steps">
+            <li>Start the bot</li>
+            <li>
+              Send <code>/genapi</code>
+            </li>
+            <li>Copy key → use with models below</li>
+          </ol>
+        </div>
+        <div className="pool-access-actions">
+          <a
+            className="pool-btn pool-btn--primary"
+            href="https://t.me/kryptoncode_bot?start=genapi"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open @kryptoncode_bot <ArrowUpRight size={13} strokeWidth={1.5} />
+          </a>
+          <CopyButton text="/genapi" />
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="pool-kpi-grid">
         <KpiCard

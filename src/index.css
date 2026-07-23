@@ -3600,3 +3600,85 @@ button:focus-visible {
 .pool-page .pool-card {
   border: 1px solid var(--card-border, rgba(255,255,255,0.08));
 }
+
+
+/* ── Pool API access CTA ── */
+.pool-access {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.pool-access-copy {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.pool-access-eyebrow {
+  display: inline-block;
+  color: var(--ink-3, #9aa0a6);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+.pool-access-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary, #f3f4f6);
+}
+.pool-access-text {
+  margin: 0 0 0.75rem;
+  color: var(--ink-2, #c4c7cc);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.pool-access-text code,
+.pool-access-steps code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.84em;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.35rem;
+  padding: 0.05rem 0.35rem;
+}
+.pool-access-steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-2, #c4c7cc);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.pool-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-items: stretch;
+  min-width: 210px;
+}
+.pool-btn--primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: #3b82f6;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.12);
+  text-decoration: none;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.pool-btn--primary:hover {
+  filter: brightness(1.08);
+}
+@media (max-width: 720px) {
+  .pool-access-actions {
+    width: 100%;
+    min-width: 0;
+  }
+}
