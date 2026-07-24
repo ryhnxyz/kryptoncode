@@ -120,20 +120,20 @@ function CapacityBar({ capacity }) {
   const exhausted = Number(capacity.accountsExhausted || 0)
   const tokensUsed = Number(capacity.tokensUsed || 0)
   const tone =
-    remaining >= 60 ? 'good' : remaining >= 25 ? 'warn' : 'crit'
+    used <= 40 ? 'good' : used <= 75 ? 'warn' : 'crit'
   return (
     <div className="pool-card pool-capacity">
       <div className="pool-capacity-head">
         <div>
           <span className="pool-capacity-eyebrow">Pool capacity</span>
-          <h3 className="pool-capacity-title">Token remaining</h3>
+          <h3 className="pool-capacity-title">Usage</h3>
           <p className="pool-capacity-text">
-            All <strong>grok-cli</strong> accounts · bar fills as accounts run out of credits
+            All <strong>grok-cli</strong> accounts · <strong>1%</strong> still lots · <strong>100%</strong> full/habis
           </p>
         </div>
         <div className={`pool-capacity-pct pool-capacity-pct--${tone}`}>
           <Gauge size={18} strokeWidth={1.5} />
-          <span>{remaining.toFixed(remaining % 1 === 0 ? 0 : 1)}%</span>
+          <span>{used.toFixed(used % 1 === 0 ? 0 : 1)}%</span>
         </div>
       </div>
 
