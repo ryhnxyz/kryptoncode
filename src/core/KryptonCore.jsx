@@ -195,6 +195,7 @@ export default function KryptonCore() {
   const startListen = useCallback(async () => {
     if (captureRef.current?.active) return;
     speechRef.current?.cancel();
+    try { chatAbortRef.current?.abort(); } catch { /* noop */ } // barge-in: stop any in-flight reply
     engineRef.current?.setSpeaking(false);
     wakeRef.current?.setEnabled(false);
     // ensure the mic stream is live (also feeds the orb spectrum)
@@ -287,40 +288,72 @@ export default function KryptonCore() {
   /* ── orchestrator: live /api/core/chat over SSE ───────────────── */
   const streamChatToCore = useCallback((message) => {
     try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+    speechRef.current?.cancel();
     const ac = new AbortController();
     chatAbortRef.current = ac;
     setStreaming(true);
     setKryText('');
     setOrb('thinking');
     let buf = '';
+    let fedIdx = 0;
+    // Stream the spoken reply sentence-by-sentence so Krypton starts talking
+    // after the first sentence instead of waiting for the whole answer.
+    speechRef.current?.beginStream({
+      onstart: () => {
+        engineRef.current?.setSpeaking(true);
+        setOrbState('speaking');
+        engineRef.current?.setState('speaking');
+        bumpActivity();
+      },
+      onend: () => {
+        engineRef.current?.setSpeaking(false);
+        setOrb('idle');
+        bumpActivity();
+        if (openRef.current && voiceModeRef.current && captureRef.current?.supported) {
+          setTimeout(() => startListenRef.current?.(), 350);
+        }
+      },
+    });
+    const feedSentences = (final) => {
+      const seg = buf.slice(fedIdx);
+      const re = /[^.!?…\n]*[.!?…\n]+/g;
+      let m; let last = 0;
+      while ((m = re.exec(seg))) { const s = m[0].trim(); if (s) speechRef.current?.feed(s); last = re.lastIndex; }
+      if (last) fedIdx += last;
+      if (final) { const tail = buf.slice(fedIdx).trim(); if (tail) speechRef.current?.feed(tail); fedIdx = buf.length; }
+    };
     const stageToState = (stage, agent) => {
       if (stage === 'agent') {
         return ({ system: 'reading', 'hermes-engineer': 'coding', browser: 'browsing', research: 'searching', general: 'thinking' })[agent] || 'thinking';
       }
       return 'thinking';
     };
-    const oops = (msg) => { setStreaming(false); sayReply(msg, 'idle'); };
+    const oops = (msg) => { setStreaming(false); speechRef.current?.cancel(); sayReply(msg, 'idle'); };
     liveApi.streamChat({
       message,
       lang: langRef.current,
       history: historyRef.current,
       signal: ac.signal,
       handlers: {
-        stage: (d) => { setOrb(stageToState(d.stage, d.agent)); bumpActivity(); },
+        stage: (d) => { if (ac.signal.aborted) return; if (engineRef.current?.getState() !== 'speaking') setOrb(stageToState(d.stage, d.agent)); bumpActivity(); },
         panel: (d) => {
+          if (ac.signal.aborted) return;
           if (d.action === 'show') addPanel(d.id, d.id === 'research' ? { query: message.slice(0, 42) } : undefined);
           else if (d.action === 'hide') removePanel(d.id);
         },
-        token: (d) => { buf += d.t || ''; setKryText(buf); bumpActivity(); },
+        token: (d) => { if (ac.signal.aborted) return; buf += d.t || ''; setKryText(buf); feedSentences(false); bumpActivity(); },
         done: (d) => {
+          if (ac.signal.aborted) return;
           setStreaming(false);
           const text = (d && d.text) || buf;
+          setKryText(text);
+          feedSentences(true);
+          speechRef.current?.endStream();
           historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);
-          sayReply(text, 'idle');
         },
-        error: () => oops(langRef.current === 'id' ? 'Maaf, koneksi ke inti terganggu. Coba lagi ya.' : 'Sorry, the core connection dropped. Try again.'),
+        error: () => { if (!ac.signal.aborted) oops(langRef.current === 'id' ? 'Maaf, koneksi ke inti terganggu. Coba lagi ya.' : 'Sorry, the core connection dropped. Try again.'); },
       },
-    }).catch(() => oops(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'));
+    }).catch(() => { if (!ac.signal.aborted) oops(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'); });
   }, [addPanel, bumpActivity, removePanel, sayReply, setOrb]);
 
   /* ── command handling: instant local for hide/exit, else orchestrator ── */

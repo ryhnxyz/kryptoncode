@@ -171,46 +171,84 @@ export function createNaturalSpeech(getLang, apiBase) {
     } catch { /* noop */ }
   }
 
-  function speak(text, { onstart, onend } = {}) {
+  // ── sequential clip queue (enables sentence-streamed speech) ──────
+  let queue = [];
+  let playing = false;
+  let streamEnded = true;
+  let started = false;
+  let sess = 0;               // bumped on cancel/new stream to void stale work
+  let cbStart = null;
+  let cbEnd = null;
+
+  function revoke() { if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; } }
+  function finishSession() { started = false; playing = false; cbStart = null; cbEnd = null; }
+
+  function onClipEnd(mySess) {
+    if (mySess !== sess) return;
+    revoke();
+    if (queue.length) { fetchAndPlay(queue.shift(), mySess); }
+    else { playing = false; if (streamEnded) { const cb = cbEnd; finishSession(); cb && cb(); } }
+  }
+
+  function fetchAndPlay(text, mySess) {
     const lang = getLang() === 'en' ? 'en' : 'id';
-    const clean = String(text).replace(/[◈✓▶]/g, '').slice(0, 500);
-    if (!clean.trim()) { onend && onend(); return; }
+    const clean = String(text).replace(/[◈✓▶]/g, '').trim().slice(0, 500);
+    if (!clean) { onClipEnd(mySess); return; }
     const a = ensureAudio();
-    let started = false;
-    let done = false;
-    const finish = () => {
-      if (done) return; done = true;
-      if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; }
-      onend && onend();
+    const fireStart = () => { if (mySess === sess && !started) { started = true; cbStart && cbStart(); } };
+    a.onplaying = fireStart;
+    a.onended = () => onClipEnd(mySess);
+    a.onerror = () => {
+      if (mySess !== sess) return;
+      // one chunk failed → speak it with browser TTS, then continue the queue
+      fallback.speak(clean, { onstart: fireStart, onend: () => onClipEnd(mySess) });
     };
-    const toFallback = () => { if (!done) { done = true; fallback.speak(text, { onstart, onend }); } };
-    a.onplaying = () => { if (!started) { started = true; onstart && onstart(); } };
-    a.onended = finish;
-    a.onerror = () => { if (!started) toFallback(); else finish(); };
-    // Fetch the FULL clip first, then play from a blob — avoids choppy/cut
-    // playback caused by progressive streaming stalls.
     const url = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
     fetch(url)
       .then((res) => { if (!res.ok) throw new Error('tts ' + res.status); return res.blob(); })
       .then((blob) => {
-        if (done) return;
-        if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } }
+        if (mySess !== sess) return;
+        revoke();
         curUrl = URL.createObjectURL(blob);
         a.muted = false;
         a.src = curUrl;
         const p = a.play();
-        if (p && p.catch) p.catch(() => toFallback());
+        if (p && p.catch) p.catch(() => { if (mySess === sess && a.onerror) a.onerror(); });
       })
-      .catch(() => toFallback());
+      .catch(() => { if (mySess === sess && a.onerror) a.onerror(); });
+  }
+
+  function beginStream({ onstart, onend } = {}) {
+    sess += 1;
+    queue = []; started = false; playing = false; streamEnded = false;
+    cbStart = onstart || null; cbEnd = onend || null;
+  }
+  function feed(text) {
+    const t = String(text || '').trim();
+    if (!t || streamEnded) return;
+    queue.push(t);
+    if (!playing) { playing = true; fetchAndPlay(queue.shift(), sess); }
+  }
+  function endStream() {
+    streamEnded = true;
+    if (!playing && !queue.length) { const cb = cbEnd; finishSession(); cb && cb(); }
+  }
+  function speak(text, opts = {}) {
+    beginStream(opts);
+    const t = String(text || '').trim();
+    if (t) feed(t);
+    endStream();
   }
 
   function cancel() {
+    sess += 1;                 // invalidate pending fetches + callbacks
+    queue = []; playing = false; started = false; streamEnded = true; cbStart = null; cbEnd = null;
     try { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); } } catch { /* noop */ }
-    if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; }
+    revoke();
     fallback.cancel();
   }
 
-  return { speak, cancel, unlock, supported: true };
+  return { speak, beginStream, feed, endStream, cancel, unlock, isSpeaking: () => playing, supported: true };
 }
 
 // ── active speech recognition (push-to-talk) ─────────────────────
