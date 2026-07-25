@@ -122,23 +122,52 @@ export function createNaturalSpeech(getLang, apiBase) {
   const base = (apiBase || 'https://api.kryptoncode.xyz').replace(/\/+$/, '');
   const fallback = createSpeech(getLang);
   let audio = null;
+  let unlocked = false;
+
+  function ensureAudio() {
+    if (!audio) {
+      audio = new Audio();
+      audio.preload = 'auto';
+      audio.playsInline = true;
+      audio.setAttribute('playsinline', '');
+    }
+    return audio;
+  }
+
+  // Call once from a real user gesture (click / key / tap). After this the
+  // element is "unlocked" so later programmatic playback — wake word replies,
+  // streamed chat answers — is allowed by the browser autoplay policy.
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    const a = ensureAudio();
+    try {
+      a.muted = true;
+      a.src = `${base}/api/core/voice?lang=id&text=${encodeURIComponent('.')}`;
+      const p = a.play();
+      const restore = () => { try { a.pause(); a.currentTime = 0; } catch { /* noop */ } a.muted = false; };
+      if (p && p.then) p.then(() => setTimeout(restore, 60)).catch(() => { a.muted = false; unlocked = false; });
+      else restore();
+    } catch { a.muted = false; unlocked = false; }
+  }
 
   function speak(text, { onstart, onend } = {}) {
     const lang = getLang() === 'en' ? 'en' : 'id';
     const clean = String(text).replace(/[◈✓▶]/g, '').slice(0, 500);
     if (!clean.trim()) { onend && onend(); return; }
-    if (!audio) { audio = new Audio(); audio.preload = 'auto'; }
+    const a = ensureAudio();
     let started = false;
     let done = false;
     const finish = () => { if (done) return; done = true; onend && onend(); };
-    audio.onplaying = () => { if (!started) { started = true; onstart && onstart(); } };
-    audio.onended = finish;
-    audio.onerror = () => {
+    a.onplaying = () => { if (!started) { started = true; onstart && onstart(); } };
+    a.onended = finish;
+    a.onerror = () => {
       if (!started) { fallback.speak(text, { onstart, onend }); done = true; }
       else finish();
     };
-    audio.src = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
-    const p = audio.play();
+    a.muted = false;
+    a.src = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
+    const p = a.play();
     if (p && p.catch) p.catch(() => { if (!started) { fallback.speak(text, { onstart, onend }); done = true; } });
   }
 
@@ -147,7 +176,7 @@ export function createNaturalSpeech(getLang, apiBase) {
     fallback.cancel();
   }
 
-  return { speak, cancel, supported: true };
+  return { speak, cancel, unlock, supported: true };
 }
 
 // ── active speech recognition (push-to-talk) ─────────────────────

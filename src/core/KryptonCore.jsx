@@ -62,6 +62,8 @@ export default function KryptonCore() {
   const exitRef = useRef(null);
   const historyRef = useRef([]);
   const chatAbortRef = useRef(null);
+  const voiceModeRef = useRef(false);
+  const finalGotRef = useRef(false);
 
   const [open, setOpen] = useState(false);
   const [orbState, setOrbState] = useState('idle');
@@ -91,9 +93,18 @@ export default function KryptonCore() {
     if (window.localStorage.getItem(VOICE_OK_KEY) === '1') {
       wakeRef.current.setEnabled(true);
     }
+    // Unlock audio playback on the first real user gesture so the natural
+    // neural voice can play later (wake word / streamed replies aren't gestures).
+    const unlockOnce = () => {
+      try { speechRef.current?.unlock?.(); cuesRef.current?.unlock?.(); } catch { /* noop */ }
+    };
+    window.addEventListener('pointerdown', unlockOnce, { once: true });
+    window.addEventListener('keydown', unlockOnce, { once: true });
     const t = setTimeout(() => setHintVisible(true), 1800);
     return () => {
       clearTimeout(t);
+      window.removeEventListener('pointerdown', unlockOnce);
+      window.removeEventListener('keydown', unlockOnce);
       engine.destroy();
       micRef.current?.disable();
       wakeRef.current?.setEnabled(false);
@@ -147,6 +158,10 @@ export default function KryptonCore() {
         setOrb(restRef.current);
         bumpActivity();
         after?.();
+        // hands-free turn-taking: after Krypton speaks, open the mic again
+        if (openRef.current && voiceModeRef.current && voiceSupport.recognition) {
+          setTimeout(() => startListenRef.current?.(), 250);
+        }
       },
     });
   }, [setOrb, bumpActivity]);
@@ -177,25 +192,44 @@ export default function KryptonCore() {
   const stopListen = useCallback(() => { recRef.current?.stop(); }, []);
   const startListen = useCallback(() => {
     if (!voiceSupport.recognition) return;
+    if (recRef.current?.active) return;
     speechRef.current?.cancel();
     engineRef.current?.setSpeaking(false);
     wakeRef.current?.setEnabled(false);
-    recRef.current = createRecognizer(() => langRef.current, {
-      onstate: (on) => {
-        setListening(on);
-        if (on) setOrb('listening');
-        else {
-          if (engineRef.current?.getState() === 'listening') setOrb('idle');
-          if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
-        }
-      },
-      onpartial: (t) => setInput(t),
-      onfinal: (t) => { setInput(''); if (t) handleRef.current?.(t); },
-    });
-    recRef.current.start();
-  }, [setOrb]);
+    finalGotRef.current = false;
+    const begin = () => {
+      recRef.current = createRecognizer(() => langRef.current, {
+        onstate: (on) => {
+          setListening(on);
+          if (on) setOrb('listening');
+          else {
+            if (engineRef.current?.getState() === 'listening') setOrb('idle');
+            // no speech captured → go back to wake-word standby
+            if (!finalGotRef.current && window.localStorage.getItem(VOICE_OK_KEY) === '1') {
+              wakeRef.current?.setEnabled(true);
+            }
+          }
+        },
+        onpartial: (t) => { setInput(t); bumpActivity(); },
+        onfinal: (t) => {
+          finalGotRef.current = true;
+          setInput('');
+          if (t) { voiceModeRef.current = true; handleRef.current?.(t); }
+        },
+      });
+      recRef.current.start();
+    };
+    setTimeout(begin, 160); // let the wake recognizer release the mic first
+  }, [setOrb, bumpActivity]);
   const startListenRef = useRef(null);
   useEffect(() => { startListenRef.current = startListen; }, [startListen]);
+
+  // Unified talk toggle for taps / keys — unlocks audio + marks voice mode.
+  const talk = useCallback(() => {
+    try { speechRef.current?.unlock?.(); } catch { /* noop */ }
+    if (listening) { stopListen(); }
+    else { voiceModeRef.current = true; startListen(); }
+  }, [listening, startListen, stopListen]);
 
   /* ── enter / exit AI Space ────────────────────────────────────── */
   const enter = useCallback((withVoice = false) => {
@@ -208,6 +242,8 @@ export default function KryptonCore() {
     engineRef.current?.nudge();
     cuesRef.current?.unlock();
     cuesRef.current?.enter();
+    speechRef.current?.unlock?.();
+    voiceModeRef.current = !!withVoice;
     micRef.current?.enable().then((ok) => {
       if (ok) {
         engineRef.current?.setAudioSource(() => micRef.current?.getData());
@@ -216,9 +252,7 @@ export default function KryptonCore() {
     });
     bumpActivity();
     setTimeout(() => {
-      sayReply(greeting(langRef.current), 'idle', () => {
-        if (withVoice) startListenRef.current?.();
-      });
+      sayReply(greeting(langRef.current), 'idle');
     }, 620);
   }, [sayReply, bumpActivity]);
   const enterRef = useRef(null);
@@ -230,6 +264,7 @@ export default function KryptonCore() {
     clearTimeout(idleTimer.current);
     try { chatAbortRef.current?.abort(); } catch { /* noop */ }
     setStreaming(false);
+    voiceModeRef.current = false;
     setOpen(false);
     document.body.classList.remove('kry-space-open');
     engineRef.current?.setPlacement('dock');
@@ -343,12 +378,12 @@ export default function KryptonCore() {
       if (e.code === 'Space' && openRef.current && document.activeElement?.tagName !== 'INPUT') {
         e.preventDefault();
         bumpActivity();
-        if (listening) stopListen(); else startListen();
+        talk();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [bumpActivity, exit, listening, startListen, stopListen]);
+  }, [bumpActivity, exit, talk]);
 
   /* ── derived ──────────────────────────────────────────────────── */
   const S = useMemo(() => ({
@@ -442,7 +477,7 @@ export default function KryptonCore() {
           type="button"
           className={`kry-core-hit ${listening ? 'listening' : ''}`}
           aria-label={listening ? 'Stop listening' : 'Talk to Krypton'}
-          onClick={() => (listening ? stopListen() : startListen())}
+          onClick={talk}
         />
 
         {/* state chip */}
@@ -468,6 +503,7 @@ export default function KryptonCore() {
               onChange={(e) => { setInput(e.target.value); bumpActivity(); }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && input.trim()) {
+                  voiceModeRef.current = false;
                   handleCommand(input.trim());
                   setInput('');
                 }
@@ -479,7 +515,7 @@ export default function KryptonCore() {
               type="button"
               className={`kry-mic ${listening ? 'on' : ''}`}
               aria-label="Voice input"
-              onClick={() => (listening ? stopListen() : startListen())}
+              onClick={talk}
             >
               <Mic size={17} />
             </button>
