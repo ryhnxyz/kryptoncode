@@ -2216,23 +2216,13 @@ main { width: 100%; }
   text-align: center;
 }
 
-/* Scroll-driven welcome stage — labs.google splash, krypton palette.
-   An off-white pinned screen with slow-morphing monochrome blobs and the
-   brand centered; scroll drifts the blobs apart, fades the copy, and
-   releases the stage into the dark catalog. */
-.lab-stage {
-  position: relative;
-  height: 300vh;
-  margin-top: calc(-1 * var(--nav-offset));
-  margin-left: calc(-1 * var(--gutter));
-  margin-right: calc(-1 * var(--gutter));
-}
-
-.lab-stage-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100svh;
+/* Welcome screen — labs.google splash, krypton palette. A timed overlay:
+   monochrome blobs bloom in around the centered brand, hold a beat, then
+   drift apart as the screen hands over to the dark catalog. */
+.lab-welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
   overflow: clip;
   background: var(--text-primary);
   color: #0a0a0b;
@@ -2306,19 +2296,9 @@ main { width: 100%; }
   100% { border-radius: 54% 46% 58% 42% / 44% 56% 46% 54%; transform: rotate(-4deg); }
 }
 
-/* darkens as the stage releases into the page */
-.lab-stage-exit {
+.lab-welcome-frame {
   position: absolute;
-  inset: 0;
-  z-index: 5;
-  background: #08090b;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.lab-stage-frame {
-  position: absolute;
-  inset: calc(var(--nav-offset) - 76px) clamp(20px, 4vw, 48px) auto;
+  inset: 24px clamp(20px, 4vw, 48px) auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2330,7 +2310,7 @@ main { width: 100%; }
   pointer-events: none;
 }
 
-.lab-stage-copy {
+.lab-welcome-copy {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -2344,7 +2324,7 @@ main { width: 100%; }
   pointer-events: none;
 }
 
-.lab-stage-badge {
+.lab-welcome-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2357,7 +2337,7 @@ main { width: 100%; }
   background: rgba(250, 247, 242, 0.55);
 }
 
-.lab-stage-eyebrow {
+.lab-welcome-eyebrow {
   color: rgba(8, 9, 11, 0.5);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -2365,7 +2345,7 @@ main { width: 100%; }
   text-transform: uppercase;
 }
 
-.lab-stage-copy h1 {
+.lab-welcome-copy h1 {
   max-width: 14ch;
   font-size: clamp(2.8rem, 8vw, 6.4rem);
   line-height: 0.98;
@@ -2373,50 +2353,20 @@ main { width: 100%; }
   text-transform: uppercase;
 }
 
-.lab-stage-sub {
+.lab-welcome-sub {
   max-width: 540px;
   color: rgba(8, 9, 11, 0.62);
   font-size: clamp(0.98rem, 1.4vw, 1.15rem);
   line-height: 1.6;
 }
 
-.lab-stage-hint {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  color: rgba(8, 9, 11, 0.6);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-.lab-stage-hint svg { animation: lab-hint-bob 1.8s ease-in-out infinite; }
-@keyframes lab-hint-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
-}
-
-.lab-stage-actions {
+.lab-welcome-skip {
   position: absolute;
   right: clamp(18px, 3.5vw, 44px);
   bottom: 26px;
   z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lab-stage-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
   min-height: 40px;
   padding: 0 18px;
   border: 1px solid rgba(8, 9, 11, 0.3);
@@ -2429,24 +2379,28 @@ main { width: 100%; }
   font-weight: 500;
   transition: background-color 160ms ease;
 }
-.lab-stage-btn:hover { background: rgba(8, 9, 11, 0.08); }
+.lab-welcome-skip:hover { background: rgba(8, 9, 11, 0.08); }
 
-.lab-stage-progress {
+.lab-welcome-progress {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
   z-index: 4;
   height: 2px;
-  background: rgba(8, 9, 11, 0.12);
+  background: rgba(8, 9, 11, 0.1);
 }
-.lab-stage-progress i {
+.lab-welcome-progress i {
   display: block;
   height: 100%;
   width: 100%;
   background: #0a0a0b;
   transform-origin: left center;
-  transform: scaleX(0);
+  animation: lab-welcome-progress 2.9s linear forwards;
+}
+@keyframes lab-welcome-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @media (max-width: 640px) {
