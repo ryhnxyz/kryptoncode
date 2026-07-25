@@ -10,8 +10,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Mic, Volume2, VolumeX, X } from './icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createOrbEngine } from './orbEngine';
-import { createMicAnalyser, createSpeech, createRecognizer, createWakeWord, voiceSupport } from './voice';
+import { createMicAnalyser, createSpeech, createNaturalSpeech, createRecognizer, createWakeWord, voiceSupport } from './voice';
 import { createCues } from './soundCues';
+import * as liveApi from './liveApi';
 import { interpret, REPLIES } from './intentEngine';
 import { STRINGS, greeting } from './mockData';
 import { SystemPanel, ProcessesPanel, LogsPanel, ResearchPanel, CodePanel, DeployPanel, BrowserPanel } from './panels';
@@ -59,6 +60,8 @@ export default function KryptonCore() {
   const openRef = useRef(false);
   const idleTimer = useRef(null);
   const exitRef = useRef(null);
+  const historyRef = useRef([]);
+  const chatAbortRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [orbState, setOrbState] = useState('idle');
@@ -72,13 +75,14 @@ export default function KryptonCore() {
   const [hintVisible, setHintVisible] = useState(false);
   const [stateSince, setStateSince] = useState(Date.now());
   const [elapsed, setElapsed] = useState('0.0s');
+  const [streaming, setStreaming] = useState(false);
 
   /* ── boot: engine + factories ─────────────────────────────────── */
   useEffect(() => {
     const engine = createOrbEngine(canvasRef.current);
     engineRef.current = engine;
     micRef.current = createMicAnalyser();
-    speechRef.current = createSpeech(() => langRef.current);
+    speechRef.current = createNaturalSpeech(() => langRef.current, liveApi.API_BASE);
     cuesRef.current = createCues();
     wakeRef.current = createWakeWord(() => langRef.current, () => {
       if (!openRef.current) enterRef.current?.(true);
@@ -224,6 +228,8 @@ export default function KryptonCore() {
     if (!openRef.current) return;
     openRef.current = false;
     clearTimeout(idleTimer.current);
+    try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+    setStreaming(false);
     setOpen(false);
     document.body.classList.remove('kry-space-open');
     engineRef.current?.setPlacement('dock');
@@ -240,28 +246,62 @@ export default function KryptonCore() {
   }, [clearPanels, setOrb, stopListen]);
   useEffect(() => { exitRef.current = exit; }, [exit]);
 
-  /* ── command handling ─────────────────────────────────────────── */
-  const handleCommand = useCallback((raw) => {
-    const res = interpret(raw);
-    if (!res) return;
-    setYouLine(raw);
-    bumpActivity();
-    if (res.exit) { exit(); return; }
-    const apply = () => {
-      if (res.hideAll) clearPanels();
-      (res.hide || []).forEach(removePanel);
-      (res.show || []).forEach((id) => addPanel(id, id === 'research' ? { query: res.arg || 'vite 8' } : undefined));
-      if (res.state) setOrb(res.state);
-      else if (res.acting) setOrb(res.acting);
-      const text = res.reply[langRef.current] || res.reply.id;
-      if (res.replyDelay) setTimeout(() => sayReply(text, res.rest || 'idle'), res.replyDelay);
-      else sayReply(text, res.rest || 'idle');
+  /* ── orchestrator: live /api/core/chat over SSE ───────────────── */
+  const streamChatToCore = useCallback((message) => {
+    try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+    const ac = new AbortController();
+    chatAbortRef.current = ac;
+    setStreaming(true);
+    setKryText('');
+    setOrb('thinking');
+    let buf = '';
+    const stageToState = (stage, agent) => {
+      if (stage === 'agent') {
+        return ({ system: 'reading', 'hermes-engineer': 'coding', browser: 'browsing', research: 'searching', general: 'thinking' })[agent] || 'thinking';
+      }
+      return 'thinking';
     };
-    if (res.think) {
-      setOrb('thinking');
-      setTimeout(apply, 700 + Math.random() * 500);
-    } else apply();
-  }, [addPanel, bumpActivity, clearPanels, exit, removePanel, sayReply, setOrb]);
+    const oops = (msg) => { setStreaming(false); sayReply(msg, 'idle'); };
+    liveApi.streamChat({
+      message,
+      lang: langRef.current,
+      history: historyRef.current,
+      signal: ac.signal,
+      handlers: {
+        stage: (d) => { setOrb(stageToState(d.stage, d.agent)); bumpActivity(); },
+        panel: (d) => {
+          if (d.action === 'show') addPanel(d.id, d.id === 'research' ? { query: message.slice(0, 42) } : undefined);
+          else if (d.action === 'hide') removePanel(d.id);
+        },
+        token: (d) => { buf += d.t || ''; setKryText(buf); bumpActivity(); },
+        done: (d) => {
+          setStreaming(false);
+          const text = (d && d.text) || buf;
+          historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);
+          sayReply(text, 'idle');
+        },
+        error: () => oops(langRef.current === 'id' ? 'Maaf, koneksi ke inti terganggu. Coba lagi ya.' : 'Sorry, the core connection dropped. Try again.'),
+      },
+    }).catch(() => oops(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'));
+  }, [addPanel, bumpActivity, removePanel, sayReply, setOrb]);
+
+  /* ── command handling: instant local for hide/exit, else orchestrator ── */
+  const handleCommand = useCallback((raw) => {
+    const q = (raw || '').trim();
+    if (!q) return;
+    setYouLine(q);
+    bumpActivity();
+    const local = interpret(q);
+    if (local?.exit) { exit(); return; }
+    if (local && (local.intent === 'hide' || local.intent === 'hideAll')) {
+      if (local.hideAll) clearPanels();
+      (local.hide || []).forEach(removePanel);
+      setStreaming(false);
+      sayReply(local.reply[langRef.current] || local.reply.id, 'idle');
+      return;
+    }
+    streamChatToCore(q);
+  }, [bumpActivity, clearPanels, exit, removePanel, sayReply, streamChatToCore]);
   const handleRef = useRef(null);
   useEffect(() => { handleRef.current = handleCommand; }, [handleCommand]);
 
@@ -415,7 +455,9 @@ export default function KryptonCore() {
         {/* conversation */}
         <div className="kry-convo">
           <div className="kry-you">{youLine ? `“${youLine}”` : ''}</div>
-          <TypeLine text={kryText} />
+          <div className="kry-reply" aria-live="polite">
+            <span className={streaming || orbState === 'speaking' ? 'kry-caret' : ''}>{kryText}</span>
+          </div>
         </div>
 
         {/* prompt dock */}

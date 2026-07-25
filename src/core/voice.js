@@ -115,6 +115,41 @@ export function createSpeech(getLang) {
   return { speak, cancel: () => { try { synth.cancel(); } catch { /* noop */ } }, supported: true };
 }
 
+// ── natural neural voice (self-hosted TTS via backend) ───────────
+// Plays MP3 streamed from /api/core/voice. Falls back to browser TTS
+// if playback fails (autoplay blocked, offline, etc.).
+export function createNaturalSpeech(getLang, apiBase) {
+  const base = (apiBase || 'https://api.kryptoncode.xyz').replace(/\/+$/, '');
+  const fallback = createSpeech(getLang);
+  let audio = null;
+
+  function speak(text, { onstart, onend } = {}) {
+    const lang = getLang() === 'en' ? 'en' : 'id';
+    const clean = String(text).replace(/[◈✓▶]/g, '').slice(0, 500);
+    if (!clean.trim()) { onend && onend(); return; }
+    if (!audio) { audio = new Audio(); audio.preload = 'auto'; }
+    let started = false;
+    let done = false;
+    const finish = () => { if (done) return; done = true; onend && onend(); };
+    audio.onplaying = () => { if (!started) { started = true; onstart && onstart(); } };
+    audio.onended = finish;
+    audio.onerror = () => {
+      if (!started) { fallback.speak(text, { onstart, onend }); done = true; }
+      else finish();
+    };
+    audio.src = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => { if (!started) { fallback.speak(text, { onstart, onend }); done = true; } });
+  }
+
+  function cancel() {
+    try { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); } } catch { /* noop */ }
+    fallback.cancel();
+  }
+
+  return { speak, cancel, supported: true };
+}
+
 // ── active speech recognition (push-to-talk) ─────────────────────
 export function createRecognizer(getLang, handlers = {}) {
   if (!SR) return { start: () => false, stop: () => {}, supported: false, get active() { return false; } };

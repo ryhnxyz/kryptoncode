@@ -1,19 +1,21 @@
 // ─────────────────────────────────────────────────────────────────
 // KRYPTON AI CORE · orbit panels
-// Interface elements the AI conjures around itself. All mock data,
-// styled with the krypton design system.
+// System / Processes / Logs pull LIVE data from /api/core (mock
+// fallback on error). Research / Code / Deploy / Browser stay mock.
 // ─────────────────────────────────────────────────────────────────
 import React, { useEffect, useRef, useState } from 'react';
 import { Cpu, Activity, Terminal, Search, Code, Rocket, Globe, X } from './icons';
-import { VPS, SERVICES, LOG_LINES, DEPLOY_SCRIPTS, RESEARCH_RESULTS, CODE_SNIPPET, STRINGS } from './mockData';
+import { VPS, SERVICES, DEPLOY_SCRIPTS, RESEARCH_RESULTS, CODE_SNIPPET, STRINGS } from './mockData';
+import { getSystem, getProcesses, getLogs } from './liveApi';
 
-export function Panel({ icon: Icon, title, onClose, children, closing }) {
+export function Panel({ icon: Icon, title, live, onClose, children, closing }) {
   return (
     <section className={`kry-panel ${closing ? 'is-closing' : ''}`}>
       <header className="kry-panel-head">
         <span className="kry-panel-title">
           <Icon size={14} aria-hidden="true" />
           {title}
+          {live && <span className="kry-live" title="Live">● LIVE</span>}
         </span>
         <button type="button" className="kry-panel-x" onClick={onClose} aria-label="Close panel">
           <X size={13} aria-hidden="true" />
@@ -24,56 +26,99 @@ export function Panel({ icon: Icon, title, onClose, children, closing }) {
   );
 }
 
-/* ── System metrics ─────────────────────────────────────────────── */
-function Spark() {
-  const [bars, setBars] = useState(() => Array.from({ length: 26 }, () => 8 + Math.random() * 22));
+function fmtUptime(ms) {
+  if (!ms || ms < 0) return '—';
+  const s = ms / 1000;
+  if (s < 3600) return `${Math.round(s / 60)}m`;
+  if (s < 86400) return `${(s / 3600).toFixed(0)}h`;
+  return `${(s / 86400).toFixed(1)}d`;
+}
+
+/* ── System (LIVE) ──────────────────────────────────────────────── */
+function Spark({ value }) {
+  const [bars, setBars] = useState(() => Array.from({ length: 26 }, () => 8 + Math.random() * 18));
   useEffect(() => {
-    const iv = setInterval(() => setBars((b) => [...b.slice(1), 8 + Math.random() * 22]), 700);
+    const iv = setInterval(
+      () => setBars((b) => [...b.slice(1), 6 + Math.random() * 10 + (value || 0) * 0.22]),
+      700
+    );
     return () => clearInterval(iv);
-  }, []);
+  }, [value]);
   return (
     <div className="kry-spark" aria-hidden="true">
-      {bars.map((h, i) => <i key={i} style={{ height: `${h}px` }} />)}
+      {bars.map((h, i) => <i key={i} style={{ height: `${Math.min(32, h)}px` }} />)}
     </div>
   );
 }
 
 export function SystemPanel({ lang, onClose, closing }) {
-  const [cpu, setCpu] = useState(11);
+  const [d, setD] = useState(null);
   useEffect(() => {
-    const iv = setInterval(() => setCpu((c) => Math.max(3, Math.min(60, c + Math.round((Math.random() - 0.5) * 10)))), 1500);
-    return () => clearInterval(iv);
+    let alive = true;
+    const load = () => getSystem().then((r) => { if (alive && r && r.success) setD(r); });
+    load();
+    const iv = setInterval(load, 4000);
+    return () => { alive = false; clearInterval(iv); };
   }, []);
-  const memPct = Math.round((VPS.usedMemMB / VPS.totalMemMB) * 100);
+  const live = !!d;
+  const cpus = d?.cpus || VPS.cpus;
+  const total = d?.totalMemMB || VPS.totalMemMB;
+  const free = d?.freeMemMB ?? (VPS.totalMemMB - VPS.usedMemMB);
+  const load = d?.loadavg || VPS.load;
+  const host = d?.host || VPS.host;
+  const uptimeD = d ? (d.uptimeSeconds / 86400).toFixed(1) : VPS.uptimeDays;
+  const usedMB = total - free;
+  const memPct = Math.round((usedMB / total) * 100);
+  const cpuPct = Math.min(100, Math.round((load[0] / cpus) * 100));
   return (
-    <Panel icon={Cpu} title={STRINGS.panelTitles.system[lang]} onClose={onClose} closing={closing}>
+    <Panel icon={Cpu} title={STRINGS.panelTitles.system[lang]} live={live} onClose={onClose} closing={closing}>
       <div className="kry-metric">
-        <div className="kry-metric-top"><span>CPU</span><b>{cpu}%</b></div>
-        <div className="kry-bar"><i style={{ width: `${cpu}%` }} /></div>
-        <Spark />
+        <div className="kry-metric-top"><span>CPU</span><b>{cpuPct}%</b></div>
+        <div className="kry-bar"><i style={{ width: `${cpuPct}%` }} /></div>
+        <Spark value={cpuPct} />
       </div>
       <div className="kry-metric">
-        <div className="kry-metric-top"><span>{lang === 'id' ? 'Memori' : 'Memory'}</span><b>{(VPS.usedMemMB / 1024).toFixed(1)} / 12 GB</b></div>
+        <div className="kry-metric-top"><span>{lang === 'id' ? 'Memori' : 'Memory'}</span><b>{(usedMB / 1024).toFixed(1)} / {(total / 1024).toFixed(0)} GB</b></div>
         <div className="kry-bar"><i style={{ width: `${memPct}%` }} /></div>
       </div>
       <div className="kry-metric">
-        <div className="kry-metric-top"><span>Load</span><b>{VPS.load.join(' · ')}</b></div>
-        <div className="kry-bar"><i style={{ width: `${Math.round((VPS.load[0] / VPS.cpus) * 100) + 6}%` }} /></div>
+        <div className="kry-metric-top"><span>Load</span><b>{load.map((n) => Number(n).toFixed(2)).join(' · ')}</b></div>
+        <div className="kry-bar"><i style={{ width: `${Math.min(100, Math.round((load[0] / cpus) * 100) + 4)}%` }} /></div>
       </div>
       <div className="kry-metric">
-        <div className="kry-metric-top"><span>Host</span><b>{VPS.host} · {VPS.uptimeDays}d up</b></div>
+        <div className="kry-metric-top"><span>Host</span><b>{host} · {uptimeD}d</b></div>
       </div>
     </Panel>
   );
 }
 
-/* ── Processes ──────────────────────────────────────────────────── */
+/* ── Processes (LIVE) ───────────────────────────────────────────── */
 export function ProcessesPanel({ lang, onClose, closing }) {
+  const [procs, setProcs] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      getProcesses().then((list) => {
+        if (!alive || !list) return;
+        setProcs(
+          list.map((p) => ({
+            name: p.name,
+            mem: p.memMB != null ? `${p.memMB}mb` : '—',
+            uptime: fmtUptime(p.uptimeMs),
+            online: p.status === 'online',
+          }))
+        );
+      });
+    load();
+    const iv = setInterval(load, 5000);
+    return () => { alive = false; clearInterval(iv); };
+  }, []);
+  const list = procs || SERVICES.map((s) => ({ ...s, online: true }));
   return (
-    <Panel icon={Activity} title={STRINGS.panelTitles.processes[lang]} onClose={onClose} closing={closing}>
-      {SERVICES.map((s) => (
+    <Panel icon={Activity} title={STRINGS.panelTitles.processes[lang]} live={!!procs} onClose={onClose} closing={closing}>
+      {list.map((s) => (
         <div className="kry-proc" key={s.name}>
-          <span className="kry-proc-name"><i className="kry-online" />{s.name}</span>
+          <span className="kry-proc-name"><i className={`kry-online ${s.online ? '' : 'off'}`} />{s.name}</span>
           <span className="kry-proc-meta">{s.uptime} · {s.mem}</span>
         </div>
       ))}
@@ -81,26 +126,34 @@ export function ProcessesPanel({ lang, onClose, closing }) {
   );
 }
 
-/* ── Live logs ──────────────────────────────────────────────────── */
+/* ── Live logs (LIVE) ───────────────────────────────────────────── */
+function colorLog(line) {
+  const l = line.toLowerCase();
+  if (/error|fail|✗|28p01/.test(l)) return 'kry-log-er';
+  if (/warn/.test(l)) return 'kry-log-wn';
+  if (/✓|ok|200|success|online|healthy/.test(l)) return 'kry-log-ok';
+  return 'kry-log-n';
+}
 export function LogsPanel({ lang, onClose, closing }) {
-  const [lines, setLines] = useState([]);
-  const idx = useRef(0);
+  const [lines, setLines] = useState(null);
   useEffect(() => {
-    const iv = setInterval(() => {
-      setLines((l) => {
-        const next = [...l, { key: idx.current, parts: LOG_LINES[idx.current % LOG_LINES.length] }];
-        idx.current += 1;
-        return next.slice(-7);
-      });
-    }, 900);
-    return () => clearInterval(iv);
+    let alive = true;
+    const load = () => getLogs('api_kryptoncode').then((ls) => { if (alive && ls) setLines(ls.slice(-8)); });
+    load();
+    const iv = setInterval(load, 2500);
+    return () => { alive = false; clearInterval(iv); };
   }, []);
+  const shown = lines || [
+    '[live] menghubungkan ke aliran log…',
+    'GET /api/core/system → 200',
+    'settlement worker tick complete',
+  ];
   return (
-    <Panel icon={Terminal} title={STRINGS.panelTitles.logs[lang]} onClose={onClose} closing={closing}>
+    <Panel icon={Terminal} title={STRINGS.panelTitles.logs[lang]} live={!!lines} onClose={onClose} closing={closing}>
       <div className="kry-logbox">
-        {lines.map((ln) => (
-          <div className="kry-logline" key={ln.key}>
-            {ln.parts.map(([cls, txt], i) => <span key={i} className={`kry-log-${cls}`}>{txt}</span>)}
+        {shown.map((ln, i) => (
+          <div className="kry-logline" key={i + ln.slice(0, 12)}>
+            <span className={colorLog(ln)}>{ln}</span>
           </div>
         ))}
       </div>
@@ -108,15 +161,12 @@ export function LogsPanel({ lang, onClose, closing }) {
   );
 }
 
-/* ── Research ───────────────────────────────────────────────────── */
+/* ── Research (mock) ────────────────────────────────────────────── */
 export function ResearchPanel({ lang, query, onClose, closing }) {
   const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 1300);
-    return () => clearTimeout(t);
-  }, []);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 1200); return () => clearTimeout(t); }, []);
   return (
-    <Panel icon={Search} title={`${STRINGS.panelTitles.research[lang]} · ${query}`} onClose={onClose} closing={closing}>
+    <Panel icon={Search} title={`${STRINGS.panelTitles.research[lang]} · ${query || ''}`} onClose={onClose} closing={closing}>
       {!ready ? (
         <div className="kry-dim">{lang === 'id' ? 'Menelusuri web & dokumentasi…' : 'Searching the web & docs…'}</div>
       ) : (
@@ -132,7 +182,7 @@ export function ResearchPanel({ lang, query, onClose, closing }) {
   );
 }
 
-/* ── Code draft ─────────────────────────────────────────────────── */
+/* ── Code (mock) ────────────────────────────────────────────────── */
 export function CodePanel({ lang, onClose, closing }) {
   return (
     <Panel icon={Code} title={STRINGS.panelTitles.code[lang]} onClose={onClose} closing={closing}>
@@ -145,14 +195,14 @@ export function CodePanel({ lang, onClose, closing }) {
   );
 }
 
-/* ── Deploy (drives its own timeline) ───────────────────────────── */
+/* ── Deploy (mock timeline) ─────────────────────────────────────── */
 export function DeployPanel({ lang, variant = 'backend', onDone, onClose, closing }) {
   const steps = DEPLOY_SCRIPTS[variant] || DEPLOY_SCRIPTS.backend;
   const [n, setN] = useState(0);
   const doneRef = useRef(false);
   useEffect(() => {
     if (n >= steps.length) {
-      if (!doneRef.current) { doneRef.current = true; onDone?.(variant); }
+      if (!doneRef.current) { doneRef.current = true; onDone && onDone(variant); }
       return undefined;
     }
     const t = setTimeout(() => setN((v) => v + 1), n === 0 ? 500 : 620);
@@ -171,7 +221,7 @@ export function DeployPanel({ lang, variant = 'backend', onDone, onClose, closin
   );
 }
 
-/* ── Browser ────────────────────────────────────────────────────── */
+/* ── Browser (mock) ─────────────────────────────────────────────── */
 export function BrowserPanel({ lang, onClose, closing }) {
   return (
     <Panel icon={Globe} title={STRINGS.panelTitles.browser[lang]} onClose={onClose} closing={closing}>
