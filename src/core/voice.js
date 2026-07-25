@@ -61,7 +61,27 @@ export function createMicAnalyser() {
     ctx = null; analyser = null; stream = null; enabled = false;
   }
 
-  return { enable, disable, getData, get enabled() { return enabled; } };
+  return {
+    enable, disable, getData,
+    get enabled() { return enabled; },
+    get stream() { return stream; },
+  };
+}
+
+// A tiny truly-silent WAV — played unmuted inside a user gesture, it unlocks
+// the <audio> element so later programmatic playback is allowed.
+function silentWavDataUri() {
+  const sr = 8000, n = 400;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const dv = new DataView(buf);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true);
+  dv.setUint16(34, 16, true); ws(36, 'data'); dv.setUint32(40, n * 2, true);
+  let bin = ''; const u8 = new Uint8Array(buf);
+  for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+  return 'data:audio/wav;base64,' + btoa(bin);
 }
 
 // ── TTS persona ──────────────────────────────────────────────────
@@ -139,16 +159,15 @@ export function createNaturalSpeech(getLang, apiBase) {
   // streamed chat answers — is allowed by the browser autoplay policy.
   function unlock() {
     if (unlocked) return;
-    unlocked = true;
     const a = ensureAudio();
     try {
-      a.muted = true;
-      a.src = `${base}/api/core/voice?lang=id&text=${encodeURIComponent('.')}`;
+      a.muted = false;
+      a.src = silentWavDataUri();
       const p = a.play();
-      const restore = () => { try { a.pause(); a.currentTime = 0; } catch { /* noop */ } a.muted = false; };
-      if (p && p.then) p.then(() => setTimeout(restore, 60)).catch(() => { a.muted = false; unlocked = false; });
-      else restore();
-    } catch { a.muted = false; unlocked = false; }
+      const ok = () => { unlocked = true; try { a.pause(); a.currentTime = 0; } catch { /* noop */ } };
+      if (p && p.then) p.then(ok).catch(() => { /* will retry on next gesture */ });
+      else ok();
+    } catch { /* noop */ }
   }
 
   function speak(text, { onstart, onend } = {}) {
@@ -258,4 +277,92 @@ export function createWakeWord(getLang, onWake) {
     setEnabled(v) { want = !!v; if (v) start(); else stop(); },
     supported: true,
   };
+}
+
+// ── server-side voice capture (MediaRecorder → Whisper) ──────────
+// Reliable, browser-agnostic replacement for Web Speech capture.
+// Reuses the mic analyser's stream + levels for voice-activity detection,
+// records until a natural pause, then POSTs the clip to /api/core/stt.
+export function createVoiceCapture(mic, getLang, apiBase) {
+  const base = (apiBase || 'https://api.kryptoncode.xyz').replace(/\/+$/, '');
+  const supported = typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined';
+  let recorder = null;
+  let chunks = [];
+  let vad = null;
+  let active = false;
+  let aborted = false;
+  let onResult = null;
+  let onPhase = null;
+
+  const START = 0.06;         // level to count as speech
+  const STOP = 0.035;         // level considered silence
+  const SILENCE_MS = 900;     // trailing silence to end a turn
+  const MAX_MS = 9000;        // hard cap
+  const NOSPEECH_MS = 6000;   // give up if nothing spoken
+
+  function pickMime() {
+    const opts = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    for (const m of opts) { try { if (window.MediaRecorder.isTypeSupported(m)) return m; } catch { /* noop */ } }
+    return '';
+  }
+
+  function start(cb, phaseCb) {
+    if (active || !supported) return false;
+    const stream = mic && mic.stream;
+    if (!stream) return false;
+    onResult = cb; onPhase = phaseCb || null;
+    chunks = []; aborted = false; active = true;
+    const mime = pickMime();
+    try { recorder = mime ? new window.MediaRecorder(stream, { mimeType: mime }) : new window.MediaRecorder(stream); }
+    catch { active = false; return false; }
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = finalize;
+    try { recorder.start(120); } catch { active = false; return false; }
+
+    const t0 = performance.now();
+    let speechStart = 0;
+    let lastLoud = 0;
+    vad = setInterval(() => {
+      const d = mic.getData && mic.getData();
+      const lvl = d ? d.level : 0;
+      const now = performance.now();
+      if (lvl > START) { if (!speechStart) speechStart = now; lastLoud = now; }
+      if (!speechStart) { if (now - t0 > NOSPEECH_MS) stop(true); return; }
+      if (now - t0 > MAX_MS) { stop(false); return; }
+      if (lvl < STOP && now - lastLoud > SILENCE_MS) stop(false);
+    }, 60);
+    return true;
+  }
+
+  function stop(abort) {
+    if (!active) return;
+    aborted = !!abort;
+    if (vad) { clearInterval(vad); vad = null; }
+    try {
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      else finalize();
+    } catch { finalize(); }
+  }
+
+  async function finalize() {
+    if (!active) return;
+    active = false;
+    const cb = onResult; onResult = null;
+    if (aborted || !chunks.length) { cb && cb(null); return; }
+    const blob = new Blob(chunks, { type: (recorder && recorder.mimeType) || 'audio/webm' });
+    chunks = [];
+    if (blob.size < 1400) { cb && cb(null); return; } // too short to be speech
+    onPhase && onPhase('transcribing');
+    try {
+      const res = await fetch(`${base}/api/core/stt?lang=${encodeURIComponent(getLang())}`, {
+        method: 'POST',
+        headers: { 'Content-Type': blob.type || 'audio/webm' },
+        body: blob,
+      });
+      const j = await res.json();
+      cb && cb(((j && j.text) || '').trim());
+    } catch { cb && cb(null); }
+  }
+
+  return { start, stop, get active() { return active; }, supported };
 }

@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Mic, Volume2, VolumeX, X } from './icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createOrbEngine } from './orbEngine';
-import { createMicAnalyser, createSpeech, createNaturalSpeech, createRecognizer, createWakeWord, voiceSupport } from './voice';
+import { createMicAnalyser, createSpeech, createNaturalSpeech, createRecognizer, createWakeWord, createVoiceCapture, voiceSupport } from './voice';
 import { createCues } from './soundCues';
 import * as liveApi from './liveApi';
 import { interpret, REPLIES } from './intentEngine';
@@ -64,6 +64,7 @@ export default function KryptonCore() {
   const chatAbortRef = useRef(null);
   const voiceModeRef = useRef(false);
   const finalGotRef = useRef(false);
+  const captureRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [orbState, setOrbState] = useState('idle');
@@ -84,6 +85,7 @@ export default function KryptonCore() {
     const engine = createOrbEngine(canvasRef.current);
     engineRef.current = engine;
     micRef.current = createMicAnalyser();
+    captureRef.current = createVoiceCapture(micRef.current, () => langRef.current, liveApi.API_BASE);
     speechRef.current = createNaturalSpeech(() => langRef.current, liveApi.API_BASE);
     cuesRef.current = createCues();
     wakeRef.current = createWakeWord(() => langRef.current, () => {
@@ -159,8 +161,8 @@ export default function KryptonCore() {
         bumpActivity();
         after?.();
         // hands-free turn-taking: after Krypton speaks, open the mic again
-        if (openRef.current && voiceModeRef.current && voiceSupport.recognition) {
-          setTimeout(() => startListenRef.current?.(), 250);
+        if (openRef.current && voiceModeRef.current && captureRef.current?.supported) {
+          setTimeout(() => startListenRef.current?.(), 350);
         }
       },
     });
@@ -189,37 +191,38 @@ export default function KryptonCore() {
   }, [sayReply, setOrb]);
 
   /* ── listening (push-to-talk) ─────────────────────────────────── */
-  const stopListen = useCallback(() => { recRef.current?.stop(); }, []);
-  const startListen = useCallback(() => {
-    if (!voiceSupport.recognition) return;
-    if (recRef.current?.active) return;
+  const stopListen = useCallback(() => { captureRef.current?.stop(false); }, []);
+  const startListen = useCallback(async () => {
+    if (captureRef.current?.active) return;
     speechRef.current?.cancel();
     engineRef.current?.setSpeaking(false);
     wakeRef.current?.setEnabled(false);
-    finalGotRef.current = false;
-    const begin = () => {
-      recRef.current = createRecognizer(() => langRef.current, {
-        onstate: (on) => {
-          setListening(on);
-          if (on) setOrb('listening');
-          else {
-            if (engineRef.current?.getState() === 'listening') setOrb('idle');
-            // no speech captured → go back to wake-word standby
-            if (!finalGotRef.current && window.localStorage.getItem(VOICE_OK_KEY) === '1') {
-              wakeRef.current?.setEnabled(true);
-            }
-          }
-        },
-        onpartial: (t) => { setInput(t); bumpActivity(); },
-        onfinal: (t) => {
-          finalGotRef.current = true;
+    // ensure the mic stream is live (also feeds the orb spectrum)
+    if (!micRef.current?.stream) {
+      const ok = await micRef.current?.enable();
+      if (ok) {
+        engineRef.current?.setAudioSource(() => micRef.current?.getData());
+        window.localStorage.setItem(VOICE_OK_KEY, '1');
+      }
+    }
+    const started = captureRef.current?.start(
+      (text) => {
+        setListening(false);
+        if (text) {
+          voiceModeRef.current = true;
           setInput('');
-          if (t) { voiceModeRef.current = true; handleRef.current?.(t); }
-        },
-      });
-      recRef.current.start();
-    };
-    setTimeout(begin, 160); // let the wake recognizer release the mic first
+          handleRef.current?.(text); // → orchestrator (thinking → reply → natural voice)
+        } else {
+          if (engineRef.current?.getState() === 'listening') setOrb('idle');
+          if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
+        }
+      },
+      (phase) => { if (phase === 'transcribing') setOrb('thinking'); }
+    );
+    if (started) { setListening(true); setOrb('listening'); bumpActivity(); }
+    else if (window.localStorage.getItem(VOICE_OK_KEY) === '1') {
+      wakeRef.current?.setEnabled(true);
+    }
   }, [setOrb, bumpActivity]);
   const startListenRef = useRef(null);
   useEffect(() => { startListenRef.current = startListen; }, [startListen]);
