@@ -143,6 +143,7 @@ export function createNaturalSpeech(getLang, apiBase) {
   const fallback = createSpeech(getLang);
   let audio = null;
   let unlocked = false;
+  let curUrl = null;
 
   function ensureAudio() {
     if (!audio) {
@@ -177,21 +178,35 @@ export function createNaturalSpeech(getLang, apiBase) {
     const a = ensureAudio();
     let started = false;
     let done = false;
-    const finish = () => { if (done) return; done = true; onend && onend(); };
+    const finish = () => {
+      if (done) return; done = true;
+      if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; }
+      onend && onend();
+    };
+    const toFallback = () => { if (!done) { done = true; fallback.speak(text, { onstart, onend }); } };
     a.onplaying = () => { if (!started) { started = true; onstart && onstart(); } };
     a.onended = finish;
-    a.onerror = () => {
-      if (!started) { fallback.speak(text, { onstart, onend }); done = true; }
-      else finish();
-    };
-    a.muted = false;
-    a.src = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
-    const p = a.play();
-    if (p && p.catch) p.catch(() => { if (!started) { fallback.speak(text, { onstart, onend }); done = true; } });
+    a.onerror = () => { if (!started) toFallback(); else finish(); };
+    // Fetch the FULL clip first, then play from a blob — avoids choppy/cut
+    // playback caused by progressive streaming stalls.
+    const url = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
+    fetch(url)
+      .then((res) => { if (!res.ok) throw new Error('tts ' + res.status); return res.blob(); })
+      .then((blob) => {
+        if (done) return;
+        if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } }
+        curUrl = URL.createObjectURL(blob);
+        a.muted = false;
+        a.src = curUrl;
+        const p = a.play();
+        if (p && p.catch) p.catch(() => toFallback());
+      })
+      .catch(() => toFallback());
   }
 
   function cancel() {
     try { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); } } catch { /* noop */ }
+    if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; }
     fallback.cancel();
   }
 
