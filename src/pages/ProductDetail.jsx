@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, Check, Link, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, Link, TriangleAlert, WifiOff } from 'lucide-react';
 import { renderIcon } from '../lib/icons';
 import { api } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,14 +16,19 @@ export default function ProductDetail() {
   const collectionPath = source === 'mock' ? '/products?source=mock' : '/products';
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [fallback, setFallback] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
-      setLoading(true); setError(null); setProduct(null);
+      setLoading(true); setFallback(false); setProduct(null);
       if (source === 'mock') { setProduct(productsData.find((item) => item.id === id) || null); setLoading(false); return; }
       try { const data = await api.get(`/api/products/${id}`); setProduct(data.product); }
-      catch (requestError) { setError(requestError.message); }
+      catch {
+        // API/backend unreachable — try the bundled demo catalog before giving up.
+        const demoProduct = productsData.find((item) => item.id === id) || null;
+        setProduct(demoProduct);
+        setFallback(Boolean(demoProduct));
+      }
       finally { setLoading(false); }
     }
     fetchProduct();
@@ -33,13 +38,19 @@ export default function ProductDetail() {
 
   if (loading) return <main className="product-detail-page page-content" aria-busy="true"><div className="skeleton detail-toolbar-skeleton" /><article className="detail-hero-card menu-surface"><div className="detail-hero"><span className="skeleton detail-icon-skeleton" /><div className="detail-heading-copy"><span className="skeleton detail-line-sm" /><span className="skeleton detail-line-lg" /><span className="skeleton detail-line-md" /></div></div></article></main>;
 
-  if (error || !product) return <main className="product-detail-page page-content"><article className="detail-state menu-surface"><TriangleAlert aria-hidden="true" /><h1>{t('product.notFound')}</h1>{error && <p>{error}</p>}<button className="product-button product-button-primary" onClick={() => navigate(collectionPath)}><ArrowLeft aria-hidden="true" />{t('product.backToCollection')}</button></article></main>;
+  if (!product) return <main className="product-detail-page page-content"><article className="detail-state menu-surface"><TriangleAlert aria-hidden="true" /><h1>{t('product.notFound')}</h1><button className="product-button product-button-primary" onClick={() => navigate(collectionPath)}><ArrowLeft aria-hidden="true" />{t('product.backToCollection')}</button></article></main>;
 
   let features = [];
   try { features = typeof product.features === 'string' ? JSON.parse(product.features) : product.features || []; } catch { features = []; }
 
   return <main className="product-detail-page page-content animate-fade-in">
     <div className="product-detail-toolbar"><button className="product-detail-back" onClick={() => navigate(collectionPath)}><ArrowLeft aria-hidden="true" />{t('product.back')}</button><ProductSourceToggle source={source} onChange={changeSource} label={t('products.dataSource')} liveLabel={t('products.liveApi')} mockLabel={t('products.mockData')} /></div>
+    {fallback && (
+      <div className="pool-demo-note" role="status">
+        <WifiOff size={14} strokeWidth={1.5} aria-hidden="true" />
+        <span>{t('products.fallbackNotice')}</span>
+      </div>
+    )}
     <article className="detail-layout">
       <section className="detail-hero-card menu-surface"><div className="detail-hero"><span className="detail-product-icon" aria-hidden="true">{renderIcon(product.icon_name)}</span><div className="detail-heading-copy"><div className="detail-eyebrow"><span className="product-badge">{product.type}</span><span>{t('common.by')} {product.company}</span></div><h1>{product.title}</h1><p>{product.desc}</p></div></div></section>
       <div className="detail-content-grid">

@@ -62,9 +62,6 @@ function AppContent() {
         {/* Navbar */}
         <nav
           className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} ${isMobileMenuOpen ? 'navbar-menu-open' : ''}`}
-          style={isScrolled && !isMobileMenuOpen
-            ? { backdropFilter: 'blur(22px) saturate(145%)', WebkitBackdropFilter: 'blur(22px) saturate(145%)' }
-            : undefined}
         >
           <Link to="/" style={{ textDecoration: 'none' }} onClick={closeMenu}>
             <div className="logo" style={{ color: '#C0C0C0' }}>
@@ -106,7 +103,7 @@ function AppContent() {
             
             <div className="nav-actions">
               <LanguageSelector />
-              <a className="btn-white-pill nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
+              <a className="k-btn k-btn--primary nav-try-btn" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
                 {t('nav.tryAgent')} <ArrowUpRight size={18} weight="bold" aria-hidden="true" />
               </a>
             </div>
@@ -150,6 +147,10 @@ function AppContent() {
                 {t('footer.replayIntro')}
               </button>
             </div>
+          </div>
+
+          <div className="k-wordmark-row" aria-hidden="true">
+            <span className="k-wordmark">KryptonCode</span>
           </div>
 
           <div className="footer-bottom">

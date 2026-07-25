@@ -6,12 +6,13 @@ import {
   Brain,
   Check,
   Copy,
+  Database,
   DollarSign,
   Eye,
+  Gauge,
   RefreshCw,
   Wrench,
   Zap,
-  Gauge,
 } from 'lucide-react'
 import {
   Area,
@@ -22,9 +23,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useLanguage } from '../contexts/LanguageContext'
+import { buildPoolDemoData } from '../data/poolData'
 
-const API_BASE = 'https://api.kryptoncode.xyz/api/pool'
+const API_URL = 'https://api.kryptoncode.xyz/api/pool'
 const CONNECT_URL = 'https://base.kryptoncode.xyz/v1'
+const BOT_URL = 'https://t.me/kryptoncode_bot?start=genapi'
+const FETCH_TIMEOUT = 6500
 
 function fmt(n) {
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B'
@@ -46,12 +51,18 @@ function fmtCtx(n) {
 
 function fmtTime(ts) {
   const d = new Date(ts)
-  const now = new Date()
-  const diff = (now - d) / 1000
+  const diff = (Date.now() - d.getTime()) / 1000
   if (diff < 60) return Math.floor(diff) + 's'
   if (diff < 3600) return Math.floor(diff / 60) + 'm'
   if (diff < 86400) return Math.floor(diff / 3600) + 'h'
   return d.toLocaleDateString()
+}
+
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms)
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), ms)
+  return controller.signal
 }
 
 function KpiCard({ icon: Icon, label, value, sub }) {
@@ -93,6 +104,7 @@ function CopyButton({ text, label }) {
   return (
     <button
       className="pool-btn pool-btn--mono"
+      type="button"
       title={text}
       onClick={() => {
         navigator.clipboard?.writeText(text)
@@ -106,10 +118,8 @@ function CopyButton({ text, label }) {
   )
 }
 
-
-function CapacityBar({ capacity }) {
+function CapacityBar({ capacity, t }) {
   if (!capacity) return null
-  const remaining = Number(capacity.remainingPct ?? 0)
   const used = Number(
     capacity.usedPct != null
       ? capacity.usedPct
@@ -119,17 +129,14 @@ function CapacityBar({ capacity }) {
   const healthy = Number(capacity.accountsHealthy || 0)
   const exhausted = Number(capacity.accountsExhausted || 0)
   const tokensUsed = Number(capacity.tokensUsed || 0)
-  const tone =
-    used <= 40 ? 'good' : used <= 75 ? 'warn' : 'crit'
+  const tone = used <= 40 ? 'good' : used <= 75 ? 'warn' : 'crit'
   return (
     <div className="pool-card pool-capacity">
       <div className="pool-capacity-head">
         <div>
-          <span className="pool-capacity-eyebrow">Pool capacity</span>
-          <h3 className="pool-capacity-title">Usage</h3>
-          <p className="pool-capacity-text">
-            All <strong>grok-cli</strong> accounts · <strong>1%</strong> still lots · <strong>100%</strong> full/habis
-          </p>
+          <span className="pool-eyebrow">{t('pool.capacityEyebrow')}</span>
+          <h3 className="pool-capacity-title">{t('pool.capacityTitle')}</h3>
+          <p className="pool-capacity-text">{t('pool.capacityText')}</p>
         </div>
         <div className={`pool-capacity-pct pool-capacity-pct--${tone}`}>
           <Gauge size={18} strokeWidth={1.5} />
@@ -137,7 +144,13 @@ function CapacityBar({ capacity }) {
         </div>
       </div>
 
-      <div className="pool-capacity-bar" role="progressbar" aria-valuenow={used} aria-valuemin={0} aria-valuemax={100}>
+      <div
+        className="pool-capacity-bar"
+        role="progressbar"
+        aria-valuenow={used}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
         <div
           className={`pool-capacity-fill pool-capacity-fill--${tone}`}
           style={{ width: `${Math.max(0, Math.min(100, used))}%` }}
@@ -146,23 +159,23 @@ function CapacityBar({ capacity }) {
 
       <div className="pool-capacity-meta">
         <div>
-          <span className="pool-capacity-meta-label">Healthy</span>
+          <span className="pool-capacity-meta-label">{t('pool.healthy')}</span>
           <span className="pool-capacity-meta-value pool-mono">
             {healthy}/{total}
           </span>
         </div>
         <div>
-          <span className="pool-capacity-meta-label">Exhausted</span>
+          <span className="pool-capacity-meta-label">{t('pool.exhausted')}</span>
           <span className="pool-capacity-meta-value pool-mono">
-            {exhausted} · {used.toFixed(used % 1 === 0 ? 0 : 1)}%
+            {exhausted}/{total}
           </span>
         </div>
         <div>
-          <span className="pool-capacity-meta-label">Tokens used</span>
+          <span className="pool-capacity-meta-label">{t('pool.tokensUsed')}</span>
           <span className="pool-capacity-meta-value pool-mono">{fmt(tokensUsed)}</span>
         </div>
         <div>
-          <span className="pool-capacity-meta-label">Grok requests</span>
+          <span className="pool-capacity-meta-label">{t('pool.grokRequests')}</span>
           <span className="pool-capacity-meta-value pool-mono">{fmt(capacity.requests || 0)}</span>
         </div>
       </div>
@@ -179,25 +192,42 @@ function SectionHeading({ title, meta }) {
   )
 }
 
+function PoolSkeleton() {
+  return (
+    <main className="pool-page page-content" aria-busy="true">
+      <div className="skeleton pool-skeleton-intro" />
+      <div className="pool-kpi-grid" aria-hidden="true">
+        {[1, 2, 3, 4].map((n) => (
+          <div key={n} className="skeleton pool-skeleton-kpi" />
+        ))}
+      </div>
+      <div className="skeleton pool-skeleton-block" />
+    </main>
+  )
+}
+
 export default function Pool() {
+  const { t } = useLanguage()
   const [data, setData] = useState(null)
+  const [isDemo, setIsDemo] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
 
   const loadData = useCallback(async () => {
     setRefreshing(true)
     try {
-      const res = await fetch(API_BASE)
+      const res = await fetch(API_URL, { signal: timeoutSignal(FETCH_TIMEOUT) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       setData(json)
-      setError(null)
-      setLastUpdated(new Date().toLocaleTimeString())
-    } catch (e) {
-      setError(e.message)
+      setIsDemo(false)
+    } catch {
+      // Backend unreachable — fall back to the bundled demo dataset.
+      setData(buildPoolDemoData())
+      setIsDemo(true)
     } finally {
+      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
       setLoading(false)
       setRefreshing(false)
     }
@@ -209,27 +239,7 @@ export default function Pool() {
     return () => clearInterval(interval)
   }, [loadData])
 
-  if (loading) {
-    return (
-      <main className="pool-page">
-        <div className="pool-loading">Loading AI Pool…</div>
-      </main>
-    )
-  }
-
-  if (error && !data) {
-    return (
-      <main className="pool-page">
-        <div className="pool-error">
-          <p>Failed to load pool data</p>
-          <span>{error}</span>
-          <button className="pool-btn" onClick={loadData}>
-            Try again
-          </button>
-        </div>
-      </main>
-    )
-  }
+  if (loading || !data) return <PoolSkeleton />
 
   const stats = data?.stats || {}
   const models = (Array.isArray(data?.models) ? data.models : []).filter((m) => {
@@ -240,6 +250,7 @@ export default function Pool() {
       id.includes('grok') ||
       owned.includes('grok') ||
       owned === 'krypton' ||
+      owned === 'xai' ||
       prov.includes('grok') ||
       prov === 'gcli' ||
       prov === 'xai'
@@ -262,137 +273,156 @@ export default function Pool() {
     cost: Number((d.cost || 0).toFixed(4)),
   }))
 
+  const tableHeaders = [
+    t('pool.time'),
+    'Model',
+    'Provider',
+    'Prompt',
+    'Completion',
+    'Cached',
+    t('pool.cost'),
+    t('pool.status'),
+  ]
+
   return (
-    <main className="pool-page">
-      {/* Header */}
-      <header className="pool-header">
-        <div>
-          <span className="pool-eyebrow">KryptonCode / Shared Infrastructure</span>
-          <h1 className="pool-title">AI Pool</h1>
-          <p className="pool-subtitle">
-            Live view of the models, usage, and capacity powering KryptonCode's shared AI
-            infrastructure.
-          </p>
+    <main className="pool-page page-content">
+      {/* Intro — same visual language as the Products page */}
+      <section className="products-intro pool-intro animate-slide-up" aria-labelledby="pool-heading">
+        <div className="products-kicker">
+          <span className="products-status-dot" aria-hidden="true" />
+          {t('pool.kicker')}
         </div>
-        <div className="pool-header-right">
-          <span className="pool-live-pill">
-            <span className="pool-live-dot" />
-            Live · {lastUpdated || '—'}
+        <div className="products-intro-grid">
+          <h1 id="pool-heading">{t('pool.headline')}</h1>
+          <div className="products-intro-copy">
+            <p>{t('pool.intro')}</p>
+            <a href={BOT_URL} target="_blank" rel="noopener noreferrer">
+              {t('pool.getKey')}
+              <ArrowUpRight aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+        <div className="products-separator" />
+        <div className="products-meta pool-meta">
+          <span>{t('pool.meta')}</span>
+          <div className="pool-meta-actions">
+            <span className={`pool-pill ${isDemo ? 'pool-pill--demo' : 'pool-pill--live'}`}>
+              <span className="pool-pill-dot" aria-hidden="true" />
+              {isDemo ? t('pool.demo') : `${t('pool.live')} · ${lastUpdated || '—'}`}
+            </span>
+            <button
+              className="pool-icon-btn"
+              type="button"
+              onClick={loadData}
+              disabled={refreshing}
+              aria-label={t('pool.refresh')}
+            >
+              <RefreshCw size={14} strokeWidth={1.5} className={refreshing ? 'pool-spin' : ''} />
+            </button>
+          </div>
+          <span>
+            {models.length} {t('pool.modelsCount')}
           </span>
-          <button
-            className="pool-icon-btn"
-            onClick={loadData}
-            disabled={refreshing}
-            aria-label="Refresh"
-          >
-            <RefreshCw size={15} strokeWidth={1.5} className={refreshing ? 'pool-spin' : ''} />
+        </div>
+      </section>
+
+      {/* Demo-mode notice */}
+      {isDemo && (
+        <div className="pool-demo-note animate-slide-up" role="status">
+          <Database size={14} strokeWidth={1.5} aria-hidden="true" />
+          <span>{t('pool.demoNotice')}</span>
+          <button type="button" onClick={loadData} disabled={refreshing}>
+            {t('pool.retryLive')}
           </button>
         </div>
-      </header>
+      )}
 
-      {/* Connection bar */}
-      <div className="pool-card pool-conn">
-        <div className="pool-conn-item">
-          <span className="pool-conn-label">API Base URL</span>
-          <CopyButton text={CONNECT_URL} label="base.kryptoncode.xyz/v1" />
-        </div>
-        <div className="pool-conn-divider" />
-        <div className="pool-conn-item">
-          <span className="pool-conn-label">Status</span>
-          <span className="pool-conn-status">
-            <span className="pool-live-dot" />
-            Operational
-          </span>
-        </div>
-        <a className="pool-btn pool-btn--outline" href={CONNECT_URL} target="_blank" rel="noreferrer">
-          Endpoint <ArrowUpRight size={13} strokeWidth={1.5} />
-        </a>
-      </div>
-
-      {/* API access CTA → Telegram bot */}
-      <div className="pool-card pool-access">
-        <div className="pool-access-copy">
-          <span className="pool-access-eyebrow">Need API access?</span>
-          <h3 className="pool-access-title">Generate your API key via Telegram</h3>
-          <p className="pool-access-text">
-            Open <strong>@kryptoncode_bot</strong>, press <strong>Start</strong>, then run{" "}
-            <code>/genapi</code>. The bot creates a personal 9router key for{" "}
-            <code>base.kryptoncode.xyz/v1</code>.
-          </p>
-          <ol className="pool-access-steps">
-            <li>Start the bot</li>
+      {/* Connect card — endpoint + API key via Telegram bot */}
+      <section className="pool-card pool-connect animate-slide-up delay-100" aria-labelledby="pool-connect-title">
+        <div className="pool-connect-copy">
+          <span className="pool-eyebrow">{t('pool.accessEyebrow')}</span>
+          <h2 id="pool-connect-title" className="pool-connect-title">{t('pool.accessTitle')}</h2>
+          <p className="pool-connect-text">{t('pool.accessText')}</p>
+          <ol className="pool-connect-steps">
+            <li>{t('pool.step1')}</li>
             <li>
-              Send <code>/genapi</code>
+              {t('pool.step2')} <code>/genapi</code>
             </li>
-            <li>Copy key → use with models below</li>
+            <li>{t('pool.step3')}</li>
           </ol>
         </div>
-        <div className="pool-access-actions">
-          <a
-            className="pool-btn pool-btn--primary"
-            href="https://t.me/kryptoncode_bot?start=genapi"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open @kryptoncode_bot <ArrowUpRight size={13} strokeWidth={1.5} />
+        <div className="pool-connect-panel">
+          <div className="pool-endpoint">
+            <span className="pool-endpoint-label">{t('pool.endpoint')}</span>
+            <CopyButton text={CONNECT_URL} label="base.kryptoncode.xyz/v1" />
+          </div>
+          <div className="pool-endpoint">
+            <span className="pool-endpoint-label">{t('pool.status')}</span>
+            <span className={`pool-conn-status ${isDemo ? 'pool-conn-status--demo' : ''}`}>
+              <span className="pool-pill-dot" aria-hidden="true" />
+              {isDemo ? t('pool.demo') : t('pool.operational')}
+            </span>
+          </div>
+          <a className="btn-white-pill pool-bot-cta" href={BOT_URL} target="_blank" rel="noopener noreferrer">
+            {t('pool.openBot')} <ArrowUpRight size={16} aria-hidden="true" />
           </a>
           <CopyButton text="/genapi" />
         </div>
-      </div>
+      </section>
 
-      {/* Capacity remaining across all grok accounts */}
-      <CapacityBar capacity={capacity} />
+      {/* Capacity across all grok accounts */}
+      <CapacityBar capacity={capacity} t={t} />
 
       {/* KPIs */}
       <div className="pool-kpi-grid">
         <KpiCard
           icon={Activity}
-          label="Total Requests"
+          label={t('pool.totalRequests')}
           value={fmt(lifetime.requests)}
-          sub={`${fmt(lifetime.promptTokens)} prompt tokens`}
+          sub={`${fmt(lifetime.promptTokens)} ${t('pool.promptTokens')}`}
         />
         <KpiCard
           icon={Zap}
-          label="Today"
+          label={t('pool.today')}
           value={fmt(today.requests)}
-          sub={`${fmtCost(today.cost)} spent today`}
+          sub={`${fmtCost(today.cost)} ${t('pool.spentToday')}`}
         />
         <KpiCard
           icon={Boxes}
-          label="Models"
+          label={t('pool.models')}
           value={String(models.length)}
           sub={
             capacity
-              ? `${capacity.accountsHealthy || 0}/${capacity.accountsTotal || 0} accounts healthy`
-              : 'powered by KryptonCode'
+              ? `${capacity.accountsHealthy || 0}/${capacity.accountsTotal || 0} ${t('pool.accountsHealthy')}`
+              : t('pool.poweredBy')
           }
         />
         <KpiCard
           icon={DollarSign}
-          label="Lifetime Cost"
+          label={t('pool.lifetimeCost')}
           value={fmtCost(lifetime.cost)}
-          sub={`${fmt(lifetime.completionTokens)} completion tokens`}
+          sub={`${fmt(lifetime.completionTokens)} ${t('pool.completionTokens')}`}
         />
       </div>
 
       {/* Chart */}
-      <section>
-        <SectionHeading title="Daily Usage" meta={`${usageDaily.length} days`} />
+      <section className="pool-section">
+        <SectionHeading title={t('pool.dailyUsage')} meta={`${usageDaily.length} ${t('pool.days')}`} />
         <div className="pool-card pool-chart-wrap">
           <div className="pool-chart-head">
-            <span className="pool-chart-title">Requests & cost trend</span>
+            <span className="pool-chart-title">{t('pool.chartTitle')}</span>
             <div className="pool-chart-legend">
               <span>
-                <i style={{ background: 'var(--chart-1)' }} /> Requests
+                <i style={{ background: 'var(--chart-1)' }} /> {t('pool.requests')}
               </span>
               <span>
-                <i style={{ background: 'var(--chart-2)' }} /> Cost
+                <i style={{ background: 'var(--chart-2)' }} /> {t('pool.cost')}
               </span>
             </div>
           </div>
           {chartData.length ? (
             <div className="pool-chart">
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
                   <defs>
                     <linearGradient id="poolReq" x1="0" y1="0" x2="0" y2="1">
@@ -400,7 +430,7 @@ export default function Pool() {
                       <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="var(--card-border)" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="date"
                     tick={{ fill: 'var(--ink-3)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
@@ -413,15 +443,15 @@ export default function Pool() {
                     tick={{ fill: 'var(--ink-3)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
                     tickLine={false}
                     axisLine={false}
-                    width={36}
+                    width={40}
                     tickFormatter={(v) => fmt(v)}
                   />
                   <YAxis yAxisId="cost" orientation="right" hide />
                   <Tooltip
                     contentStyle={{
-                      background: 'var(--bg-secondary)',
-                      border: '1px solid var(--card-border)',
-                      borderRadius: 'var(--radius)',
+                      background: 'rgb(20, 20, 21)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 12,
                       fontSize: 12,
                       fontFamily: 'var(--font-mono)',
                     }}
@@ -435,6 +465,7 @@ export default function Pool() {
                     stroke="var(--chart-1)"
                     strokeWidth={2}
                     fill="url(#poolReq)"
+                    isAnimationActive={false}
                   />
                   <Area
                     yAxisId="cost"
@@ -444,31 +475,32 @@ export default function Pool() {
                     strokeWidth={1.5}
                     strokeDasharray="5 5"
                     fill="none"
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="pool-empty">No usage data yet</div>
+            <div className="pool-empty">{t('pool.noUsage')}</div>
           )}
         </div>
       </section>
 
       {/* Models */}
-      <section>
-        <SectionHeading title="Available Models" meta={`${models.length} models`} />
+      <section className="pool-section">
+        <SectionHeading title={t('pool.availableModels')} meta={`${models.length} ${t('pool.modelsCount')}`} />
         {models.length ? (
           <div className="pool-models-grid">
             {models.map((m, i) => (
-              <div key={i} className="pool-card pool-model">
+              <div key={m.id || i} className="pool-card pool-model">
                 <div className="pool-model-head">
                   <span className="pool-model-id">{m.id}</span>
                   <span className="pool-model-owner">{m.owned_by || 'krypton'}</span>
                 </div>
                 <div className="pool-model-caps">
-                  <CapTag icon={Eye} label="Vision" active={m.vision} />
-                  <CapTag icon={Wrench} label="Tools" active={m.tools} />
-                  <CapTag icon={Brain} label="Reasoning" active={m.reasoning} />
+                  <CapTag icon={Eye} label={t('pool.vision')} active={m.vision} />
+                  <CapTag icon={Wrench} label={t('pool.toolsCap')} active={m.tools} />
+                  <CapTag icon={Brain} label={t('pool.reasoning')} active={m.reasoning} />
                 </div>
                 <div className="pool-model-meta">
                   <span>
@@ -482,24 +514,22 @@ export default function Pool() {
             ))}
           </div>
         ) : (
-          <div className="pool-card pool-empty">No models available</div>
+          <div className="pool-card pool-empty">{t('pool.noModels')}</div>
         )}
       </section>
 
       {/* Recent requests */}
-      <section>
-        <SectionHeading title="Recent Requests" meta={`${usageRecent.length} recent`} />
+      <section className="pool-section">
+        <SectionHeading title={t('pool.recentRequests')} meta={`${usageRecent.length} ${t('pool.recent')}`} />
         {usageRecent.length ? (
           <div className="pool-card pool-table-wrap">
             <div className="pool-table-scroll">
               <table className="pool-table">
                 <thead>
                   <tr>
-                    {['Time', 'Model', 'Provider', 'Prompt', 'Completion', 'Cached', 'Cost', 'Status'].map(
-                      (h) => (
-                        <th key={h}>{h}</th>
-                      ),
-                    )}
+                    {tableHeaders.map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -507,7 +537,9 @@ export default function Pool() {
                     <tr key={i}>
                       <td className="pool-mono">{fmtTime(r.timestamp)}</td>
                       <td className="pool-mono">{r.model || '—'}</td>
-                      <td className="pool-mono">{(r.provider || '').includes('grok') ? 'grok-cli' : (r.provider || '—')}</td>
+                      <td className="pool-mono">
+                        {(r.provider || '').includes('grok') ? 'grok-cli' : r.provider || '—'}
+                      </td>
                       <td className="pool-mono">{fmt(r.promptTokens)}</td>
                       <td className="pool-mono">{fmt(r.completionTokens)}</td>
                       <td className="pool-mono pool-dim">{fmt(r.cachedTokens)}</td>
@@ -529,7 +561,9 @@ export default function Pool() {
                     <StatusBadge status={r.status} />
                   </div>
                   <div className="pool-mobile-card-mid">
-                    <span className="pool-mono">{(r.provider || '').includes('grok') ? 'grok-cli' : (r.provider || '—')}</span>
+                    <span className="pool-mono">
+                      {(r.provider || '').includes('grok') ? 'grok-cli' : r.provider || '—'}
+                    </span>
                     <span className="pool-mono">{fmtTime(r.timestamp)}</span>
                   </div>
                   <div className="pool-mobile-card-grid">
@@ -555,7 +589,7 @@ export default function Pool() {
             </div>
           </div>
         ) : (
-          <div className="pool-card pool-empty">No recent requests</div>
+          <div className="pool-card pool-empty">{t('pool.noRecent')}</div>
         )}
       </section>
     </main>
