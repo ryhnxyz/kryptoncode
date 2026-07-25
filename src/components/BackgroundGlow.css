@@ -1,4 +1,5 @@
-/* Section-scoped field: lives inside a .k-band--hero, not the viewport. */
+/* Hero background field — overcode language, monochrome krypton palette.
+   Dotted halftone across the hero + soft bloom glows drifting slowly. */
 .signal-field {
   position: absolute !important;
   inset: 0;
@@ -8,103 +9,75 @@
   isolation: isolate;
 }
 
-.signal-field__grid,
+/* Halftone dot grid — fades out toward the hero edges */
+.signal-field__grid {
+  position: absolute;
+  inset: -4%;
+  background-image: radial-gradient(circle, rgba(250, 247, 242, 0.16) 1px, transparent 1.3px);
+  background-size: 24px 24px;
+  opacity: 0.34;
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 0%, black 0%, rgba(0, 0, 0, 0.55) 55%, transparent 88%);
+  mask-image: radial-gradient(120% 100% at 50% 0%, black 0%, rgba(0, 0, 0, 0.55) 55%, transparent 88%);
+}
+
+/* Bloom glows — where overcode blooms purple, krypton blooms warm white */
 .signal-field__wave {
   position: absolute;
-  inset: -8%;
-}
-
-.signal-field__grid {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1.2px);
-  background-size: 28px 28px;
-  opacity: 0.26;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 2%, black 28%, black 70%, transparent 98%);
-  mask-image: linear-gradient(to bottom, transparent 2%, black 28%, black 70%, transparent 98%);
-}
-
-.signal-field__wave {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.82) 1.4px, transparent 1.6px);
-  background-size: 18px 18px;
-  transform-origin: 50% 50%;
+  inset: -20%;
   will-change: transform;
 }
 
 .signal-field__wave--far {
-  opacity: 0.16;
-  clip-path: polygon(0 18%, 10% 14%, 22% 22%, 35% 42%, 48% 53%, 62% 45%, 76% 24%, 89% 17%, 100% 26%, 100% 66%, 88% 58%, 75% 61%, 61% 74%, 48% 82%, 34% 72%, 20% 49%, 8% 39%, 0 43%);
-  animation: signal-drift-far 36s ease-in-out infinite alternate;
+  background: radial-gradient(38% 30% at 50% 22%, rgba(250, 247, 242, 0.085), transparent 70%);
+  animation: signal-drift-far 26s ease-in-out infinite alternate;
 }
 
 .signal-field__wave--near {
-  opacity: 0.34;
-  clip-path: polygon(0 56%, 12% 48%, 25% 51%, 38% 63%, 51% 72%, 64% 68%, 77% 54%, 90% 48%, 100% 52%, 100% 79%, 88% 75%, 75% 80%, 62% 90%, 49% 94%, 36% 87%, 23% 72%, 10% 66%, 0 70%);
-  animation: signal-drift-near 42s ease-in-out infinite alternate;
+  background:
+    radial-gradient(26% 20% at 38% 30%, rgba(250, 247, 242, 0.05), transparent 70%),
+    radial-gradient(26% 20% at 64% 24%, rgba(250, 247, 242, 0.05), transparent 70%);
+  animation: signal-drift-near 34s ease-in-out infinite alternate;
 }
 
+/* Tiny HUD line — krypton signature detail */
 .signal-field__axis {
   position: absolute;
-  inset: 22px 22px auto;
+  inset: auto 26px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(250, 247, 242, 0.24);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
 }
 
 .signal-field__axis::before {
   content: '';
   position: absolute;
   top: 50%;
-  right: 72px;
-  left: 42px;
+  right: 78px;
+  left: 46px;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(250, 247, 242, 0.07);
 }
 
 @keyframes signal-drift-far {
-  from { transform: translate3d(-0.5%, -0.4%, 0) scale(1.01); }
-  to { transform: translate3d(0.5%, 0.4%, 0) scale(1.015); }
+  from { transform: translate3d(-1%, -0.6%, 0) scale(1); }
+  to { transform: translate3d(1%, 0.8%, 0) scale(1.03); }
 }
 
 @keyframes signal-drift-near {
-  from { transform: translate3d(0.4%, 0.3%, 0) scale(1.005); }
-  to { transform: translate3d(-0.4%, -0.3%, 0) scale(1.012); }
+  from { transform: translate3d(0.8%, 0.5%, 0) scale(1.01); }
+  to { transform: translate3d(-0.8%, -0.5%, 0) scale(1.025); }
 }
 
 @media (max-width: 640px) {
-  .signal-field__grid {
-    inset: 0;
-    background-size: 26px 26px;
-    opacity: 0.1;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
-    mask-image: linear-gradient(to bottom, transparent 8%, black 32%, black 68%, transparent 96%);
-  }
-
-  .signal-field__wave {
-    inset: -6%;
-    background-size: 20px 20px;
-    animation: none;
-    will-change: auto;
-  }
-
-  .signal-field__wave--far {
-    opacity: 0.08;
-  }
-
-  .signal-field__wave--near {
-    opacity: 0.12;
-  }
-
-  .signal-field__axis {
-    inset: 16px 16px auto;
-  }
+  .signal-field__grid { background-size: 21px 21px; opacity: 0.22; }
+  .signal-field__wave { animation: none; will-change: auto; }
+  .signal-field__axis { inset: auto 16px 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .signal-field__wave {
-    animation: none;
-    will-change: auto;
-  }
+  .signal-field__wave { animation: none; will-change: auto; }
 }
