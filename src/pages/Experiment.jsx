@@ -27,7 +27,7 @@ const EASE = [0.16, 1, 0.3, 1];
  * brand, hold a beat, then drift apart as the screen hands over to the
  * dark catalog. Pure animation — no scrolling involved.
  */
-function LabWelcome({ t, onDone }) {
+function LabWelcome({ t, onDone, hold = false }) {
   const [leaving, setLeaving] = useState(false);
   const doneRef = useRef(false);
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -44,9 +44,11 @@ function LabWelcome({ t, onDone }) {
   }, [finish, reducedMotion]);
 
   useEffect(() => {
-    if (reducedMotion) { finish(); return undefined; }
+    if (reducedMotion && !hold) { finish(); return undefined; }
 
-    const exitTimer = window.setTimeout(beginExit, WELCOME_HOLD_MS);
+    // hold mode (?intro=1): stay on screen until the user skips — handy for
+    // previewing/tuning the choreography.
+    const exitTimer = hold ? 0 : window.setTimeout(beginExit, WELCOME_HOLD_MS);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -54,13 +56,13 @@ function LabWelcome({ t, onDone }) {
     window.addEventListener('keydown', onKey);
 
     return () => {
-      window.clearTimeout(exitTimer);
+      if (exitTimer) window.clearTimeout(exitTimer);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKey);
     };
-  }, [beginExit, finish, reducedMotion]);
+  }, [beginExit, finish, reducedMotion, hold]);
 
-  if (reducedMotion) return null;
+  if (reducedMotion && !hold) return null;
 
   return (
     <motion.div
@@ -160,7 +162,9 @@ export default function Experiment() {
   const [filter, setFilter] = useState('all');
   // The welcome plays on every entrance to the Lab (labs.google behavior),
   // but never underneath the site-wide splash — it waits its turn.
-  const [showWelcome, setShowWelcome] = useState(() => siteSplashDone());
+  // ?intro=1 holds it open (preview/tuning mode).
+  const holdIntro = new URLSearchParams(window.location.search).has('intro');
+  const [showWelcome, setShowWelcome] = useState(() => holdIntro || siteSplashDone());
 
   useEffect(() => {
     if (siteSplashDone()) return undefined;
@@ -177,7 +181,7 @@ export default function Experiment() {
   return (
     <>
       <AnimatePresence>
-        {showWelcome && <LabWelcome t={t} onDone={() => setShowWelcome(false)} />}
+        {showWelcome && <LabWelcome t={t} hold={holdIntro} onDone={() => setShowWelcome(false)} />}
       </AnimatePresence>
 
       <main className="lab-page page-content" aria-hidden={showWelcome}>
