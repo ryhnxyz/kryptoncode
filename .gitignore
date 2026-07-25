@@ -32,4 +32,5 @@ dist-preview
 
 # Generated from assets-src/*.b64 at build time (scripts/decode-assets.mjs)
 public/lab-opening.mp4
+public/lab-opening.webm
 public/lab-opening-poster.jpg

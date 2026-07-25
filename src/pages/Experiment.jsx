@@ -65,7 +65,6 @@ function LabOpening({ onFinish }) {
       <video
         ref={videoRef}
         className="lab-opening-video"
-        src="/lab-opening.mp4"
         poster="/lab-opening-poster.jpg"
         autoPlay
         muted
@@ -73,7 +72,10 @@ function LabOpening({ onFinish }) {
         preload="auto"
         onEnded={finish}
         onError={finish}
-      />
+      >
+        <source src="/lab-opening.webm" type="video/webm" />
+        <source src="/lab-opening.mp4" type="video/mp4" />
+      </video>
       <div className="lab-opening-shade" aria-hidden="true" />
       <div className="lab-opening-grain" aria-hidden="true" />
 
@@ -134,12 +136,23 @@ function LabOpening({ onFinish }) {
 
 const STATUSES = ['all', 'live', 'wip', 'archived'];
 
+const siteSplashDone = () => window.localStorage.getItem('krypton_intro_v2') === 'complete';
+
 export default function Experiment() {
   const { t, language } = useLanguage();
+  // Hold the lab opening until the site-wide WelcomeSplash (if any) is done,
+  // so the film never plays hidden underneath it.
   const [showOpening, setShowOpening] = useState(
-    () => window.sessionStorage.getItem(OPENING_KEY) !== 'seen',
+    () => window.sessionStorage.getItem(OPENING_KEY) !== 'seen' && siteSplashDone(),
   );
   const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    if (window.sessionStorage.getItem(OPENING_KEY) === 'seen' || siteSplashDone()) return undefined;
+    const onSplashDone = () => setShowOpening(true);
+    window.addEventListener('krypton:splash-done', onSplashDone, { once: true });
+    return () => window.removeEventListener('krypton:splash-done', onSplashDone);
+  }, []);
 
   const items = useMemo(
     () => experimentsData.filter((e) => filter === 'all' || e.status === filter),

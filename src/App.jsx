@@ -47,7 +47,14 @@ function AppContent() {
 
   return (
     <>
-      {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
+      {showSplash && (
+        <WelcomeSplash
+          onComplete={() => {
+            setShowSplash(false);
+            window.dispatchEvent(new CustomEvent('krypton:splash-done'));
+          }}
+        />
+      )}
       <div
         className="app-container"
         style={{
