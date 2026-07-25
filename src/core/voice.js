@@ -192,7 +192,13 @@ export function createNaturalSpeech(getLang, apiBase) {
 
   function fetchAndPlay(text, mySess) {
     const lang = getLang() === 'en' ? 'en' : 'id';
-    const clean = String(text).replace(/[◈✓▶]/g, '').trim().slice(0, 500);
+    const clean = String(text)
+      .replace(/[*_#`>~]/g, '')          // strip markdown emphasis/headers/quotes
+      .replace(/^\s*[-•]\s*/gm, '')       // strip list bullets
+      .replace(/[◈✓▶]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 500);
     if (!clean) { onClipEnd(mySess); return; }
     const a = ensureAudio();
     const fireStart = () => { if (mySess === sess && !started) { started = true; cbStart && cbStart(); } };
@@ -349,7 +355,7 @@ export function createVoiceCapture(mic, getLang, apiBase) {
 
   const START = 0.06;         // level to count as speech
   const STOP = 0.035;         // level considered silence
-  const SILENCE_MS = 900;     // trailing silence to end a turn
+  const SILENCE_MS = 650;     // trailing silence to end a turn (snappier)
   const MAX_MS = 9000;        // hard cap
   const NOSPEECH_MS = 6000;   // give up if nothing spoken
 
