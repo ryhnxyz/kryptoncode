@@ -5,7 +5,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { experimentsData } from '../data/experimentsData';
 import SpectrumBars from '../components/SpectrumBars';
 
-const WELCOME_KEY = 'krypton_lab_intro_v2';
 const WELCOME_HOLD_MS = 2900;   // when the exit choreography starts
 const WELCOME_DONE_MS = 3700;   // when the overlay unmounts
 
@@ -36,7 +35,6 @@ function LabWelcome({ t, onDone }) {
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
-    window.sessionStorage.setItem(WELCOME_KEY, 'seen');
     onDone();
   }, [onDone]);
 
@@ -160,13 +158,12 @@ const STATUSES = ['all', 'live', 'wip', 'archived'];
 export default function Experiment() {
   const { t, language } = useLanguage();
   const [filter, setFilter] = useState('all');
-  // Welcome shows once per session, and never underneath the site splash.
-  const [showWelcome, setShowWelcome] = useState(
-    () => window.sessionStorage.getItem(WELCOME_KEY) !== 'seen' && siteSplashDone(),
-  );
+  // The welcome plays on every entrance to the Lab (labs.google behavior),
+  // but never underneath the site-wide splash — it waits its turn.
+  const [showWelcome, setShowWelcome] = useState(() => siteSplashDone());
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(WELCOME_KEY) === 'seen' || siteSplashDone()) return undefined;
+    if (siteSplashDone()) return undefined;
     const onSplashDone = () => setShowWelcome(true);
     window.addEventListener('krypton:splash-done', onSplashDone, { once: true });
     return () => window.removeEventListener('krypton:splash-done', onSplashDone);
