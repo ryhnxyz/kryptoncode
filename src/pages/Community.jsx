@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, MessagesSquare, Users, Wrench } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import BackgroundGlow from '../components/BackgroundGlow';
 
 export default function Community() {
   const { t } = useLanguage();
@@ -14,7 +15,8 @@ export default function Community() {
 
   return (
     <main className="page-content">
-      <section className="k-hero community-hero">
+      <section className="k-hero community-hero k-band k-band--hero">
+        <BackgroundGlow />
         <p className="hero-eyebrow animate-slide-up">{t('common.studio')}</p>
         <h1 className="hero-title animate-slide-up">
           {first} <span className="highlight">{rest.join(' ')}</span>

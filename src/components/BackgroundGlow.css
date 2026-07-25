@@ -1,10 +1,10 @@
+/* Section-scoped field: lives inside a .k-band--hero, not the viewport. */
 .signal-field {
-  position: fixed;
+  position: absolute !important;
   inset: 0;
-  z-index: -1;
+  z-index: 0 !important;
   overflow: hidden;
   pointer-events: none;
-  background: #08090b;
   isolation: isolate;
 }
 

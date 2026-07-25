@@ -12,7 +12,6 @@ import Pool from './pages/Pool';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
-import BackgroundGlow from './components/BackgroundGlow';
 import LanguageSelector from './components/LanguageSelector';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
@@ -47,7 +46,6 @@ function AppContent() {
 
   return (
     <>
-      <BackgroundGlow />
       {showSplash && <WelcomeSplash onComplete={() => setShowSplash(false)} />}
       <div
         className="app-container"

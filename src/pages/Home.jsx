@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Bot, Database, Network } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import BackgroundGlow from '../components/BackgroundGlow';
 
 function Ticker({ items }) {
   const row = items.map((label, i) => (
@@ -47,8 +48,9 @@ export default function Home() {
 
   return (
     <main>
-      {/* Hero */}
-      <section className="k-hero">
+      {/* Hero — animated signal field band */}
+      <section className="k-hero k-band k-band--hero">
+        <BackgroundGlow />
         <p className="hero-eyebrow animate-slide-up">{t('common.studio')}</p>
         <h1 className="hero-title animate-slide-up">
           {t('home.title1')}<span className="highlight">{t('home.titleHighlight')}</span>{t('home.title2')}<br />
@@ -84,8 +86,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Services */}
-      <section className="k-section" aria-labelledby="services-title">
+      {/* Services — raised panel band */}
+      <section className="k-section k-band k-band--panel" aria-labelledby="services-title">
         <div className="k-section-head">
           <div>
             <span className="k-eyebrow">{t('home.servicesEyebrow')}</span>
@@ -151,8 +153,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Steps */}
-      <section className="k-section" aria-labelledby="steps-title">
+      {/* Steps — terminal scanline band */}
+      <section className="k-section k-band k-band--scan" aria-labelledby="steps-title">
         <div className="k-section-head">
           <div>
             <span className="k-eyebrow">{t('home.stepsEyebrow')}</span>
@@ -188,8 +190,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="k-section k-section--tight" aria-labelledby="cta-title">
+      {/* CTA banner — full-bleed glow band */}
+      <section className="k-band k-band--cta" aria-labelledby="cta-title">
         <div className="k-cta">
           <span className="k-eyebrow">{t('home.ctaEyebrow')}</span>
           <h2 className="k-cta-title" id="cta-title">{t('home.ctaTitle')}</h2>

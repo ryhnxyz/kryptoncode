@@ -24,6 +24,7 @@
   --surface-3: #1f1f22;
   --line: #2a2a2e;
   --line-strong: #3d3d42;
+  --gutter: clamp(20px, 3.5vw, 64px);
   --ink: currentColor;
   --ink-2: #d6d3d1;
   --ink-3: #78716c;
@@ -303,7 +304,7 @@ body {
   /* Full-width desktop layout — pages breathe with fluid gutters instead of a hard cap. */
   width: 100%;
   margin: 0 auto;
-  padding: 24px clamp(20px, 3.5vw, 64px);
+  padding: 24px var(--gutter) 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1050,11 +1051,13 @@ button:active, .btn-primary:active, .btn-secondary:active {
 
 .site-footer {
   margin-top: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  background-color: rgb(20, 20, 20);
-  background-image: none;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+  margin-inline: calc(var(--gutter) * -1);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background-color: #0d0d10;
+  background-image: radial-gradient(ellipse 70% 60% at 50% 118%, rgba(250, 247, 242, 0.05), transparent);
+  box-shadow: none;
 }
 
 .footer-main {
@@ -1166,7 +1169,7 @@ button:focus-visible {
 
 @media (max-width: 768px) {
   .app-container {
-    padding: 14px;
+    padding: 14px var(--gutter) 0;
   }
 
   body.mobile-menu-open {
@@ -4538,7 +4541,6 @@ button:focus-visible {
 
 .site-footer {
   border-color: var(--line);
-  background: var(--surface);
 }
 
 .navbar {
@@ -4622,4 +4624,108 @@ button:focus-visible {
   justify-content: center;
   gap: 10px;
   margin-top: 30px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SECTION BANDS — per-section full-bleed backgrounds (overcode-style
+   rhythm): hero field → flat → panel → flat → scanline → glow.
+   ════════════════════════════════════════════════════════════════ */
+
+.k-band {
+  position: relative;
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+}
+
+.k-band > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero band — carries the animated signal field + breathing spotlight */
+.k-band--hero {
+  overflow: hidden;
+}
+
+.k-band--hero::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 90%;
+  z-index: 0;
+  background: radial-gradient(ellipse 46% 58% at 50% 12%, rgba(250, 247, 242, 0.085), transparent 70%);
+  animation: k-spot 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes k-spot {
+  from { opacity: 0.72; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.06); }
+}
+
+/* Panel band — raised solid surface with column-line texture */
+.k-band--panel {
+  border-block: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(90deg, rgba(250, 247, 242, 0.022) 0 1px, transparent 1px 120px),
+    linear-gradient(180deg, #0e0e11, #0c0c0f);
+}
+
+/* Scanline band — terminal CRT texture */
+.k-band--scan {
+  border-block: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(0deg, rgba(250, 247, 242, 0.016) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #0b0b0d, #0a0a0c);
+}
+
+/* Glow band — CTA finale: dots + rising warm glow */
+.k-band--cta {
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+  padding-block: clamp(76px, 10vw, 150px);
+  background:
+    radial-gradient(rgba(250, 247, 242, 0.05) 1px, transparent 1.5px) 0 0 / 20px 20px,
+    radial-gradient(ellipse 62% 78% at 50% 118%, rgba(250, 247, 242, 0.09), transparent 68%),
+    #0c0c0e;
+}
+
+/* CTA content sheds its card chrome — the band is the surface now */
+.k-band--cta .k-cta {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+/* Ticker joins the full-bleed rhythm */
+.k-ticker {
+  margin-inline: calc(var(--gutter) * -1);
+}
+
+/* Page-top glow — sits behind the intro cards on inner pages */
+.products-page,
+.pool-page,
+.product-detail-page {
+  position: relative;
+}
+
+.products-page::before,
+.pool-page::before,
+.product-detail-page::before {
+  content: '';
+  position: absolute;
+  top: -28px;
+  right: calc(var(--gutter) * -1);
+  left: calc(var(--gutter) * -1);
+  height: 540px;
+  z-index: -1;
+  background: radial-gradient(ellipse 54% 62% at 50% 0%, rgba(250, 247, 242, 0.055), transparent 70%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-band--hero::before {
+    animation: none;
+  }
 }
