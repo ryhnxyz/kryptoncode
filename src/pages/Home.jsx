@@ -101,11 +101,12 @@ export default function Home() {
         <div className="k-services">
           {services.map(({ icon: Icon, title, desc, meta, to }, i) => (
             <Link className="k-service" to={to} key={i}>
-              <div className="k-service-top">
-                <span className="k-service-icon"><Icon strokeWidth={1.5} aria-hidden="true" /></span>
+              <div className="k-service-row">
+                <span className="k-service-icon"><Icon strokeWidth={1.6} aria-hidden="true" /></span>
+                <h3>{title}</h3>
                 <span className="k-arrow"><ArrowUpRight aria-hidden="true" /></span>
               </div>
-              <h3>{title}</h3>
+              <div className="k-service-divider" aria-hidden="true" />
               <p>{desc}</p>
               <span className="k-service-meta">{meta}</span>
             </Link>

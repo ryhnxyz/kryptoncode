@@ -1053,10 +1053,11 @@ button:active, .btn-primary:active, .btn-secondary:active {
   margin-top: auto;
   margin-inline: calc(var(--gutter) * -1);
   border: 0;
-  border-top: 1px solid var(--line);
   border-radius: 0;
-  background-color: #0d0d10;
-  background-image: radial-gradient(ellipse 70% 60% at 50% 118%, rgba(250, 247, 242, 0.05), transparent);
+  background-color: transparent;
+  background-image:
+    radial-gradient(ellipse 70% 62% at 50% 120%, rgba(250, 247, 242, 0.075), transparent 72%),
+    linear-gradient(180deg, transparent, rgba(250, 247, 242, 0.035) 34%, rgba(250, 247, 242, 0.05));
   box-shadow: none;
 }
 
@@ -1134,7 +1135,8 @@ button:active, .btn-primary:active, .btn-secondary:active {
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, rgba(250, 247, 242, 0.14) 30%, rgba(250, 247, 242, 0.14) 70%, transparent) 1;
   padding: 18px 42px;
   color: var(--text-secondary);
   font-family: var(--font-mono);
@@ -3996,11 +3998,24 @@ button:focus-visible {
 
 /* ── Marquee ticker ─────────────────────────────────────────── */
 .k-ticker {
+  position: relative;
   overflow: hidden;
-  border-block: 1px solid var(--line);
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(250, 247, 242, 0.03), transparent 55%);
   user-select: none;
 }
+
+.k-ticker::before,
+.k-ticker::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(250, 247, 242, 0.16) 24%, rgba(250, 247, 242, 0.16) 76%, transparent);
+}
+
+.k-ticker::before { top: 0; }
+.k-ticker::after { bottom: 0; }
 
 .k-ticker-track {
   display: flex;
@@ -4315,7 +4330,10 @@ button:focus-visible {
   position: absolute;
   right: 14px;
   top: 6px;
-  color: var(--surface-3);
+  color: transparent;
+  background: linear-gradient(180deg, rgba(250, 247, 242, 0.13), rgba(250, 247, 242, 0.02));
+  -webkit-background-clip: text;
+  background-clip: text;
   font-family: var(--font-display);
   font-size: 4.6rem;
   font-weight: 760;
@@ -4469,7 +4487,10 @@ button:focus-visible {
 
 .k-wordmark {
   display: block;
-  color: var(--surface-3);
+  color: transparent;
+  background: linear-gradient(180deg, rgba(250, 247, 242, 0.17), rgba(250, 247, 242, 0.025));
+  -webkit-background-clip: text;
+  background-clip: text;
   font-size: clamp(3.4rem, 11.5vw, 11rem);
   font-weight: 760;
   letter-spacing: -0.045em;
@@ -4647,6 +4668,18 @@ button:focus-visible {
   overflow: hidden;
 }
 
+.k-band--hero::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 120px;
+  z-index: 0;
+  background: linear-gradient(180deg, transparent, var(--bg-color));
+  pointer-events: none;
+}
+
 .k-band--hero::before {
   content: '';
   position: absolute;
@@ -4663,31 +4696,41 @@ button:focus-visible {
   to { opacity: 1; transform: scale(1.06); }
 }
 
-/* Panel band — raised solid surface with column-line texture */
+/* Panel band — luminous wash that fades in and out (no hard edges) */
 .k-band--panel {
-  border-block: 1px solid var(--line);
   background:
-    repeating-linear-gradient(90deg, rgba(250, 247, 242, 0.022) 0 1px, transparent 1px 120px),
-    linear-gradient(180deg, #0e0e11, #0c0c0f);
+    repeating-linear-gradient(90deg, rgba(250, 247, 242, 0.016) 0 1px, transparent 1px 120px),
+    linear-gradient(180deg, transparent 0%, rgba(250, 247, 242, 0.075) 18%, rgba(250, 247, 242, 0.045) 55%, transparent 100%);
 }
 
-/* Scanline band — terminal CRT texture */
+.k-band--panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse 58% 52% at 50% 6%, rgba(250, 247, 242, 0.07), transparent 74%);
+  pointer-events: none;
+}
+
+/* Scanline band — terminal CRT texture, fading in and out */
 .k-band--scan {
-  border-block: 1px solid var(--line);
   background:
-    repeating-linear-gradient(0deg, rgba(250, 247, 242, 0.016) 0 1px, transparent 1px 5px),
-    linear-gradient(180deg, #0b0b0d, #0a0a0c);
+    linear-gradient(180deg, transparent, rgba(250, 247, 242, 0.028) 30%, rgba(250, 247, 242, 0.028) 70%, transparent),
+    repeating-linear-gradient(0deg, rgba(250, 247, 242, 0.014) 0 1px, transparent 1px 5px);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 14%, #000 86%, transparent);
 }
 
 /* Glow band — CTA finale: dots + rising warm glow */
 .k-band--cta {
   overflow: hidden;
-  border-block: 1px solid var(--line);
   padding-block: clamp(76px, 10vw, 150px);
   background:
-    radial-gradient(rgba(250, 247, 242, 0.05) 1px, transparent 1.5px) 0 0 / 20px 20px,
-    radial-gradient(ellipse 62% 78% at 50% 118%, rgba(250, 247, 242, 0.09), transparent 68%),
-    #0c0c0e;
+    radial-gradient(rgba(250, 247, 242, 0.045) 1px, transparent 1.5px) 0 0 / 20px 20px,
+    radial-gradient(ellipse 64% 82% at 50% 116%, rgba(250, 247, 242, 0.12), transparent 70%),
+    linear-gradient(180deg, transparent, rgba(250, 247, 242, 0.03) 60%, rgba(250, 247, 242, 0.05));
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 10%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent, #000 10%, #000 100%);
 }
 
 /* CTA content sheds its card chrome — the band is the surface now */
@@ -4728,4 +4771,127 @@ button:focus-visible {
   .k-band--hero::before {
     animation: none;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DEPTH PASS — non-flat components. One surface recipe everywhere:
+   vertical luminance gradient + hairline border + top highlight +
+   warm glow that rises on hover. Ivory icon tiles for contrast.
+   ════════════════════════════════════════════════════════════════ */
+
+.k-service,
+.k-stat,
+.k-step,
+.k-pool-mini,
+.k-pool-panel,
+.product-card,
+.pool-card,
+.products-intro,
+.detail-hero-card,
+.detail-section-card,
+.detail-action-card,
+.products-state-card,
+.products-error-card {
+  position: relative;
+  border-color: rgba(250, 247, 242, 0.09);
+  background:
+    linear-gradient(180deg, rgba(250, 247, 242, 0.07), rgba(250, 247, 242, 0.018) 46%, rgba(250, 247, 242, 0.028)) border-box,
+    #101013;
+  box-shadow: inset 0 1px 0 rgba(250, 247, 242, 0.07);
+}
+
+/* Rising warm glow on interactive cards (overcode's active-card move) */
+.k-service::after,
+.k-stat::after,
+.k-step::after,
+.product-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 78% 62% at 50% 112%, rgba(250, 247, 242, 0.12), transparent 68%);
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
+}
+
+.k-service:hover::after,
+.k-stat:hover::after,
+.k-step:hover::after,
+.product-card:hover::after {
+  opacity: 1;
+}
+
+.k-service:hover,
+.product-card:hover,
+.pool-card:hover {
+  border-color: rgba(250, 247, 242, 0.16);
+  background:
+    linear-gradient(180deg, rgba(250, 247, 242, 0.09), rgba(250, 247, 242, 0.03) 46%, rgba(250, 247, 242, 0.04)) border-box,
+    #101013;
+}
+
+/* Card content above the glow layer */
+.k-service > *,
+.k-stat > *,
+.k-step > *,
+.product-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ivory icon tiles — dark glyph on warm white (the contrast pop) */
+.k-service-icon,
+.product-card-icon,
+.detail-product-icon {
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdf9, #efeae2);
+  color: #101013;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Service card: icon + title row, divider, description (overcode layout) */
+.k-service-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.k-service-row h3 {
+  flex: 1;
+}
+
+.k-service-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(250, 247, 242, 0.14), rgba(250, 247, 242, 0.02));
+}
+
+/* Ghost buttons pick up the gradient surface too */
+.k-btn--ghost {
+  background: linear-gradient(180deg, rgba(250, 247, 242, 0.07), rgba(250, 247, 242, 0.02)), #101013;
+}
+
+.k-btn--ghost:hover {
+  background: linear-gradient(180deg, rgba(250, 247, 242, 0.1), rgba(250, 247, 242, 0.04)), #101013;
+}
+
+/* Pool panel interior minis stay darker for hierarchy */
+.k-pool-panel {
+  background:
+    linear-gradient(180deg, rgba(250, 247, 242, 0.045), rgba(250, 247, 242, 0.012) 50%, rgba(250, 247, 242, 0.02)),
+    #0b0b0d;
+}
+
+/* FAQ rows: faded hairlines instead of solid borders */
+.k-faq,
+.k-faq details {
+  border-color: transparent;
+  border-image: linear-gradient(90deg, rgba(250, 247, 242, 0.16), rgba(250, 247, 242, 0.03)) 1;
+}
+
+/* Intro cards on inner pages shed their hard border for the soft recipe */
+.products-intro {
+  border-color: rgba(250, 247, 242, 0.09) !important;
 }
