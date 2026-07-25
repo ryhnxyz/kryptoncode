@@ -15,6 +15,7 @@ import NotFound from './pages/NotFound';
 import WelcomeSplash from './components/WelcomeSplash';
 import LanguageSelector from './components/LanguageSelector';
 import RevealManager from './components/RevealManager';
+import KryptonCore from './core/KryptonCore';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
@@ -177,6 +178,9 @@ function AppContent() {
           </div>
         </footer>
       </div>
+
+      {/* Krypton AI Core — the living intelligence at the center of the platform */}
+      {!showSplash && <KryptonCore />}
     </>
   );
 }
