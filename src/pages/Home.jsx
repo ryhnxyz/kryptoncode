@@ -3,22 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Bot, Database, Network } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import BackgroundGlow from '../components/BackgroundGlow';
-
-function Ticker({ items }) {
-  const row = items.map((label, i) => (
-    <span className="k-ticker-item" key={i}>{label}</span>
-  ));
-  return (
-    <div className="k-ticker" aria-hidden="true">
-      <div className="k-ticker-track">
-        {row}
-        {items.map((label, i) => (
-          <span className="k-ticker-item" key={`b-${i}`}>{label}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
+import DotMatrixMarquee from '../components/DotMatrixMarquee';
+import SpectrumBars from '../components/SpectrumBars';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -67,11 +53,12 @@ export default function Home() {
             <ArrowUpRight aria-hidden="true" />
           </a>
         </div>
+        <SpectrumBars height={56} className="hero-spectrum animate-slide-up delay-300" />
         <p className="k-hero-note animate-slide-up delay-300">{t('home.note')}</p>
       </section>
 
-      {/* Marquee */}
-      <Ticker items={tickerItems} />
+      {/* Dot-matrix marquee */}
+      <DotMatrixMarquee text={tickerItems.join('   ·   ')} />
 
       {/* Stats */}
       <section className="k-section k-section--tight" aria-label="KryptonCode stats">
@@ -146,6 +133,7 @@ export default function Home() {
             <div className="pool-capacity-bar">
               <div className="pool-capacity-fill pool-capacity-fill--good" style={{ width: '34%' }} />
             </div>
+            <SpectrumBars height={30} align="bottom" className="k-pool-panel-spectrum" />
             <div className="k-pool-panel-foot">
               <span>{t('home.poolFoot1')}</span>
               <span>{t('home.poolFoot2')}</span>

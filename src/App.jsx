@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
 import Pool from './pages/Pool';
+import Experiment from './pages/Experiment';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
@@ -92,6 +93,12 @@ function AppContent() {
                 <span>{t('nav.community')}</span>
                 <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
               </NavLink>
+              <span className="nav-separator"> </span>
+              <NavLink to="/experiment" className="nav-item-clean" onClick={closeMenu}>
+                <span className="nav-index">03</span>
+                <span>{t('nav.experiment')}</span>
+                <ArrowUpRight className="nav-link-arrow" size={22} weight="bold" aria-hidden="true" />
+              </NavLink>
             </div>
 
             <div className="mobile-menu-meta" aria-hidden={!isMobileMenuOpen}>
@@ -115,6 +122,7 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/buy/:planId" element={<BuyAccess />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/experiment" element={<Experiment />} />
           <Route path="/pool" element={<Pool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -133,6 +141,7 @@ function AppContent() {
               <p className="footer-label">{t('footer.explore')}</p>
               <Link to="/products">{t('nav.products')}</Link>
               <Link to="/community">{t('nav.community')}</Link>
+              <Link to="/experiment">{t('nav.experiment')}</Link>
             </nav>
 
             <div className="footer-connect">

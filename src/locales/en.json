@@ -21,7 +21,8 @@
     "openMenu": "Open navigation menu",
     "closeMenu": "Close navigation menu",
     "navigation": "Navigation",
-    "tryAgent": "Try Agent"
+    "tryAgent": "Try Agent",
+    "experiment": "/experiment"
   },
   "home": {
     "title1": "Smart ",
@@ -336,5 +337,32 @@
     "vision": "Vision",
     "toolsCap": "Tools",
     "reasoning": "Reasoning"
+  },
+  "lab": {
+    "kicker": "KRYPTON LAB",
+    "headline": "Where ideas get tested.",
+    "intro": "KryptonCode's experiment space — prototypes, trials, and technical toys that may never become products. Some are alive, some failed, all of them honest.",
+    "replay": "Replay opening",
+    "metaLeft": "explored by kryptoncode",
+    "filterLabel": "Filter experiment status",
+    "filter": {
+      "all": "All",
+      "live": "Live",
+      "wip": "WIP",
+      "archived": "Archive"
+    },
+    "count": "experiments",
+    "catalogLabel": "Experiment catalog",
+    "status": {
+      "live": "Live",
+      "wip": "WIP",
+      "archived": "Archive"
+    },
+    "empty": "No experiments under this filter.",
+    "openingLabel": "Krypton Lab opening",
+    "openingKicker": "KRYPTON / LAB — 001",
+    "openingTitle": "Welcome to the test chamber.",
+    "openingSub": "Prototypes. Signals. Iterations. Not everything ships — and that's the point.",
+    "skip": "Skip"
   }
 }
