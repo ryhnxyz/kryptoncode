@@ -57,6 +57,8 @@ export default function KryptonCore() {
   const restRef = useRef('idle');
   const proactiveRef = useRef(false);
   const openRef = useRef(false);
+  const idleTimer = useRef(null);
+  const exitRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [orbState, setOrbState] = useState('idle');
@@ -103,6 +105,14 @@ export default function KryptonCore() {
     if (name !== 'idle' && name !== 'speaking') cuesRef.current?.state();
   }, []);
 
+  // Auto-close AI Space after 60s of no interaction → back to the small orb.
+  const IDLE_MS = 60000;
+  const bumpActivity = useCallback(() => {
+    if (!openRef.current) return;
+    clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => exitRef.current?.(), IDLE_MS);
+  }, []);
+
   useEffect(() => {
     if (orbState === 'completed' || orbState === 'celebrating') {
       const t = setTimeout(() => setOrb('idle'), orbState === 'celebrating' ? 2600 : 3200);
@@ -126,14 +136,16 @@ export default function KryptonCore() {
         engineRef.current?.setSpeaking(true);
         setOrbState('speaking');
         engineRef.current?.setState('speaking');
+        bumpActivity();
       },
       onend: () => {
         engineRef.current?.setSpeaking(false);
         setOrb(restRef.current);
+        bumpActivity();
         after?.();
       },
     });
-  }, [setOrb]);
+  }, [setOrb, bumpActivity]);
 
   /* ── panels ───────────────────────────────────────────────────── */
   const addPanel = useCallback((id, meta) => {
@@ -198,18 +210,20 @@ export default function KryptonCore() {
         window.localStorage.setItem(VOICE_OK_KEY, '1');
       }
     });
+    bumpActivity();
     setTimeout(() => {
       sayReply(greeting(langRef.current), 'idle', () => {
         if (withVoice) startListenRef.current?.();
       });
     }, 620);
-  }, [sayReply]);
+  }, [sayReply, bumpActivity]);
   const enterRef = useRef(null);
   useEffect(() => { enterRef.current = enter; }, [enter]);
 
   const exit = useCallback(() => {
     if (!openRef.current) return;
     openRef.current = false;
+    clearTimeout(idleTimer.current);
     setOpen(false);
     document.body.classList.remove('kry-space-open');
     engineRef.current?.setPlacement('dock');
@@ -224,12 +238,14 @@ export default function KryptonCore() {
     cuesRef.current?.exit();
     if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
   }, [clearPanels, setOrb, stopListen]);
+  useEffect(() => { exitRef.current = exit; }, [exit]);
 
   /* ── command handling ─────────────────────────────────────────── */
   const handleCommand = useCallback((raw) => {
     const res = interpret(raw);
     if (!res) return;
     setYouLine(raw);
+    bumpActivity();
     if (res.exit) { exit(); return; }
     const apply = () => {
       if (res.hideAll) clearPanels();
@@ -245,7 +261,7 @@ export default function KryptonCore() {
       setOrb('thinking');
       setTimeout(apply, 700 + Math.random() * 500);
     } else apply();
-  }, [addPanel, clearPanels, exit, removePanel, sayReply, setOrb]);
+  }, [addPanel, bumpActivity, clearPanels, exit, removePanel, sayReply, setOrb]);
   const handleRef = useRef(null);
   useEffect(() => { handleRef.current = handleCommand; }, [handleCommand]);
 
@@ -286,12 +302,13 @@ export default function KryptonCore() {
       if (e.key === 'Escape' && openRef.current) exit();
       if (e.code === 'Space' && openRef.current && document.activeElement?.tagName !== 'INPUT') {
         e.preventDefault();
+        bumpActivity();
         if (listening) stopListen(); else startListen();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [exit, listening, startListen, stopListen]);
+  }, [bumpActivity, exit, listening, startListen, stopListen]);
 
   /* ── derived ──────────────────────────────────────────────────── */
   const S = useMemo(() => ({
@@ -341,7 +358,13 @@ export default function KryptonCore() {
       )}
 
       {/* AI SPACE */}
-      <div className={`kry-space ${open ? 'open' : ''}`} aria-hidden={!open}>
+      <div
+        className={`kry-space ${open ? 'open' : ''}`}
+        aria-hidden={!open}
+        onPointerDown={bumpActivity}
+        onKeyDownCapture={bumpActivity}
+        onMouseMove={bumpActivity}
+      >
         <div className="kry-dimension" />
 
         <header className="kry-space-head">
@@ -400,7 +423,7 @@ export default function KryptonCore() {
           <div className={`kry-prompt ${listening ? 'hot' : ''}`}>
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); bumpActivity(); }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && input.trim()) {
                   handleCommand(input.trim());
