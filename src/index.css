@@ -1035,22 +1035,6 @@ main { width: 100%; }
 .k-cta--light .k-btn--ghost { background: rgba(8, 9, 11, 0.08); color: #0a0a0b; }
 .k-cta--light .k-btn--ghost:hover { background: rgba(8, 9, 11, 0.14); }
 
-/* Temporary A/B preview tag */
-.k-cta-option-tag {
-  position: absolute;
-  top: 16px;
-  left: 20px;
-  z-index: 2;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px dashed currentColor;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.55;
-}
-
 /* ── 10 · Products / Detail / Pool / Buy / Community / 404 ───── */
 /* Products intro — centered mega head */
 .products-page { width: 100%; }

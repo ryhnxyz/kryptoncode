@@ -191,33 +191,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA banner — TEMP: two visual options rendered for preview.
-          Option A = inverted off-white band, Option B = dark + white glow.
-          Remove the one that doesn't get picked. */}
+      {/* CTA banner — inverted off-white band (flat, overcode language) */}
       <section className="k-band k-band--cta k-cta--light" aria-labelledby="cta-title">
-        <span className="k-cta-option-tag" aria-hidden="true">Option A</span>
         <div className="k-cta">
           <span className="k-eyebrow">{t('home.ctaEyebrow')}</span>
           <h2 className="k-cta-title" id="cta-title">{t('home.ctaTitle')}</h2>
-          <p>{t('home.ctaDesc')}</p>
-          <div className="k-cta-actions">
-            <a className="k-btn k-btn--primary k-btn--lg" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
-              <span>{t('home.ctaChat')}</span>
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-            <Link className="k-btn k-btn--ghost k-btn--lg" to="/products">
-              <span>{t('home.ctaExplore')}</span>
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="k-band k-band--cta" aria-label="CTA option B preview">
-        <span className="k-cta-option-tag" aria-hidden="true">Option B</span>
-        <div className="k-cta">
-          <span className="k-eyebrow">{t('home.ctaEyebrow')}</span>
-          <h2 className="k-cta-title">{t('home.ctaTitle')}</h2>
           <p>{t('home.ctaDesc')}</p>
           <div className="k-cta-actions">
             <a className="k-btn k-btn--primary k-btn--lg" href="https://t.me/kryptoncodes" target="_blank" rel="noopener noreferrer">
