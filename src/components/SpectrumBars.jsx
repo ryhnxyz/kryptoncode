@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * SpectrumBars — an audio-equalizer field made of dots. Columns of tiny warm
- * dots rise and fall in smooth traveling waves, echoing the reference video's
- * hero spectrum. Canvas-based, DPR-aware, freezes to a calm static frame when
+ * SpectrumBars — an audio-equalizer field made of dots, reacting to the
+ * page scroll like a signal meter: calm at rest, surging while the user
+ * scrolls. Canvas-based, DPR-aware, freezes to a calm static frame when
  * the user prefers reduced motion.
  */
 export default function SpectrumBars({ height = 64, align = 'center', className = '' }) {
@@ -21,6 +21,8 @@ export default function SpectrumBars({ height = 64, align = 'center', className 
     let visible = true;
     let width = 0;
     let dpr = 1;
+    let lastScrollY = window.scrollY;
+    let energy = 0;
 
     const PITCH = 9;        // column spacing
     const DOT = 5;          // vertical dot pitch
@@ -52,11 +54,19 @@ export default function SpectrumBars({ height = 64, align = 'center', className 
       const t = reducedMotion ? 1.35 : now / 1000;
       ctx.clearRect(0, 0, width, height);
 
+      // Scroll energy: the meter surges while the page moves.
+      const sy = window.scrollY;
+      const dy = Math.abs(sy - lastScrollY);
+      lastScrollY = sy;
+      const target = Math.min(1, dy / 22);
+      energy += (target - energy) * (target > energy ? 0.3 : 0.045);
+
       const cols = Math.floor(width / PITCH);
       const maxDots = Math.floor(height / DOT);
+      const gain = reducedMotion ? 1 : 0.42 + 0.85 * energy;
 
       for (let i = 0; i < cols; i++) {
-        const amp = amplitudeAt(i, t);
+        const amp = Math.min(1, amplitudeAt(i, t) * gain);
         const dots = Math.max(1, Math.round(amp * maxDots));
         const x = i * PITCH + PITCH / 2;
         for (let d = 0; d < dots; d++) {

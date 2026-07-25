@@ -342,7 +342,6 @@
     "kicker": "KRYPTON LAB",
     "headline": "Tempat ide diuji coba.",
     "intro": "Ruang eksperimen KryptonCode — prototipe, uji coba, dan mainan teknis yang belum tentu jadi produk. Sebagian hidup, sebagian gagal, semuanya jujur.",
-    "replay": "Putar ulang opening",
     "metaLeft": "dieksplorasi oleh kryptoncode",
     "filterLabel": "Filter status eksperimen",
     "filter": {
@@ -361,8 +360,11 @@
     "empty": "Belum ada eksperimen di filter ini.",
     "openingLabel": "Pembuka Krypton Lab",
     "openingKicker": "KRYPTON / LAB — 001",
-    "openingTitle": "Selamat datang di ruang uji.",
-    "openingSub": "Prototipe. Sinyal. Iterasi. Tidak semua selesai — dan memang begitu seharusnya.",
-    "skip": "Lewati"
+    "openingTitle": "Krypton Lab.",
+    "openingSub": "Rumah untuk eksperimen KryptonCode — tempat prototipe dan ide liar diuji.",
+    "skip": "Lewati",
+    "scrollHint": "Scroll untuk masuk",
+    "sound": "Nyalakan suara",
+    "mute": "Matikan suara"
   }
 }

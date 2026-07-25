@@ -342,7 +342,6 @@
     "kicker": "KRYPTON LAB",
     "headline": "Where ideas get tested.",
     "intro": "KryptonCode's experiment space — prototypes, trials, and technical toys that may never become products. Some are alive, some failed, all of them honest.",
-    "replay": "Replay opening",
     "metaLeft": "explored by kryptoncode",
     "filterLabel": "Filter experiment status",
     "filter": {
@@ -361,8 +360,11 @@
     "empty": "No experiments under this filter.",
     "openingLabel": "Krypton Lab opening",
     "openingKicker": "KRYPTON / LAB — 001",
-    "openingTitle": "Welcome to the test chamber.",
-    "openingSub": "Prototypes. Signals. Iterations. Not everything ships — and that's the point.",
-    "skip": "Skip"
+    "openingTitle": "Krypton Lab.",
+    "openingSub": "The home for KryptonCode experiments — where prototypes and wild ideas get tested.",
+    "skip": "Skip",
+    "scrollHint": "Scroll to enter",
+    "sound": "Turn sound on",
+    "mute": "Mute sound"
   }
 }

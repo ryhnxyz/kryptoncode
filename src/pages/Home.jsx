@@ -64,7 +64,7 @@ export default function Home() {
       <section className="k-section k-section--tight" aria-label="KryptonCode stats">
         <div className="k-stats">
           {stats.map((s, i) => (
-            <article className="k-stat" key={i}>
+            <article className="k-stat" key={i} data-reveal style={{ '--reveal-delay': `${i * 80}ms` }}>
               <span className="k-stat-index">{String(i + 1).padStart(2, '0')} /</span>
               <span className="k-stat-value">{s.value}</span>
               <span className="k-stat-label">{s.label}</span>
@@ -75,7 +75,7 @@ export default function Home() {
 
       {/* Services — raised panel band */}
       <section className="k-section k-band k-band--panel" aria-labelledby="services-title">
-        <div className="k-section-head">
+        <div className="k-section-head" data-reveal>
           <div>
             <span className="k-eyebrow">{t('home.servicesEyebrow')}</span>
             <h2 className="k-h2" id="services-title">{t('home.servicesTitle')}</h2>
@@ -87,7 +87,7 @@ export default function Home() {
         </div>
         <div className="k-services">
           {services.map(({ icon: Icon, title, desc, meta, to }, i) => (
-            <Link className="k-service" to={to} key={i}>
+            <Link className="k-service" to={to} key={i} data-reveal style={{ '--reveal-delay': `${i * 90}ms` }}>
               <div className="k-service-row">
                 <span className="k-service-icon"><Icon strokeWidth={1.6} aria-hidden="true" /></span>
                 <h3>{title}</h3>
@@ -103,7 +103,7 @@ export default function Home() {
 
       {/* AI Pool feature band */}
       <section className="k-section k-section--tight" aria-labelledby="pool-band-title">
-        <div className="k-pool-band">
+        <div className="k-pool-band" data-reveal>
           <div>
             <span className="k-eyebrow">{t('home.poolEyebrow')}</span>
             <h2 className="k-h2" id="pool-band-title">{t('home.poolTitle')}</h2>
@@ -144,7 +144,7 @@ export default function Home() {
 
       {/* Steps — terminal scanline band */}
       <section className="k-section k-band k-band--scan" aria-labelledby="steps-title">
-        <div className="k-section-head">
+        <div className="k-section-head" data-reveal>
           <div>
             <span className="k-eyebrow">{t('home.stepsEyebrow')}</span>
             <h2 className="k-h2" id="steps-title">{t('home.stepsTitle')}</h2>
@@ -152,7 +152,7 @@ export default function Home() {
         </div>
         <div className="k-steps">
           {steps.map((s, i) => (
-            <article className="k-step" data-index={String(i + 1).padStart(2, '0')} key={i}>
+            <article className="k-step" data-index={String(i + 1).padStart(2, '0')} key={i} data-reveal style={{ '--reveal-delay': `${i * 90}ms` }}>
               <span className="k-step-path">{s.path}</span>
               <h3>{s.title}</h3>
               <p>{s.desc}</p>
@@ -163,7 +163,7 @@ export default function Home() {
 
       {/* FAQ */}
       <section className="k-section k-section--tight" aria-labelledby="faq-title">
-        <div className="k-section-head">
+        <div className="k-section-head" data-reveal>
           <div>
             <span className="k-eyebrow">{t('home.faqEyebrow')}</span>
             <h2 className="k-h2" id="faq-title">{t('home.faqTitle')}</h2>
@@ -171,7 +171,7 @@ export default function Home() {
         </div>
         <div className="k-faq k-faq-list">
           {faqs.map((f, i) => (
-            <details key={i}>
+            <details key={i} data-reveal style={{ '--reveal-delay': `${i * 70}ms` }}>
               <summary>{f.q}</summary>
               <p>{f.a}</p>
             </details>
@@ -181,7 +181,7 @@ export default function Home() {
 
       {/* CTA banner — inverted off-white band (flat, overcode language) */}
       <section className="k-band k-band--cta k-cta--light" aria-labelledby="cta-title">
-        <div className="k-cta">
+        <div className="k-cta" data-reveal>
           <span className="k-eyebrow">{t('home.ctaEyebrow')}</span>
           <h2 className="k-cta-title" id="cta-title">{t('home.ctaTitle')}</h2>
           <p>{t('home.ctaDesc')}</p>

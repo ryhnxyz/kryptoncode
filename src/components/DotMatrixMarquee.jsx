@@ -4,12 +4,11 @@ import React, { useEffect, useRef } from 'react';
  * DotMatrixMarquee — huge scrolling text where every glyph is built from
  * LED-style dots (the reference video's signature motif), monochrome krypton.
  *
- * Implementation: the text is rasterized once to an offscreen canvas, sampled
- * into a dot grid, then the dot field scrolls forever with a soft amplitude
- * wave pulsing through dot radii. Static (no scroll, no pulse) when the user
- * prefers reduced motion.
+ * Scroll-interactive: page scroll velocity drives the marquee — scrolling
+ * down sweeps it left, scrolling up sweeps it back, idle keeps a gentle
+ * drift. Static when the user prefers reduced motion.
  */
-export default function DotMatrixMarquee({ text, speed = 42, className = '' }) {
+export default function DotMatrixMarquee({ text, speed = 26, className = '' }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -31,6 +30,8 @@ export default function DotMatrixMarquee({ text, speed = 42, className = '' }) {
     let height = 0;
     let offset = 0;
     let last = performance.now();
+    let lastScrollY = window.scrollY;
+    let scrollVel = 0;
 
     const DOT_COLOR = [250, 247, 242];
 
@@ -86,11 +87,22 @@ export default function DotMatrixMarquee({ text, speed = 42, className = '' }) {
 
       const dt = Math.min(64, now - last);
       last = now;
-      if (!reducedMotion) offset = (offset + (speed * dt) / 1000) % loopWidth;
+
+      // Scroll coupling: velocity of the page scroll scrubs the marquee.
+      const sy = window.scrollY;
+      const dy = sy - lastScrollY;
+      lastScrollY = sy;
+      scrollVel += (dy - scrollVel) * 0.14;
+
+      if (!reducedMotion) {
+        offset += (speed * dt) / 1000 + scrollVel * 0.85;
+        offset = ((offset % loopWidth) + loopWidth) % loopWidth;
+      }
 
       ctx.clearRect(0, 0, width, height);
       const t = now / 1000;
-      const baseR = cell * 0.32;
+      const energy = Math.min(1, Math.abs(scrollVel) / 26);
+      const baseR = cell * (0.3 + 0.1 * energy);
 
       for (let rep = -1; rep * loopWidth < width + loopWidth; rep++) {
         const shift = rep * loopWidth - offset;
@@ -98,8 +110,10 @@ export default function DotMatrixMarquee({ text, speed = 42, className = '' }) {
           const col = columns[i];
           const x = col.x + shift + cell / 2;
           if (x < -cell || x > width + cell) continue;
-          // soft wave traveling through the field
-          const pulse = reducedMotion ? 1 : 0.78 + 0.3 * Math.sin(x * 0.016 + t * 2.1) * Math.sin(t * 0.7 + col.x * 0.002);
+          // soft wave traveling through the field, energized by scroll
+          const pulse = reducedMotion
+            ? 1
+            : 0.78 + (0.22 + 0.34 * energy) * Math.sin(x * 0.016 + t * 2.1) * Math.sin(t * 0.7 + col.x * 0.002);
           const r = Math.max(0.8, baseR * pulse);
           const alpha = 0.55 + 0.4 * Math.min(1, pulse);
           ctx.fillStyle = `rgba(${DOT_COLOR[0]}, ${DOT_COLOR[1]}, ${DOT_COLOR[2]}, ${alpha})`;

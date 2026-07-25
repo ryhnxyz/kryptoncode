@@ -14,6 +14,7 @@ import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
 import LanguageSelector from './components/LanguageSelector';
+import RevealManager from './components/RevealManager';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
@@ -121,6 +122,9 @@ function AppContent() {
             </div>
           </div>
         </nav>
+
+        {/* Scroll-driven section reveals */}
+        <RevealManager />
 
         {/* Dynamic Pages */}
         <Routes>
