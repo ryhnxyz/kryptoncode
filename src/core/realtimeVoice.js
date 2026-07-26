@@ -259,13 +259,11 @@ export function createRealtimeSpeech(getLang, apiBase) {
           }
           if (message.type === 'buffer' && session.startedOnServer && socket?.readyState === WebSocket.OPEN) {
             const bufferedMs = Number(message.bufferedMs) || 0;
-            if (!session.flowPaused && bufferedMs >= HIGH_BUFFER_MS) {
-              session.flowPaused = true;
-              try { send({ type: 'flow', sessionId: session.id, paused: true, bufferedMs }); } catch { /* noop */ }
-            } else if (session.flowPaused && bufferedMs <= LOW_BUFFER_MS) {
-              session.flowPaused = false;
-              try { send({ type: 'flow', sessionId: session.id, paused: false, bufferedMs }); } catch { /* noop */ }
-            }
+            if (session.flowPaused && bufferedMs <= LOW_BUFFER_MS) session.flowPaused = false;
+            else if (!session.flowPaused && bufferedMs >= HIGH_BUFFER_MS) session.flowPaused = true;
+            try {
+              send({ type: 'flow', sessionId: session.id, paused: session.flowPaused, bufferedMs });
+            } catch { /* reconnect on the next turn */ }
           }
         };
         workletNode.connect(audioContext.destination);
