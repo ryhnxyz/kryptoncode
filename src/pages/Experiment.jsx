@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, FlaskConical } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight, FlaskConical, Lock } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { experimentsData } from '../data/experimentsData';
+import {
+  experimentCategories,
+  experimentsData,
+  getCategoryCount,
+} from '../data/experimentsData';
 import SpectrumBars from '../components/SpectrumBars';
 
 const WELCOME_HOLD_MS = 2900;   // when the exit choreography starts
@@ -157,9 +162,29 @@ function LabWelcome({ t, onDone, hold = false }) {
 
 const STATUSES = ['all', 'live', 'wip', 'archived'];
 
+/**
+ * Experiment — the Krypton Library.
+ * A library-shaped catalog: an index of category shelves (design first),
+ * a filterable grid of entries, and a detail page per entry
+ * (/experiment/:slug) with live preview, download, and the prompt.
+ */
 export default function Experiment() {
   const { t, language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState('all');
+
+  // Active shelf lives in the URL (?cat=design) so it survives refresh
+  // and can be shared / linked back to from detail pages.
+  const catParam = searchParams.get('cat');
+  const category = experimentCategories.some((c) => c.id === catParam) ? catParam : 'all';
+
+  const selectCategory = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === 'all') next.delete('cat');
+    else next.set('cat', id);
+    setSearchParams(next, { replace: true });
+  };
+
   // The welcome plays on every entrance to the Lab (labs.google behavior),
   // but never underneath the site-wide splash — it waits its turn.
   // ?intro=1 holds it open (preview/tuning mode).
@@ -174,8 +199,13 @@ export default function Experiment() {
   }, []);
 
   const items = useMemo(
-    () => experimentsData.filter((e) => filter === 'all' || e.status === filter),
-    [filter],
+    () =>
+      experimentsData.filter(
+        (e) =>
+          (category === 'all' || e.category === category) &&
+          (filter === 'all' || e.status === filter),
+      ),
+    [category, filter],
   );
 
   return (
@@ -185,7 +215,7 @@ export default function Experiment() {
       </AnimatePresence>
 
       <main className="lab-page page-content" aria-hidden={showWelcome}>
-        {/* Catalog intro */}
+        {/* 01 · Library intro */}
         <section className="products-intro lab-intro animate-slide-up" aria-labelledby="lab-heading">
           <div className="products-kicker">
             <FlaskConical size={12} strokeWidth={1.8} aria-hidden="true" />
@@ -220,23 +250,84 @@ export default function Experiment() {
           </div>
         </section>
 
-        {/* Catalog */}
+        {/* 02 · Shelf index — pick a category */}
+        <section className="lib-index" aria-label={t('lab.shelfLabel')} data-reveal>
+          <div className="lib-index-head">
+            <span>[ {t('lab.shelfKicker')} ]</span>
+            <span>
+              {experimentsData.length} {t('lab.count')}
+            </span>
+          </div>
+          <div className="lib-rows">
+            <button
+              type="button"
+              className={`lib-row ${category === 'all' ? 'is-active' : ''}`}
+              aria-pressed={category === 'all'}
+              onClick={() => selectCategory('all')}
+            >
+              <span className="lib-row-index" aria-hidden="true">00</span>
+              <span className="lib-row-name">{t('lab.category.all')}</span>
+              <span className="lib-row-count">
+                {experimentsData.length} {t('lab.entries')}
+              </span>
+              <ArrowRight className="lib-row-arrow" size={16} strokeWidth={1.8} aria-hidden="true" />
+            </button>
+            {experimentCategories.map((c, i) => {
+              const count = getCategoryCount(c.id);
+              const soon = c.soon || count === 0;
+              const rowIndex = String(i + 1).padStart(2, '0');
+              if (soon) {
+                return (
+                  <div key={c.id} className="lib-row is-soon" aria-disabled="true">
+                    <span className="lib-row-index" aria-hidden="true">{rowIndex}</span>
+                    <span className="lib-row-name">{t(`lab.category.${c.id}`)}</span>
+                    <span className="lib-row-soon">
+                      <Lock size={11} strokeWidth={2} aria-hidden="true" />
+                      {t('lab.shelfSoon')}
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`lib-row ${category === c.id ? 'is-active' : ''}`}
+                  aria-pressed={category === c.id}
+                  onClick={() => selectCategory(c.id)}
+                >
+                  <span className="lib-row-index" aria-hidden="true">{rowIndex}</span>
+                  <span className="lib-row-name">{t(`lab.category.${c.id}`)}</span>
+                  <span className="lib-row-count">
+                    {count} {t('lab.entries')}
+                  </span>
+                  <ArrowRight className="lib-row-arrow" size={16} strokeWidth={1.8} aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 03 · Catalog grid — every card opens its detail page */}
         <section className="exp-grid" aria-label={t('lab.catalogLabel')}>
           {items.map((exp, i) => {
             const desc = language === 'id' ? exp.desc_id : exp.desc_en;
-            const Wrapper = exp.url ? 'a' : 'article';
-            const wrapperProps = exp.url
-              ? { href: exp.url, target: '_blank', rel: 'noopener noreferrer' }
-              : {};
             return (
-              <Wrapper
-                key={`${filter}-${exp.id}`}
-                className="exp-card"
-                data-reveal
-                style={{ '--reveal-delay': `${Math.min(i * 70, 350)}ms` }}
+              <Link
+                key={`${category}-${filter}-${exp.id}`}
+                to={`/experiment/${exp.slug}`}
+                className="exp-card exp-card--library"
+                style={{ '--card-delay': `${Math.min(i * 60, 320)}ms` }}
                 data-index={String(i + 1).padStart(3, '0')}
-                {...wrapperProps}
               >
+                <div className="exp-thumb" aria-hidden="true">
+                  {exp.preview ? (
+                    <img src={exp.preview} alt="" loading="lazy" />
+                  ) : (
+                    <span className="exp-thumb-ph">{String(i + 1).padStart(3, '0')}</span>
+                  )}
+                  <span className="exp-thumb-cat">{t(`lab.category.${exp.category}`)}</span>
+                </div>
                 <div className="exp-card-top">
                   <span className="exp-index" aria-hidden="true">{String(i + 1).padStart(3, '0')}</span>
                   <span className={`exp-status exp-status--${exp.status}`}>
@@ -254,15 +345,32 @@ export default function Experiment() {
                   </div>
                   <span className="exp-year">
                     {exp.year}
-                    {exp.url && <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden="true" />}
+                    <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden="true" />
                   </span>
                 </div>
-              </Wrapper>
+              </Link>
             );
           })}
           {items.length === 0 && (
             <div className="exp-empty">{t('lab.empty')}</div>
           )}
+        </section>
+
+        {/* 04 · Outro — submit an idea */}
+        <section className="lab-outro" data-reveal>
+          <div className="lab-outro-copy">
+            <span className="lab-outro-kicker">[ {t('lab.outroKicker')} ]</span>
+            <h2>{t('lab.outroTitle')}</h2>
+            <p>{t('lab.outroDesc')}</p>
+          </div>
+          <a
+            className="k-btn k-btn--primary"
+            href="https://t.me/kryptoncodes"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('lab.outroCta')} <ArrowUpRight size={17} aria-hidden="true" />
+          </a>
         </section>
       </main>
     </>

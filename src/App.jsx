@@ -10,12 +10,15 @@ import BuyAccess from './pages/BuyAccess';
 import Community from './pages/Community';
 import Pool from './pages/Pool';
 import Experiment from './pages/Experiment';
+import ExperimentDetail from './pages/ExperimentDetail';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
 import LanguageSelector from './components/LanguageSelector';
 import RevealManager from './components/RevealManager';
-import KryptonCore from './core/KryptonCore';
+// KryptonCore (orb AI kanan bawah) — DISEMBUNYIKAN sementara, akan
+// dikembangkan lagi nanti. Buka kembali import ini + render di bawah.
+// import KryptonCore from './core/KryptonCore';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 function AppContent() {
@@ -135,6 +138,7 @@ function AppContent() {
           <Route path="/buy/:planId" element={<BuyAccess />} />
           <Route path="/community" element={<Community />} />
           <Route path="/experiment" element={<Experiment />} />
+          <Route path="/experiment/:slug" element={<ExperimentDetail />} />
           <Route path="/pool" element={<Pool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -179,8 +183,10 @@ function AppContent() {
         </footer>
       </div>
 
-      {/* Krypton AI Core — the living intelligence at the center of the platform */}
-      {!showSplash && <KryptonCore />}
+      {/* Krypton AI Core — the living intelligence at the center of the platform.
+          Disembunyikan sementara (akan dikembangkan nanti) — buka baris di
+          bawah + import-nya di atas untuk menampilkan kembali orb-nya. */}
+      {/* {!showSplash && <KryptonCore />} */}
     </>
   );
 }

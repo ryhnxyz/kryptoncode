@@ -364,6 +364,42 @@
     "openingSub": "Rumah untuk eksperimen KryptonCode — tempat prototipe dan ide liar diuji.",
     "skip": "Lewati",
     "sound": "Nyalakan suara",
-    "mute": "Matikan suara"
+    "mute": "Matikan suara",
+    "category": {
+      "all": "Semua rak",
+      "design": "Desain",
+      "motion": "Motion",
+      "audio": "Audio",
+      "tooling": "Tooling"
+    },
+    "shelfKicker": "indeks perpustakaan",
+    "shelfLabel": "Jelajahi perpustakaan per kategori",
+    "shelfSoon": "Segera",
+    "entries": "entri",
+    "detail": {
+      "back": "Kembali ke perpustakaan",
+      "previewLabel": "Pratinjau eksperimen",
+      "preview": "Live preview",
+      "download": "Unduh",
+      "noPreview": "Preview menyusul",
+      "noDownload": "File belum diunggah",
+      "promptTitle": "Prompt-nya",
+      "promptEmpty": "Prompt belum ditambahkan untuk entri ini.",
+      "copy": "Salin",
+      "copied": "Tersalin",
+      "metaTitle": "Kartu indeks",
+      "category": "Kategori",
+      "status": "Status",
+      "year": "Tahun",
+      "tags": "Tag",
+      "navLabel": "Antar entri",
+      "prev": "Sebelumnya",
+      "next": "Berikutnya",
+      "notFound": "Entri tidak ditemukan di perpustakaan."
+    },
+    "outroKicker": "panggilan terbuka",
+    "outroTitle": "Punya ide yang layak diuji?",
+    "outroDesc": "Perpustakaan ini tumbuh dari eksperimen kecil. Kirim ide — kalau menarik, dia dapat rak sendiri.",
+    "outroCta": "Kirim via Telegram"
   }
 }

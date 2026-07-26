@@ -364,6 +364,42 @@
     "openingSub": "The home for KryptonCode experiments — where prototypes and wild ideas get tested.",
     "skip": "Skip",
     "sound": "Turn sound on",
-    "mute": "Mute sound"
+    "mute": "Mute sound",
+    "category": {
+      "all": "All shelves",
+      "design": "Design",
+      "motion": "Motion",
+      "audio": "Audio",
+      "tooling": "Tooling"
+    },
+    "shelfKicker": "library index",
+    "shelfLabel": "Browse the library by category",
+    "shelfSoon": "Soon",
+    "entries": "entries",
+    "detail": {
+      "back": "Back to library",
+      "previewLabel": "Experiment preview",
+      "preview": "Live preview",
+      "download": "Download",
+      "noPreview": "Preview coming soon",
+      "noDownload": "File not uploaded yet",
+      "promptTitle": "The prompt",
+      "promptEmpty": "Prompt hasn't been added for this entry.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "metaTitle": "Index card",
+      "category": "Category",
+      "status": "Status",
+      "year": "Year",
+      "tags": "Tags",
+      "navLabel": "Between entries",
+      "prev": "Previous",
+      "next": "Next",
+      "notFound": "Entry not found in the library."
+    },
+    "outroKicker": "open call",
+    "outroTitle": "Got an idea worth testing?",
+    "outroDesc": "The library grows from small experiments. Send an idea — if it's interesting, it gets its own shelf entry.",
+    "outroCta": "Send via Telegram"
   }
 }
