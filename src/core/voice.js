@@ -19,32 +19,55 @@ export function createMicAnalyser() {
   let stream = null;
   let bins = null;
   let enabled = false;
+  let enabling = null;
+  let enableSession = 0;
+
+  const hasLiveTrack = (candidate = stream) => {
+    const tracks = candidate?.getAudioTracks?.() || [];
+    return tracks.some((track) => track.readyState === 'live' && track.enabled !== false);
+  };
 
   async function enable() {
-    if (enabled) return true;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      const AC = window.AudioContext || window.webkitAudioContext;
-      ctx = new AC();
-      if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
-      const src = ctx.createMediaStreamSource(stream);
-      analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;           // 128 bins
-      analyser.smoothingTimeConstant = 0.55;
-      src.connect(analyser);
-      bins = new Uint8Array(analyser.frequencyBinCount);
-      enabled = true;
-      return true;
-    } catch {
-      enabled = false;
-      return false;
-    }
+    if (enabled && hasLiveTrack()) return true;
+    if (enabling) return enabling;
+    const session = ++enableSession;
+    enabling = (async () => {
+      if (enabled || stream) disable(false);
+      let nextStream = null;
+      let nextCtx = null;
+      try {
+        nextStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        if (session !== enableSession || !hasLiveTrack(nextStream)) throw new Error('microphone stream is not live');
+        const AC = window.AudioContext || window.webkitAudioContext;
+        nextCtx = new AC();
+        if (nextCtx.state === 'suspended') await nextCtx.resume().catch(() => {});
+        if (session !== enableSession) throw new Error('stale microphone session');
+        const src = nextCtx.createMediaStreamSource(nextStream);
+        const nextAnalyser = nextCtx.createAnalyser();
+        nextAnalyser.fftSize = 256;           // 128 bins
+        nextAnalyser.smoothingTimeConstant = 0.55;
+        src.connect(nextAnalyser);
+        stream = nextStream;
+        ctx = nextCtx;
+        analyser = nextAnalyser;
+        bins = new Uint8Array(analyser.frequencyBinCount);
+        enabled = true;
+        return true;
+      } catch {
+        try { nextStream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
+        try { nextCtx?.close(); } catch { /* noop */ }
+        if (session === enableSession) enabled = false;
+        return false;
+      }
+    })();
+    try { return await enabling; }
+    finally { if (session === enableSession) enabling = null; }
   }
 
   function getData() {
-    if (!enabled || !analyser) return null;
+    if (!enabled || !analyser || !hasLiveTrack()) return null;
     analyser.getByteFrequencyData(bins);
     // rms-ish level from mid bins
     let sum = 0;
@@ -55,15 +78,17 @@ export function createMicAnalyser() {
     return { level: Math.min(1, level), bins };
   }
 
-  function disable() {
+  function disable(invalidate = true) {
+    if (invalidate) enableSession += 1;
     try { stream?.getTracks().forEach((t) => t.stop()); } catch { /* noop */ }
     try { ctx?.close(); } catch { /* noop */ }
-    ctx = null; analyser = null; stream = null; enabled = false;
+    ctx = null; analyser = null; stream = null; bins = null; enabled = false;
+    if (invalidate) enabling = null;
   }
 
   return {
     enable, disable, getData,
-    get enabled() { return enabled; },
+    get enabled() { return enabled && hasLiveTrack(); },
     get stream() { return stream; },
   };
 }
@@ -187,7 +212,7 @@ export function createNaturalSpeech(getLang, apiBase) {
     if (mySess !== sess) return;
     revoke();
     if (queue.length) { fetchAndPlay(queue.shift(), mySess); }
-    else { playing = false; if (streamEnded) { const cb = cbEnd; finishSession(); cb && cb(); } }
+    else { playing = false; if (streamEnded) { const cb = cbEnd; finishSession(); cb?.(); } }
   }
 
   function fetchAndPlay(text, mySess) {
@@ -201,7 +226,7 @@ export function createNaturalSpeech(getLang, apiBase) {
       .slice(0, 500);
     if (!clean) { onClipEnd(mySess); return; }
     const a = ensureAudio();
-    const fireStart = () => { if (mySess === sess && !started) { started = true; cbStart && cbStart(); } };
+    const fireStart = () => { if (mySess === sess && !started) { started = true; cbStart?.(); } };
     a.onplaying = fireStart;
     a.onended = () => onClipEnd(mySess);
     a.onerror = () => {
@@ -237,7 +262,7 @@ export function createNaturalSpeech(getLang, apiBase) {
   }
   function endStream() {
     streamEnded = true;
-    if (!playing && !queue.length) { const cb = cbEnd; finishSession(); cb && cb(); }
+    if (!playing && !queue.length) { const cb = cbEnd; finishSession(); cb?.(); }
   }
   function speak(text, opts = {}) {
     beginStream(opts);
@@ -345,19 +370,19 @@ export function createWakeWord(getLang, onWake) {
 export function createVoiceCapture(mic, getLang, apiBase) {
   const base = (apiBase || 'https://api.kryptoncode.xyz').replace(/\/+$/, '');
   const supported = typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined';
-  let recorder = null;
-  let chunks = [];
-  let vad = null;
-  let active = false;
-  let aborted = false;
-  let onResult = null;
-  let onPhase = null;
+  let sessionId = 0;
+  let current = null;
 
   const START = 0.06;         // level to count as speech
   const STOP = 0.035;         // level considered silence
-  const SILENCE_MS = 650;     // trailing silence to end a turn (snappier)
+  const SILENCE_MS = 480;     // fast turn-end without clipping normal phrasing
   const MAX_MS = 9000;        // hard cap
   const NOSPEECH_MS = 6000;   // give up if nothing spoken
+
+  const hasLiveAudioTrack = (stream) => {
+    const tracks = stream?.getAudioTracks?.() || [];
+    return tracks.some((track) => track.readyState === 'live' && track.enabled !== false);
+  };
 
   function pickMime() {
     const opts = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
@@ -365,24 +390,86 @@ export function createVoiceCapture(mic, getLang, apiBase) {
     return '';
   }
 
+  function clearVad(session) {
+    if (session.vad) clearInterval(session.vad);
+    session.vad = null;
+  }
+
+  function deliver(session, value) {
+    if (session.delivered) return;
+    session.delivered = true;
+    clearVad(session);
+    if (session.fetchAbort) session.fetchAbort = null;
+    if (current === session) current = null;
+    const cb = session.onResult;
+    session.onResult = null;
+    session.onPhase = null;
+    cb?.(value);
+  }
+
+  function abortSession(session) {
+    if (!session || session.delivered) return;
+    session.aborted = true;
+    clearVad(session);
+    try { session.fetchAbort?.abort(); } catch { /* noop */ }
+    session.fetchAbort = null;
+    if (session.recording && !session.stopping) {
+      session.stopping = true;
+      try { if (session.recorder.state !== 'inactive') session.recorder.stop(); } catch { /* noop */ }
+      session.recording = false;
+    }
+    deliver(session, null);
+  }
+
   function start(cb, phaseCb) {
-    if (active || !supported) return false;
-    const stream = mic && mic.stream;
-    if (!stream) return false;
-    onResult = cb; onPhase = phaseCb || null;
-    chunks = []; aborted = false; active = true;
+    if (!supported || current?.recording) return false;
+    // A newer recording owns the callback lane and invalidates stale STT work.
+    if (current) abortSession(current);
+    const stream = mic?.stream;
+    if (!hasLiveAudioTrack(stream)) return false;
+
+    const session = {
+      id: ++sessionId,
+      stream,
+      recorder: null,
+      chunks: [],
+      vad: null,
+      fetchAbort: null,
+      onResult: cb,
+      onPhase: phaseCb || null,
+      recording: false,
+      stopping: false,
+      finalizing: false,
+      aborted: false,
+      delivered: false,
+    };
     const mime = pickMime();
-    try { recorder = mime ? new window.MediaRecorder(stream, { mimeType: mime }) : new window.MediaRecorder(stream); }
-    catch { active = false; return false; }
-    recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-    recorder.onstop = finalize;
-    try { recorder.start(120); } catch { active = false; return false; }
+    try {
+      session.recorder = mime ? new window.MediaRecorder(stream, { mimeType: mime }) : new window.MediaRecorder(stream);
+    } catch { return false; }
+    session.recorder.ondataavailable = (event) => {
+      if (!session.delivered && event.data?.size) session.chunks.push(event.data);
+    };
+    session.recorder.onstop = () => finalize(session);
+    session.recorder.onerror = () => abortSession(session);
+    try {
+      session.recorder.start(120);
+      session.recording = true;
+      current = session;
+    } catch {
+      session.recorder.ondataavailable = null;
+      session.recorder.onstop = null;
+      session.recorder.onerror = null;
+      return false;
+    }
 
     const t0 = performance.now();
     let speechStart = 0;
     let lastLoud = 0;
-    vad = setInterval(() => {
-      const d = mic.getData && mic.getData();
+    session.vad = setInterval(() => {
+      if (current !== session || session.delivered) { clearVad(session); return; }
+      if (!hasLiveAudioTrack(stream)) { abortSession(session); return; }
+      const d = mic?.getData?.();
       const lvl = d ? d.level : 0;
       const now = performance.now();
       if (lvl > START) { if (!speechStart) speechStart = now; lastLoud = now; }
@@ -393,35 +480,61 @@ export function createVoiceCapture(mic, getLang, apiBase) {
     return true;
   }
 
-  function stop(abort) {
-    if (!active) return;
-    aborted = !!abort;
-    if (vad) { clearInterval(vad); vad = null; }
+  function stop(abort = false) {
+    const session = current;
+    if (!session || session.delivered) return;
+    if (abort) {
+      sessionId += 1;
+      abortSession(session);
+      return;
+    }
+    if (!session.recording || session.stopping) return;
+    clearVad(session);
+    session.stopping = true;
     try {
-      if (recorder && recorder.state !== 'inactive') recorder.stop();
-      else finalize();
-    } catch { finalize(); }
+      if (session.recorder.state !== 'inactive') session.recorder.stop();
+      else finalize(session);
+    } catch { finalize(session); }
   }
 
-  async function finalize() {
-    if (!active) return;
-    active = false;
-    const cb = onResult; onResult = null;
-    if (aborted || !chunks.length) { cb && cb(null); return; }
-    const blob = new Blob(chunks, { type: (recorder && recorder.mimeType) || 'audio/webm' });
-    chunks = [];
-    if (blob.size < 1400) { cb && cb(null); return; } // too short to be speech
-    onPhase && onPhase('transcribing');
+  async function finalize(session) {
+    if (session.finalizing || session.delivered) return;
+    session.finalizing = true;
+    session.recording = false;
+    clearVad(session);
+    if (session.aborted || session.id !== sessionId || current !== session || !session.chunks.length) {
+      deliver(session, null);
+      return;
+    }
+    const blob = new Blob(session.chunks, { type: session.recorder?.mimeType || 'audio/webm' });
+    session.chunks = [];
+    if (blob.size < 1400) { deliver(session, null); return; } // too short to be speech
+    session.onPhase?.('transcribing');
+    if (session.delivered || session.aborted || session.id !== sessionId || current !== session) return;
+    const fetchAbort = new AbortController();
+    session.fetchAbort = fetchAbort;
     try {
       const res = await fetch(`${base}/api/core/stt?lang=${encodeURIComponent(getLang())}`, {
         method: 'POST',
         headers: { 'Content-Type': blob.type || 'audio/webm' },
         body: blob,
+        signal: fetchAbort.signal,
       });
-      const j = await res.json();
-      cb && cb(((j && j.text) || '').trim());
-    } catch { cb && cb(null); }
+      if (!res.ok) throw new Error(`stt HTTP ${res.status}`);
+      const json = await res.json();
+      if (session.delivered || session.aborted || session.id !== sessionId || current !== session || fetchAbort.signal.aborted) return;
+      deliver(session, String(json?.text || '').trim());
+    } catch {
+      if (!session.delivered) deliver(session, null);
+    } finally {
+      if (session.fetchAbort === fetchAbort) session.fetchAbort = null;
+    }
   }
 
-  return { start, stop, get active() { return active; }, supported };
+  function cancel() {
+    sessionId += 1;
+    abortSession(current);
+  }
+
+  return { start, stop, cancel, get active() { return !!current?.recording; }, supported };
 }

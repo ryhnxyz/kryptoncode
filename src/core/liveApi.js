@@ -61,29 +61,62 @@ export async function streamChat({ message, lang = 'id', history = [], handlers 
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = '';
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let idx;
-    while ((idx = buf.indexOf('\n\n')) >= 0) {
-      const frame = buf.slice(0, idx);
-      buf = buf.slice(idx + 2);
-      let event = 'message';
-      let data = '';
-      for (const line of frame.split('\n')) {
-        if (line.startsWith('event:')) event = line.slice(6).trim();
-        else if (line.startsWith('data:')) data += line.slice(5).trim();
-      }
-      if (!data) continue;
-      let parsed;
-      try {
-        parsed = JSON.parse(data);
-      } catch {
-        parsed = data;
-      }
-      handlers[event] && handlers[event](parsed);
+  let terminal = null;
+
+  const dispatchFrame = (frame) => {
+    let event = 'message';
+    const dataLines = [];
+    for (const line of frame.split(/\r\n|\n|\r/)) {
+      if (!line || line.startsWith(':')) continue;
+      const colon = line.indexOf(':');
+      const field = colon < 0 ? line : line.slice(0, colon);
+      let value = colon < 0 ? '' : line.slice(colon + 1);
+      if (value.startsWith(' ')) value = value.slice(1);
+      if (field === 'event') event = value || 'message';
+      else if (field === 'data') dataLines.push(value);
     }
+    if (!dataLines.length) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(dataLines.join('\n'));
+    } catch {
+      throw new Error(`malformed ${event} event`);
+    }
+    if (event === 'done' || event === 'error') {
+      if (terminal) throw new Error('duplicate terminal event');
+      terminal = event;
+    }
+    handlers[event]?.(parsed);
+  };
+
+  const drain = () => {
+    while (true) {
+      const match = /\r\n\r\n|\n\n|\r\r/.exec(buf);
+      if (!match) return;
+      const frame = buf.slice(0, match.index);
+      buf = buf.slice(match.index + match[0].length);
+      dispatchFrame(frame);
+      if (terminal) return;
+    }
+  };
+
+  try {
+    while (!terminal) {
+      const { value, done } = await reader.read();
+      if (done) {
+        buf += dec.decode();
+        drain();
+        break;
+      }
+      buf += dec.decode(value, { stream: true });
+      if (buf.length > 1024 * 1024) throw new Error('chat stream buffer overflow');
+      drain();
+    }
+    if (!terminal) throw new Error('chat stream ended without terminal event');
+    if (!signal?.aborted) await reader.cancel().catch(() => {});
+    return terminal;
+  } finally {
+    try { reader.releaseLock(); } catch { /* already released */ }
   }
 }
 

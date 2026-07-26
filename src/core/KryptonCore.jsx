@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Mic, Volume2, VolumeX, X } from './icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createOrbEngine } from './orbEngine';
-import { createMicAnalyser, createSpeech, createNaturalSpeech, createRecognizer, createWakeWord, createVoiceCapture, voiceSupport } from './voice';
+import { createMicAnalyser, createNaturalSpeech, createWakeWord, createVoiceCapture } from './voice';
 import { createCues } from './soundCues';
 import * as liveApi from './liveApi';
 import { interpret, REPLIES } from './intentEngine';
@@ -19,28 +19,6 @@ import { SystemPanel, ProcessesPanel, LogsPanel, ResearchPanel, CodePanel, Deplo
 import './aiCore.css';
 
 const VOICE_OK_KEY = 'krypton_voice_ok';
-
-/* typewriter line for Krypton's replies */
-function TypeLine({ text }) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    setN(0);
-    if (!text) return undefined;
-    const iv = setInterval(() => {
-      setN((v) => {
-        if (v >= text.length) { clearInterval(iv); return v; }
-        return v + 1;
-      });
-    }, 16);
-    return () => clearInterval(iv);
-  }, [text]);
-  const done = n >= (text?.length || 0);
-  return (
-    <div className="kry-reply" aria-live="polite">
-      <span className={done ? '' : 'kry-caret'}>{text?.slice(0, n)}</span>
-    </div>
-  );
-}
 
 export default function KryptonCore() {
   const { language } = useLanguage();
@@ -52,7 +30,6 @@ export default function KryptonCore() {
   const engineRef = useRef(null);
   const micRef = useRef(null);
   const speechRef = useRef(null);
-  const recRef = useRef(null);
   const wakeRef = useRef(null);
   const cuesRef = useRef(null);
   const restRef = useRef('idle');
@@ -63,8 +40,20 @@ export default function KryptonCore() {
   const historyRef = useRef([]);
   const chatAbortRef = useRef(null);
   const voiceModeRef = useRef(false);
-  const finalGotRef = useRef(false);
   const captureRef = useRef(null);
+  const startListenRef = useRef(null);
+  const requestListenRef = useRef(null);
+  const listeningRef = useRef(false);
+  const streamingRef = useRef(false);
+  const enterTimerRef = useRef(null);
+  const listenTimerRef = useRef(null);
+  const listenGenerationRef = useRef(0);
+  const chatSessionRef = useRef(0);
+  const speechSessionRef = useRef(0);
+  const bargeTimerRef = useRef(null);
+  const bargeLoudSinceRef = useRef(0);
+  const bargeCooldownRef = useRef(0);
+  const mountedRef = useRef(true);
 
   const [open, setOpen] = useState(false);
   const [orbState, setOrbState] = useState('idle');
@@ -82,6 +71,7 @@ export default function KryptonCore() {
 
   /* ── boot: engine + factories ─────────────────────────────────── */
   useEffect(() => {
+    mountedRef.current = true;
     const engine = createOrbEngine(canvasRef.current);
     engineRef.current = engine;
     micRef.current = createMicAnalyser();
@@ -90,7 +80,7 @@ export default function KryptonCore() {
     cuesRef.current = createCues();
     wakeRef.current = createWakeWord(() => langRef.current, () => {
       if (!openRef.current) enterRef.current?.(true);
-      else startListenRef.current?.();
+      else requestListenRef.current?.();
     });
     if (window.localStorage.getItem(VOICE_OK_KEY) === '1') {
       wakeRef.current.setEnabled(true);
@@ -104,13 +94,28 @@ export default function KryptonCore() {
     window.addEventListener('keydown', unlockOnce, { once: true });
     const t = setTimeout(() => setHintVisible(true), 1800);
     return () => {
+      mountedRef.current = false;
+      openRef.current = false;
+      voiceModeRef.current = false;
+      listeningRef.current = false;
+      streamingRef.current = false;
+      listenGenerationRef.current += 1;
+      chatSessionRef.current += 1;
+      speechSessionRef.current += 1;
       clearTimeout(t);
+      clearTimeout(idleTimer.current);
+      clearTimeout(enterTimerRef.current);
+      clearTimeout(listenTimerRef.current);
+      clearInterval(bargeTimerRef.current);
       window.removeEventListener('pointerdown', unlockOnce);
       window.removeEventListener('keydown', unlockOnce);
-      engine.destroy();
-      micRef.current?.disable();
+      try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+      captureRef.current?.cancel?.();
       wakeRef.current?.setEnabled(false);
       speechRef.current?.cancel();
+      micRef.current?.disable();
+      engine.destroy();
+      document.body.classList.remove('kry-space-open');
     };
   }, []);
 
@@ -121,6 +126,72 @@ export default function KryptonCore() {
     engineRef.current?.setState(name);
     if (name !== 'idle' && name !== 'speaking') cuesRef.current?.state();
   }, []);
+
+  const setStreamingState = useCallback((value) => {
+    streamingRef.current = !!value;
+    setStreaming(!!value);
+  }, []);
+
+  const clearScheduledListen = useCallback((invalidate = true) => {
+    clearTimeout(listenTimerRef.current);
+    listenTimerRef.current = null;
+    if (invalidate) listenGenerationRef.current += 1;
+  }, []);
+
+  const hasLiveMicTrack = useCallback(() => {
+    const tracks = micRef.current?.stream?.getAudioTracks?.() || [];
+    return tracks.some((track) => track.readyState === 'live' && track.enabled !== false);
+  }, []);
+
+  // Schedule hands-free turn-taking only while the same voice generation is valid.
+  // Capture startup can briefly race getUserMedia/MediaRecorder readiness, so retry
+  // a few times with a capped backoff instead of silently leaving the orb idle.
+  const scheduleListen = useCallback((delay = 350, maxRetries = 5) => {
+    clearScheduledListen(true);
+    const generation = listenGenerationRef.current;
+    const attempt = async (retriesLeft, retryDelay) => {
+      if (
+        !mountedRef.current ||
+        generation !== listenGenerationRef.current ||
+        !openRef.current ||
+        !voiceModeRef.current ||
+        !captureRef.current?.supported
+      ) return;
+      if (listeningRef.current || captureRef.current?.active) return;
+      if (streamingRef.current || speechRef.current?.isSpeaking?.()) {
+        if (retriesLeft > 0) {
+          listenTimerRef.current = setTimeout(() => attempt(retriesLeft - 1, Math.min(700, retryDelay * 1.5)), retryDelay);
+        }
+        return;
+      }
+
+      let ready = hasLiveMicTrack();
+      if (!ready) {
+        const enabled = await micRef.current?.enable();
+        ready = !!enabled && hasLiveMicTrack();
+      }
+      if (ready) {
+        engineRef.current?.setAudioSource(() => micRef.current?.getData());
+        window.localStorage.setItem(VOICE_OK_KEY, '1');
+      }
+      if (
+        !mountedRef.current ||
+        generation !== listenGenerationRef.current ||
+        !openRef.current ||
+        !voiceModeRef.current
+      ) return;
+
+      const started = ready && await startListenRef.current?.(generation);
+      if (!started && retriesLeft > 0 && generation === listenGenerationRef.current) {
+        listenTimerRef.current = setTimeout(() => attempt(retriesLeft - 1, Math.min(700, retryDelay * 1.5)), retryDelay);
+      } else if (!started && engineRef.current?.getState() !== 'speaking') {
+        setOrb('idle');
+      }
+    };
+
+    listenTimerRef.current = setTimeout(() => attempt(maxRetries, 140), Math.max(0, delay));
+    return generation;
+  }, [clearScheduledListen, hasLiveMicTrack, setOrb]);
 
   // Auto-close AI Space after 60s of no interaction → back to the small orb.
   const IDLE_MS = 60000;
@@ -146,27 +217,28 @@ export default function KryptonCore() {
 
   /* ── speak with persona ───────────────────────────────────────── */
   const sayReply = useCallback((text, rest = 'idle', after) => {
+    clearScheduledListen(true);
+    const speechSession = ++speechSessionRef.current;
     restRef.current = rest;
     setKryText(text);
     speechRef.current?.speak(text, {
       onstart: () => {
+        if (!mountedRef.current || speechSession !== speechSessionRef.current || !openRef.current) return;
         engineRef.current?.setSpeaking(true);
         setOrbState('speaking');
         engineRef.current?.setState('speaking');
         bumpActivity();
       },
       onend: () => {
+        if (!mountedRef.current || speechSession !== speechSessionRef.current || !openRef.current) return;
         engineRef.current?.setSpeaking(false);
         setOrb(restRef.current);
         bumpActivity();
         after?.();
-        // hands-free turn-taking: after Krypton speaks, open the mic again
-        if (openRef.current && voiceModeRef.current && captureRef.current?.supported) {
-          setTimeout(() => startListenRef.current?.(), 350);
-        }
+        if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
       },
     });
-  }, [setOrb, bumpActivity]);
+  }, [bumpActivity, clearScheduledListen, scheduleListen, setOrb]);
 
   /* ── panels ───────────────────────────────────────────────────── */
   const addPanel = useCallback((id, meta) => {
@@ -190,54 +262,170 @@ export default function KryptonCore() {
     sayReply(rep[langRef.current], 'celebrating');
   }, [sayReply, setOrb]);
 
-  /* ── listening (push-to-talk) ─────────────────────────────────── */
-  const stopListen = useCallback(() => { captureRef.current?.stop(false); }, []);
-  const startListen = useCallback(async () => {
-    if (captureRef.current?.active) return;
+  /* ── listening + hands-free turn-taking ───────────────────────── */
+  const cancelInFlight = useCallback((preserveListenGeneration = false) => {
+    clearScheduledListen(!preserveListenGeneration);
+    chatSessionRef.current += 1;
+    speechSessionRef.current += 1;
+    try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+    chatAbortRef.current = null;
     speechRef.current?.cancel();
-    try { chatAbortRef.current?.abort(); } catch { /* noop */ } // barge-in: stop any in-flight reply
     engineRef.current?.setSpeaking(false);
+    setStreamingState(false);
+  }, [clearScheduledListen, setStreamingState]);
+
+  const stopListen = useCallback(() => {
+    captureRef.current?.stop(false);
+  }, []);
+
+  const startListen = useCallback(async (scheduledGeneration = null) => {
+    if (
+      scheduledGeneration !== null &&
+      scheduledGeneration !== listenGenerationRef.current
+    ) return false;
+    if (!mountedRef.current || !openRef.current || !voiceModeRef.current || !captureRef.current?.supported) return false;
+    if (listeningRef.current || captureRef.current?.active) return true;
+
+    // A direct or scheduled listen is also a barge-in: stale chat/TTS callbacks
+    // are invalidated before capture starts, so they cannot reopen the mic later.
+    cancelInFlight(scheduledGeneration !== null);
+    captureRef.current?.cancel?.();
     wakeRef.current?.setEnabled(false);
-    // ensure the mic stream is live (also feeds the orb spectrum)
-    if (!micRef.current?.stream) {
+    bargeCooldownRef.current = performance.now() + 700;
+    const captureGeneration = listenGenerationRef.current;
+
+    let ready = hasLiveMicTrack();
+    if (!ready) {
       const ok = await micRef.current?.enable();
-      if (ok) {
-        engineRef.current?.setAudioSource(() => micRef.current?.getData());
-        window.localStorage.setItem(VOICE_OK_KEY, '1');
-      }
+      ready = !!ok && hasLiveMicTrack();
     }
+    if (ready) {
+      engineRef.current?.setAudioSource(() => micRef.current?.getData());
+      window.localStorage.setItem(VOICE_OK_KEY, '1');
+    }
+    if (
+      !ready ||
+      !mountedRef.current ||
+      captureGeneration !== listenGenerationRef.current ||
+      !openRef.current ||
+      !voiceModeRef.current
+    ) {
+      if (mountedRef.current && openRef.current && captureGeneration === listenGenerationRef.current) {
+        listeningRef.current = false;
+        setListening(false);
+        if (engineRef.current?.getState() !== 'speaking') setOrb('idle');
+      }
+      return false;
+    }
+
     const started = captureRef.current?.start(
       (text) => {
+        if (!mountedRef.current || captureGeneration !== listenGenerationRef.current) return;
+        listeningRef.current = false;
         setListening(false);
         if (text) {
           voiceModeRef.current = true;
           setInput('');
           handleRef.current?.(text); // → orchestrator (thinking → reply → natural voice)
         } else {
-          if (engineRef.current?.getState() === 'listening') setOrb('idle');
-          if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
+          if (engineRef.current?.getState() === 'listening' || engineRef.current?.getState() === 'thinking') setOrb('idle');
+          if (openRef.current && voiceModeRef.current) scheduleListen(500, 3);
+          else if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
         }
       },
-      (phase) => { if (phase === 'transcribing') setOrb('thinking'); }
+      (phase) => {
+        if (phase !== 'transcribing' || captureGeneration !== listenGenerationRef.current) return;
+        listeningRef.current = false;
+        setListening(false);
+        setOrb('thinking');
+      }
     );
-    if (started) { setListening(true); setOrb('listening'); bumpActivity(); }
-    else if (window.localStorage.getItem(VOICE_OK_KEY) === '1') {
-      wakeRef.current?.setEnabled(true);
+    if (started) {
+      listeningRef.current = true;
+      setListening(true);
+      setOrb('listening');
+      bumpActivity();
+      return true;
     }
-  }, [setOrb, bumpActivity]);
-  const startListenRef = useRef(null);
+
+    listeningRef.current = false;
+    setListening(false);
+    if (engineRef.current?.getState() !== 'speaking') setOrb('idle');
+    return false;
+  }, [bumpActivity, cancelInFlight, hasLiveMicTrack, scheduleListen, setOrb]);
   useEffect(() => { startListenRef.current = startListen; }, [startListen]);
 
-  // Unified talk toggle for taps / keys — unlocks audio + marks voice mode.
+  const requestListen = useCallback(() => {
+    try { speechRef.current?.unlock?.(); } catch { /* noop */ }
+    voiceModeRef.current = true;
+    const pending = startListenRef.current?.();
+    const requestGeneration = listenGenerationRef.current;
+    Promise.resolve(pending).then((started) => {
+      if (
+        !started &&
+        requestGeneration === listenGenerationRef.current &&
+        !listeningRef.current &&
+        !captureRef.current?.active &&
+        openRef.current &&
+        voiceModeRef.current
+      ) scheduleListen(140, 4);
+    });
+  }, [scheduleListen]);
+  useEffect(() => { requestListenRef.current = requestListen; }, [requestListen]);
+
+  // Unified talk toggle for taps / keys. Refs are authoritative so clicking the
+  // orb while React still renders a stale listening/thinking frame barges in now.
   const talk = useCallback(() => {
     try { speechRef.current?.unlock?.(); } catch { /* noop */ }
-    if (listening) { stopListen(); }
-    else { voiceModeRef.current = true; startListen(); }
-  }, [listening, startListen, stopListen]);
+    if (listeningRef.current || captureRef.current?.active) stopListen();
+    else requestListen();
+  }, [requestListen, stopListen]);
+
+  // Passive barge-in while the core is working. Require sustained, clearly
+  // voiced energy so ambient noise does not cancel useful work. TTS/capture are
+  // hard gates, and the cooldown suppresses the tail of the user's last turn.
+  useEffect(() => {
+    if (!open) return undefined;
+    const watched = new Set(['thinking', 'reading', 'searching', 'coding', 'browsing']);
+    clearInterval(bargeTimerRef.current);
+    bargeTimerRef.current = setInterval(() => {
+      const now = performance.now();
+      const eligible =
+        openRef.current &&
+        voiceModeRef.current &&
+        watched.has(engineRef.current?.getState()) &&
+        !speechRef.current?.isSpeaking?.() &&
+        !listeningRef.current &&
+        !captureRef.current?.active &&
+        now >= bargeCooldownRef.current;
+      if (!eligible) {
+        bargeLoudSinceRef.current = 0;
+        return;
+      }
+      const level = micRef.current?.getData?.()?.level || 0;
+      if (level >= 0.13) {
+        if (!bargeLoudSinceRef.current) bargeLoudSinceRef.current = now;
+        if (now - bargeLoudSinceRef.current >= 220) {
+          bargeLoudSinceRef.current = 0;
+          bargeCooldownRef.current = now + 900;
+          requestListenRef.current?.();
+        }
+      } else if (level < 0.09) {
+        bargeLoudSinceRef.current = 0;
+      }
+    }, 45);
+    return () => {
+      clearInterval(bargeTimerRef.current);
+      bargeTimerRef.current = null;
+      bargeLoudSinceRef.current = 0;
+    };
+  }, [open]);
 
   /* ── enter / exit AI Space ────────────────────────────────────── */
-  const enter = useCallback((withVoice = false) => {
+  const enter = useCallback((withVoice = true) => {
     if (openRef.current) return;
+    clearScheduledListen(true);
+    const enterGeneration = listenGenerationRef.current;
     openRef.current = true;
     setOpen(true);
     setHintVisible(false);
@@ -247,34 +435,55 @@ export default function KryptonCore() {
     cuesRef.current?.unlock();
     cuesRef.current?.enter();
     speechRef.current?.unlock?.();
+    wakeRef.current?.setEnabled(false);
     voiceModeRef.current = !!withVoice;
     micRef.current?.enable().then((ok) => {
-      if (ok) {
+      if (ok && openRef.current && enterGeneration === listenGenerationRef.current) {
         engineRef.current?.setAudioSource(() => micRef.current?.getData());
         window.localStorage.setItem(VOICE_OK_KEY, '1');
       }
     });
     bumpActivity();
-    setTimeout(() => {
-      sayReply(greeting(langRef.current), 'idle');
-    }, 620);
-  }, [sayReply, bumpActivity]);
+    clearTimeout(enterTimerRef.current);
+    enterTimerRef.current = setTimeout(() => {
+      if (!openRef.current || enterGeneration !== listenGenerationRef.current) return;
+      if (voiceModeRef.current) {
+        // Voice entry should feel immediate: show the greeting visually and open
+        // the mic instead of making the user wait for a spoken intro to finish.
+        setKryText(langRef.current === 'id' ? 'Aku mendengarkan.' : 'I am listening.');
+        setOrb('idle');
+        scheduleListen(0, 5);
+      } else {
+        sayReply(greeting(langRef.current), 'idle');
+      }
+    }, 260);
+  }, [bumpActivity, clearScheduledListen, sayReply, scheduleListen, setOrb]);
   const enterRef = useRef(null);
   useEffect(() => { enterRef.current = enter; }, [enter]);
 
   const exit = useCallback(() => {
     if (!openRef.current) return;
     openRef.current = false;
-    clearTimeout(idleTimer.current);
-    try { chatAbortRef.current?.abort(); } catch { /* noop */ }
-    setStreaming(false);
     voiceModeRef.current = false;
+    listeningRef.current = false;
+    bargeLoudSinceRef.current = 0;
+    clearTimeout(idleTimer.current);
+    clearTimeout(enterTimerRef.current);
+    clearScheduledListen(true);
+    clearInterval(bargeTimerRef.current);
+    bargeTimerRef.current = null;
+    chatSessionRef.current += 1;
+    speechSessionRef.current += 1;
+    try { chatAbortRef.current?.abort(); } catch { /* noop */ }
+    chatAbortRef.current = null;
+    captureRef.current?.cancel?.();
+    speechRef.current?.cancel();
+    setStreamingState(false);
+    setListening(false);
     setOpen(false);
     document.body.classList.remove('kry-space-open');
     engineRef.current?.setPlacement('dock');
-    speechRef.current?.cancel();
     engineRef.current?.setSpeaking(false);
-    stopListen();
     setToast(null);
     clearPanels();
     setYouLine('');
@@ -282,39 +491,55 @@ export default function KryptonCore() {
     setOrb('idle');
     cuesRef.current?.exit();
     if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
-  }, [clearPanels, setOrb, stopListen]);
+  }, [clearPanels, clearScheduledListen, setOrb, setStreamingState]);
   useEffect(() => { exitRef.current = exit; }, [exit]);
 
   /* ── orchestrator: live /api/core/chat over SSE ───────────────── */
   const streamChatToCore = useCallback((message) => {
+    clearTimeout(enterTimerRef.current);
+    clearScheduledListen(true);
     try { chatAbortRef.current?.abort(); } catch { /* noop */ }
     speechRef.current?.cancel();
+    engineRef.current?.setSpeaking(false);
+    const chatSession = ++chatSessionRef.current;
+    const speechSession = ++speechSessionRef.current;
     const ac = new AbortController();
     chatAbortRef.current = ac;
-    setStreaming(true);
+    setStreamingState(true);
     setKryText('');
     setOrb('thinking');
+    bargeCooldownRef.current = performance.now() + 700;
     let buf = '';
     let fedIdx = 0;
+    let terminalHandled = false;
+    const isCurrent = () =>
+      mountedRef.current &&
+      openRef.current &&
+      chatSession === chatSessionRef.current &&
+      speechSession === speechSessionRef.current &&
+      !ac.signal.aborted;
+
     // Stream the spoken reply sentence-by-sentence so Krypton starts talking
     // after the first sentence instead of waiting for the whole answer.
     speechRef.current?.beginStream({
       onstart: () => {
+        if (!isCurrent()) return;
         engineRef.current?.setSpeaking(true);
         setOrbState('speaking');
         engineRef.current?.setState('speaking');
         bumpActivity();
       },
       onend: () => {
+        if (!isCurrent()) return;
         engineRef.current?.setSpeaking(false);
+        setStreamingState(false);
         setOrb('idle');
         bumpActivity();
-        if (openRef.current && voiceModeRef.current && captureRef.current?.supported) {
-          setTimeout(() => startListenRef.current?.(), 350);
-        }
+        if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
       },
     });
     const feedSentences = (final) => {
+      if (!isCurrent()) return;
       const seg = buf.slice(fedIdx);
       const re = /[^.!?…\n]*[.!?…\n]+/g;
       let m; let last = 0;
@@ -328,35 +553,99 @@ export default function KryptonCore() {
       }
       return 'thinking';
     };
-    const oops = (msg) => { setStreaming(false); speechRef.current?.cancel(); sayReply(msg, 'idle'); };
+    const recover = (msg) => {
+      if (!isCurrent() || terminalHandled) return;
+      terminalHandled = true;
+      chatAbortRef.current = null;
+      setStreamingState(false);
+      speechSessionRef.current += 1;
+      speechRef.current?.cancel();
+      engineRef.current?.setSpeaking(false);
+      setOrb('idle');
+      sayReply(msg, 'idle');
+    };
     liveApi.streamChat({
       message,
       lang: langRef.current,
       history: historyRef.current,
       signal: ac.signal,
       handlers: {
-        stage: (d) => { if (ac.signal.aborted) return; if (engineRef.current?.getState() !== 'speaking') setOrb(stageToState(d.stage, d.agent)); bumpActivity(); },
+        stage: (d) => { if (!isCurrent() || terminalHandled) return; if (engineRef.current?.getState() !== 'speaking') setOrb(stageToState(d.stage, d.agent)); bumpActivity(); },
         panel: (d) => {
-          if (ac.signal.aborted) return;
+          if (!isCurrent() || terminalHandled) return;
           if (d.action === 'show') addPanel(d.id, d.id === 'research' ? { query: message.slice(0, 42) } : undefined);
           else if (d.action === 'hide') removePanel(d.id);
         },
-        token: (d) => { if (ac.signal.aborted) return; buf += d.t || ''; setKryText(buf); feedSentences(false); bumpActivity(); },
+        token: (d) => { if (!isCurrent() || terminalHandled) return; buf += d.t || ''; setKryText(buf); feedSentences(false); bumpActivity(); },
         done: (d) => {
-          if (ac.signal.aborted) return;
-          setStreaming(false);
-          const text = (d && d.text) || buf;
+          if (!isCurrent() || terminalHandled) return;
+          terminalHandled = true;
+          chatAbortRef.current = null;
+          setStreamingState(false);
+          const text = String((d && d.text) || buf).trim();
+          buf = text;
           setKryText(text);
           feedSentences(true);
           speechRef.current?.endStream();
-          historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);
+          if (text) {
+            historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);
+          }
         },
-        error: () => { if (!ac.signal.aborted) oops(langRef.current === 'id' ? 'Maaf, koneksi ke inti terganggu. Coba lagi ya.' : 'Sorry, the core connection dropped. Try again.'); },
+        error: () => recover(langRef.current === 'id' ? 'Maaf, koneksi ke inti terganggu. Coba lagi ya.' : 'Sorry, the core connection dropped. Try again.'),
       },
-    }).catch(() => { if (!ac.signal.aborted) oops(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'); });
-  }, [addPanel, bumpActivity, removePanel, sayReply, setOrb]);
+    }).catch(() => recover(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'));
+  }, [addPanel, bumpActivity, clearScheduledListen, removePanel, sayReply, scheduleListen, setOrb, setStreamingState]);
 
-  /* ── command handling: instant local for hide/exit, else orchestrator ── */
+  /* ── instant local intents: live platform facts without an LLM wait ── */
+  const runInstantIntent = useCallback((local) => {
+    if (!local || !['greeting', 'thanks', 'system', 'processes', 'logs'].includes(local.intent)) return false;
+    cancelInFlight();
+    const session = ++chatSessionRef.current;
+    const isCurrent = () => mountedRef.current && openRef.current && session === chatSessionRef.current;
+    (local.show || []).forEach((id) => addPanel(id));
+
+    if (local.intent === 'greeting' || local.intent === 'thanks') {
+      sayReply(local.reply[langRef.current] || local.reply.id, 'idle');
+      return true;
+    }
+    if (local.intent === 'logs') {
+      sayReply(
+        langRef.current === 'id'
+          ? 'Log terbaru sudah kubuka. Aku tetap mendengarkan.'
+          : 'The latest logs are open. I am still listening.',
+        'idle'
+      );
+      return true;
+    }
+
+    setOrb('reading');
+    const request = local.intent === 'system' ? liveApi.getSystem() : liveApi.getProcesses();
+    Promise.resolve(request).then((data) => {
+      if (!isCurrent()) return;
+      let text;
+      if (local.intent === 'system' && data?.success) {
+        const usedGB = ((data.totalMemMB - data.freeMemMB) / 1024).toFixed(1);
+        const totalGB = (data.totalMemMB / 1024).toFixed(1);
+        const load = Array.isArray(data.loadavg) ? data.loadavg[0] : null;
+        text = langRef.current === 'id'
+          ? `Sistem sehat. Beban CPU ${load ?? 'normal'}, RAM terpakai ${usedGB} dari ${totalGB} gigabyte.`
+          : `The system is healthy. CPU load is ${load ?? 'normal'}, with ${usedGB} of ${totalGB} gigabytes of memory in use.`;
+      } else if (local.intent === 'processes' && Array.isArray(data)) {
+        const online = data.filter((item) => item.status === 'online').length;
+        text = langRef.current === 'id'
+          ? `${online} dari ${data.length} layanan sedang online.`
+          : `${online} of ${data.length} services are online.`;
+      } else {
+        text = langRef.current === 'id'
+          ? 'Data live belum bisa kubaca. Coba lagi sebentar.'
+          : 'I could not read the live data just now. Try again shortly.';
+      }
+      sayReply(text, 'idle');
+    });
+    return true;
+  }, [addPanel, cancelInFlight, sayReply, setOrb]);
+
+  /* ── command handling: instant local where safe, else orchestrator ── */
   const handleCommand = useCallback((raw) => {
     const q = (raw || '').trim();
     if (!q) return;
@@ -367,12 +656,13 @@ export default function KryptonCore() {
     if (local && (local.intent === 'hide' || local.intent === 'hideAll')) {
       if (local.hideAll) clearPanels();
       (local.hide || []).forEach(removePanel);
-      setStreaming(false);
+      cancelInFlight();
       sayReply(local.reply[langRef.current] || local.reply.id, 'idle');
       return;
     }
+    if (runInstantIntent(local)) return;
     streamChatToCore(q);
-  }, [bumpActivity, clearPanels, exit, removePanel, sayReply, streamChatToCore]);
+  }, [bumpActivity, cancelInFlight, clearPanels, exit, removePanel, runInstantIntent, sayReply, streamChatToCore]);
   const handleRef = useRef(null);
   useEffect(() => { handleRef.current = handleCommand; }, [handleCommand]);
 
@@ -459,7 +749,7 @@ export default function KryptonCore() {
           type="button"
           className="kry-orb-hit"
           aria-label="Krypton AI Core"
-          onClick={() => enter(false)}
+          onClick={() => enter(true)}
         />
       )}
       {!open && (
@@ -540,6 +830,10 @@ export default function KryptonCore() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && input.trim()) {
                   voiceModeRef.current = false;
+                  listeningRef.current = false;
+                  clearScheduledListen(true);
+                  captureRef.current?.cancel?.();
+                  setListening(false);
                   handleCommand(input.trim());
                   setInput('');
                 }
