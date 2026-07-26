@@ -261,10 +261,10 @@ export function createRealtimeSpeech(getLang, apiBase) {
             const bufferedMs = Number(message.bufferedMs) || 0;
             if (!session.flowPaused && bufferedMs >= HIGH_BUFFER_MS) {
               session.flowPaused = true;
-              try { send({ type: 'flow', sessionId: session.id, paused: true }); } catch { /* noop */ }
+              try { send({ type: 'flow', sessionId: session.id, paused: true, bufferedMs }); } catch { /* noop */ }
             } else if (session.flowPaused && bufferedMs <= LOW_BUFFER_MS) {
               session.flowPaused = false;
-              try { send({ type: 'flow', sessionId: session.id, paused: false }); } catch { /* noop */ }
+              try { send({ type: 'flow', sessionId: session.id, paused: false, bufferedMs }); } catch { /* noop */ }
             }
           }
         };
