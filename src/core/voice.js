@@ -12,15 +12,29 @@ export const voiceSupport = {
   synthesis: typeof window !== 'undefined' && 'speechSynthesis' in window,
 };
 
-// ── microphone → analyser (drives the spectrum ring) ─────────────
+// Pure proximity classifier, exported so the acoustic gate can be regression-tested.
+export function classifyNearFieldVoice({ rms = 0, peak = 0, noiseFloor = 0.006, voiceRatio = 0 } = {}) {
+  const floor = Math.max(0.002, noiseFloor);
+  const snr = rms / floor;
+  const requiredRms = Math.max(0.018, floor * 3.2);
+  const requiredPeak = Math.max(0.055, floor * 5);
+  const near = rms >= requiredRms && peak >= requiredPeak && snr >= 3 && voiceRatio >= 0.38;
+  const score = Math.min(1, Math.max(0, (rms / requiredRms - 0.65) * 0.65 + (voiceRatio - 0.25)));
+  return { near, score, snr, requiredRms, requiredPeak };
+}
+
+// ── microphone → near-field speech analyser ──────────────────────
 export function createMicAnalyser() {
   let ctx = null;
   let analyser = null;
+  let sourceStream = null;
   let stream = null;
   let bins = null;
+  let wave = null;
   let enabled = false;
   let enabling = null;
   let enableSession = 0;
+  let noiseFloor = 0.006;
 
   const hasLiveTrack = (candidate = stream) => {
     const tracks = candidate?.getAudioTracks?.() || [];
@@ -32,31 +46,79 @@ export function createMicAnalyser() {
     if (enabling) return enabling;
     const session = ++enableSession;
     enabling = (async () => {
-      if (enabled || stream) disable(false);
-      let nextStream = null;
+      if (enabled || stream || sourceStream) disable(false);
+      let nextSourceStream = null;
+      let nextProcessedStream = null;
       let nextCtx = null;
       try {
-        nextStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true },
-        });
-        if (session !== enableSession || !hasLiveTrack(nextStream)) throw new Error('microphone stream is not live');
+        const supported = navigator.mediaDevices.getSupportedConstraints?.() || {};
+        const audio = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: false,
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 16000 },
+        };
+        if (supported.voiceIsolation) audio.voiceIsolation = true;
+        nextSourceStream = await navigator.mediaDevices.getUserMedia({ audio });
+        if (session !== enableSession || !hasLiveTrack(nextSourceStream)) throw new Error('microphone stream is not live');
+
+        // Ask the browser again at track level; unsupported constraints are ignored.
+        const inputTrack = nextSourceStream.getAudioTracks()[0];
+        await inputTrack?.applyConstraints?.({
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: false,
+          ...(supported.voiceIsolation ? { voiceIsolation: true } : {}),
+        }).catch(() => {});
+
         const AC = window.AudioContext || window.webkitAudioContext;
         nextCtx = new AC();
         if (nextCtx.state === 'suspended') await nextCtx.resume().catch(() => {});
         if (session !== enableSession) throw new Error('stale microphone session');
-        const src = nextCtx.createMediaStreamSource(nextStream);
+
+        const src = nextCtx.createMediaStreamSource(nextSourceStream);
+        const highpass = nextCtx.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 90;
+        highpass.Q.value = 0.7;
+        const lowpass = nextCtx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.value = 3800;
+        lowpass.Q.value = 0.7;
+        const compressor = nextCtx.createDynamicsCompressor();
+        compressor.threshold.value = -34;
+        compressor.knee.value = 8;
+        compressor.ratio.value = 3;
+        compressor.attack.value = 0.006;
+        compressor.release.value = 0.12;
         const nextAnalyser = nextCtx.createAnalyser();
-        nextAnalyser.fftSize = 256;           // 128 bins
-        nextAnalyser.smoothingTimeConstant = 0.55;
-        src.connect(nextAnalyser);
-        stream = nextStream;
+        nextAnalyser.fftSize = 512;
+        nextAnalyser.smoothingTimeConstant = 0.42;
+        const destination = nextCtx.createMediaStreamDestination();
+
+        src.connect(highpass);
+        highpass.connect(lowpass);
+        // Proximity detection must observe the uncompressed signal; otherwise a
+        // compressor would amplify distant voices and defeat the distance gate.
+        lowpass.connect(nextAnalyser);
+        lowpass.connect(compressor);
+        compressor.connect(destination);
+        nextProcessedStream = destination.stream;
+        if (!hasLiveTrack(nextProcessedStream)) throw new Error('processed microphone stream is not live');
+
+        sourceStream = nextSourceStream;
+        stream = nextProcessedStream;
         ctx = nextCtx;
         analyser = nextAnalyser;
         bins = new Uint8Array(analyser.frequencyBinCount);
+        wave = new Uint8Array(analyser.fftSize);
+        noiseFloor = 0.006;
         enabled = true;
         return true;
       } catch {
-        try { nextStream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
+        try { nextSourceStream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
+        try { nextProcessedStream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
         try { nextCtx?.close(); } catch { /* noop */ }
         if (session === enableSession) enabled = false;
         return false;
@@ -69,20 +131,60 @@ export function createMicAnalyser() {
   function getData() {
     if (!enabled || !analyser || !hasLiveTrack()) return null;
     analyser.getByteFrequencyData(bins);
-    // rms-ish level from mid bins
-    let sum = 0;
-    const from = 2, to = Math.min(64, bins.length);
-    for (let i = from; i < to; i++) sum += bins[i] * bins[i];
-    const rms = Math.sqrt(sum / (to - from)) / 255;
-    const level = Math.max(0, rms - 0.05) * 1.6;
-    return { level: Math.min(1, level), bins };
+    analyser.getByteTimeDomainData(wave);
+
+    let squareSum = 0;
+    let peak = 0;
+    for (let i = 0; i < wave.length; i++) {
+      const value = (wave[i] - 128) / 128;
+      squareSum += value * value;
+      peak = Math.max(peak, Math.abs(value));
+    }
+    const rms = Math.sqrt(squareSum / wave.length);
+
+    const hzPerBin = ctx.sampleRate / analyser.fftSize;
+    let totalEnergy = 0;
+    let voiceEnergy = 0;
+    for (let i = 1; i < bins.length; i++) {
+      const hz = i * hzPerBin;
+      const energy = bins[i] * bins[i];
+      if (hz >= 80 && hz <= 3800) totalEnergy += energy;
+      if (hz >= 180 && hz <= 2200) voiceEnergy += energy;
+    }
+    const voiceRatio = totalEnergy > 0 ? voiceEnergy / totalEnergy : 0;
+    const gate = classifyNearFieldVoice({ rms, peak, noiseFloor, voiceRatio });
+
+    // Learn room noise slowly only while a near-field voice is absent.
+    if (!gate.near && rms < Math.max(0.04, noiseFloor * 3)) {
+      noiseFloor = Math.min(0.04, Math.max(0.002, noiseFloor * 0.97 + rms * 0.03));
+    }
+    const level = Math.min(1, Math.max(0, (rms - noiseFloor * 1.15) * 9));
+    return {
+      level,
+      bins,
+      rms,
+      peak,
+      noiseFloor,
+      voiceRatio,
+      nearVoice: gate.near,
+      proximity: gate.score,
+      snr: gate.snr,
+    };
   }
 
   function disable(invalidate = true) {
     if (invalidate) enableSession += 1;
-    try { stream?.getTracks().forEach((t) => t.stop()); } catch { /* noop */ }
+    try { stream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
+    try { sourceStream?.getTracks().forEach((track) => track.stop()); } catch { /* noop */ }
     try { ctx?.close(); } catch { /* noop */ }
-    ctx = null; analyser = null; stream = null; bins = null; enabled = false;
+    ctx = null;
+    analyser = null;
+    sourceStream = null;
+    stream = null;
+    bins = null;
+    wave = null;
+    enabled = false;
+    noiseFloor = 0.006;
     if (invalidate) enabling = null;
   }
 
@@ -373,11 +475,10 @@ export function createVoiceCapture(mic, getLang, apiBase) {
   let sessionId = 0;
   let current = null;
 
-  const START = 0.06;         // level to count as speech
-  const STOP = 0.035;         // level considered silence
-  const SILENCE_MS = 480;     // fast turn-end without clipping normal phrasing
-  const MAX_MS = 9000;        // hard cap
-  const NOSPEECH_MS = 6000;   // give up if nothing spoken
+  const START_SUSTAIN_MS = 180; // reject distant voices and one-off noise spikes
+  const SILENCE_MS = 480;       // fast turn-end without clipping normal phrasing
+  const MAX_MS = 9000;          // hard cap
+  const NOSPEECH_MS = 6000;     // give up if no near-field voice is detected
 
   const hasLiveAudioTrack = (stream) => {
     const tracks = stream?.getAudioTracks?.() || [];
@@ -464,19 +565,40 @@ export function createVoiceCapture(mic, getLang, apiBase) {
     }
 
     const t0 = performance.now();
+    let nearSince = 0;
     let speechStart = 0;
-    let lastLoud = 0;
+    let lastVoice = 0;
     session.vad = setInterval(() => {
       if (current !== session || session.delivered) { clearVad(session); return; }
       if (!hasLiveAudioTrack(stream)) { abortSession(session); return; }
-      const d = mic?.getData?.();
-      const lvl = d ? d.level : 0;
+      const data = mic?.getData?.();
       const now = performance.now();
-      if (lvl > START) { if (!speechStart) speechStart = now; lastLoud = now; }
-      if (!speechStart) { if (now - t0 > NOSPEECH_MS) stop(true); return; }
+
+      if (!speechStart) {
+        if (data?.nearVoice) {
+          if (!nearSince) nearSince = now;
+          if (now - nearSince >= START_SUSTAIN_MS) {
+            speechStart = nearSince;
+            lastVoice = now;
+          }
+        } else {
+          nearSince = 0;
+        }
+        if (!speechStart && now - t0 > NOSPEECH_MS) stop(true);
+        return;
+      }
+
+      // Once a close speaker starts the turn, allow natural syllable dips while
+      // still rejecting low-SNR background conversation from extending it.
+      const continuingVoice = data?.nearVoice || (
+        data &&
+        data.rms >= Math.max(0.012, data.noiseFloor * 2.1) &&
+        data.voiceRatio >= 0.28
+      );
+      if (continuingVoice) lastVoice = now;
       if (now - t0 > MAX_MS) { stop(false); return; }
-      if (lvl < STOP && now - lastLoud > SILENCE_MS) stop(false);
-    }, 60);
+      if (now - lastVoice > SILENCE_MS) stop(false);
+    }, 45);
     return true;
   }
 

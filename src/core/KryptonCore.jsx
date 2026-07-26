@@ -402,15 +402,15 @@ export default function KryptonCore() {
         bargeLoudSinceRef.current = 0;
         return;
       }
-      const level = micRef.current?.getData?.()?.level || 0;
-      if (level >= 0.13) {
+      const micData = micRef.current?.getData?.();
+      if (micData?.nearVoice) {
         if (!bargeLoudSinceRef.current) bargeLoudSinceRef.current = now;
-        if (now - bargeLoudSinceRef.current >= 220) {
+        if (now - bargeLoudSinceRef.current >= 180) {
           bargeLoudSinceRef.current = 0;
           bargeCooldownRef.current = now + 900;
           requestListenRef.current?.();
         }
-      } else if (level < 0.09) {
+      } else {
         bargeLoudSinceRef.current = 0;
       }
     }, 45);
