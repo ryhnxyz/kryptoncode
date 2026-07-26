@@ -111,7 +111,7 @@ export default function KryptonCore() {
       try { chatAbortRef.current?.abort(); } catch { /* noop */ }
       captureRef.current?.cancel?.();
       wakeRef.current?.setEnabled(false);
-      speechRef.current?.cancel();
+      speechRef.current?.destroy?.();
       micRef.current?.disable();
       engine.destroy();
       document.body.classList.remove('kry-space-open');
@@ -229,6 +229,14 @@ export default function KryptonCore() {
         bumpActivity();
       },
       onend: () => {
+        if (!mountedRef.current || speechSession !== speechSessionRef.current || !openRef.current) return;
+        engineRef.current?.setSpeaking(false);
+        setOrb(restRef.current);
+        bumpActivity();
+        after?.();
+        if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
+      },
+      onerror: () => {
         if (!mountedRef.current || speechSession !== speechSessionRef.current || !openRef.current) return;
         engineRef.current?.setSpeaking(false);
         setOrb(restRef.current);
@@ -503,6 +511,7 @@ export default function KryptonCore() {
     bargeCooldownRef.current = performance.now() + 700;
     let buf = '';
     const speechChunker = createSpeechChunker();
+    let audioFailed = false;
     let terminalHandled = false;
     const isCurrent = () =>
       mountedRef.current &&
@@ -528,6 +537,16 @@ export default function KryptonCore() {
         setOrb('idle');
         bumpActivity();
         if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
+      },
+      onerror: () => {
+        if (!isCurrent()) return;
+        audioFailed = true;
+        engineRef.current?.setSpeaking(false);
+        if (streamingRef.current) setOrb('thinking');
+        else {
+          setOrb('idle');
+          if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
+        }
       },
     });
     const feedSpeechChunks = (delta = '', final = false) => {
@@ -582,6 +601,12 @@ export default function KryptonCore() {
           setKryText(text);
           feedSpeechChunks('', true);
           speechRef.current?.endStream();
+          if (audioFailed) {
+            engineRef.current?.setSpeaking(false);
+            setOrb('idle');
+            bumpActivity();
+            if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
+          }
           if (text) {
             historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);
           }

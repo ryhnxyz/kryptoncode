@@ -31,13 +31,6 @@ export function getProcesses() {
     .catch(() => null);
 }
 
-// Natural neural voice — URL the <audio> element plays directly.
-export function voiceUrl(text, lang = 'id') {
-  return `${API_BASE}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(
-    String(text).slice(0, 500)
-  )}`;
-}
-
 /**
  * Stream the orchestrator over SSE (POST). Parses `event:`/`data:` frames and
  * dispatches to handlers: { stage, panel, token, done, error }.
