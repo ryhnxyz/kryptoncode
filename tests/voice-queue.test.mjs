@@ -134,3 +134,78 @@ test('limits neural TTS prefetch to two concurrent requests', async () => {
     URL.revokeObjectURL = originalRevoke;
   }
 });
+
+test('streams the first neural clip through MediaSource before the full blob is available', async () => {
+  const originalAudio = globalThis.Audio;
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  const originalCreate = URL.createObjectURL;
+  const originalRevoke = URL.revokeObjectURL;
+
+  class FakeSourceBuffer {
+    constructor() { this.listeners = new Map(); this.updating = false; }
+    addEventListener(type, listener) { this.listeners.set(type, listener); }
+    removeEventListener(type) { this.listeners.delete(type); }
+    appendBuffer() {
+      this.updating = true;
+      setImmediate(() => {
+        this.updating = false;
+        this.listeners.get('updateend')?.();
+      });
+    }
+  }
+  class FakeMediaSource {
+    static isTypeSupported(type) { return type === 'audio/mpeg'; }
+    constructor() {
+      this.listeners = new Map();
+      this.readyState = 'closed';
+      setImmediate(() => {
+        this.readyState = 'open';
+        this.listeners.get('sourceopen')?.();
+      });
+    }
+    addEventListener(type, listener) { this.listeners.set(type, listener); }
+    removeEventListener(type) { this.listeners.delete(type); }
+    addSourceBuffer() { return new FakeSourceBuffer(); }
+    endOfStream() { this.readyState = 'ended'; }
+  }
+
+  globalThis.Audio = FakeAudio;
+  globalThis.window = { MediaSource: FakeMediaSource };
+  globalThis.fetch = async () => ({
+    ok: true,
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(4096));
+        controller.enqueue(new Uint8Array(4096));
+        controller.close();
+      },
+    }),
+    blob: async () => { throw new Error('first clip should not wait for blob()'); },
+  });
+  URL.createObjectURL = () => 'blob:media-source';
+  URL.revokeObjectURL = () => {};
+
+  try {
+    let starts = 0;
+    let ends = 0;
+    const speech = createNaturalSpeech(() => 'id', 'https://example.test');
+    speech.beginStream({ onstart: () => { starts += 1; }, onend: () => { ends += 1; } });
+    speech.feed('Respons cepat.');
+    speech.endStream();
+    for (let index = 0; index < 8; index += 1) await tick();
+
+    const audio = FakeAudio.instance;
+    assert.equal(audio.playCount, 1);
+    assert.equal(starts, 1);
+    audio.onended();
+    await tick();
+    assert.equal(ends, 1);
+  } finally {
+    globalThis.Audio = originalAudio;
+    globalThis.fetch = originalFetch;
+    globalThis.window = originalWindow;
+    URL.createObjectURL = originalCreate;
+    URL.revokeObjectURL = originalRevoke;
+  }
+});

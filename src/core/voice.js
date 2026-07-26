@@ -356,6 +356,113 @@ export function createNaturalSpeech(getLang, apiBase) {
     }
   }
 
+  function canStreamFirstClip() {
+    if (typeof window === 'undefined' || !window.MediaSource) return false;
+    return typeof window.MediaSource.isTypeSupported === 'function' &&
+      window.MediaSource.isTypeSupported('audio/mpeg');
+  }
+
+  function waitForMediaSource(mediaSource) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('media source timeout')), 3000);
+      const done = (callback) => {
+        clearTimeout(timer);
+        mediaSource.removeEventListener('sourceopen', onOpen);
+        mediaSource.removeEventListener('error', onError);
+        callback();
+      };
+      const onOpen = () => done(resolve);
+      const onError = () => done(() => reject(new Error('media source failed')));
+      mediaSource.addEventListener('sourceopen', onOpen, { once: true });
+      mediaSource.addEventListener('error', onError, { once: true });
+    });
+  }
+
+  function appendAudioChunk(sourceBuffer, chunk) {
+    return new Promise((resolve, reject) => {
+      const finish = (callback) => {
+        sourceBuffer.removeEventListener('updateend', onEnd);
+        sourceBuffer.removeEventListener('error', onError);
+        callback();
+      };
+      const onEnd = () => finish(resolve);
+      const onError = () => finish(() => reject(new Error('audio append failed')));
+      sourceBuffer.addEventListener('updateend', onEnd, { once: true });
+      sourceBuffer.addEventListener('error', onError, { once: true });
+      try { sourceBuffer.appendBuffer(chunk); }
+      catch { onError(); }
+    });
+  }
+
+  async function streamFirstItem(item, response, mySess) {
+    if (mySess !== sess || !response.body) return;
+    const player = ensureAudio();
+    const mediaSource = new window.MediaSource();
+    let failedOver = false;
+    let playbackStarted = false;
+    let playRequested = false;
+
+    const fallbackToBrowser = () => {
+      if (failedOver || mySess !== sess) return;
+      failedOver = true;
+      revokeItem(item);
+      if (playbackStarted) {
+        onClipEnd(item, mySess);
+        return;
+      }
+      fallback.speak(item.text, {
+        onstart: () => fireFirstStart(mySess),
+        onend: () => onClipEnd(item, mySess),
+      });
+    };
+    const beginPlayback = () => {
+      if (playRequested || failedOver || mySess !== sess) return;
+      playRequested = true;
+      player.muted = false;
+      const promise = player.play();
+      if (promise?.catch) promise.catch(fallbackToBrowser);
+    };
+
+    const queuedIndex = queue.indexOf(item);
+    if (queuedIndex >= 0) queue.splice(queuedIndex, 1);
+    currentItem = item;
+    playing = true;
+    item.state = 'streaming';
+    item.url = URL.createObjectURL(mediaSource);
+    curUrl = item.url;
+    const mediaReady = waitForMediaSource(mediaSource);
+    player.onplaying = () => {
+      playbackStarted = true;
+      fireFirstStart(mySess);
+    };
+    player.onended = () => onClipEnd(item, mySess);
+    player.onerror = fallbackToBrowser;
+    player.src = item.url;
+
+    let reader = null;
+    try {
+      await mediaReady;
+      if (mySess !== sess) return;
+      const sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+      reader = response.body.getReader();
+      let receivedBytes = 0;
+      while (mySess === sess) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (!value?.byteLength) continue;
+        await appendAudioChunk(sourceBuffer, value);
+        receivedBytes += value.byteLength;
+        if (receivedBytes >= 8 * 1024) beginPlayback();
+      }
+      if (mySess !== sess) return;
+      if (mediaSource.readyState === 'open' && !sourceBuffer.updating) mediaSource.endOfStream();
+      beginPlayback();
+    } catch {
+      try { await reader?.cancel(); } catch { /* noop */ }
+      fallbackToBrowser();
+    }
+  }
+
   function playItem(item, mySess) {
     if (mySess !== sess) return;
     currentItem = item;
@@ -370,7 +477,7 @@ export function createNaturalSpeech(getLang, apiBase) {
 
     const player = ensureAudio();
     let failedOver = false;
-    const useFallback = () => {
+    const fallbackToBrowser = () => {
       if (failedOver || mySess !== sess) return;
       failedOver = true;
       revokeItem(item);
@@ -381,12 +488,12 @@ export function createNaturalSpeech(getLang, apiBase) {
     };
     player.onplaying = () => fireFirstStart(mySess);
     player.onended = () => onClipEnd(item, mySess);
-    player.onerror = useFallback;
+    player.onerror = fallbackToBrowser;
     curUrl = item.url;
     player.muted = false;
     player.src = item.url;
     const playPromise = player.play();
-    if (playPromise?.catch) playPromise.catch(useFallback);
+    if (playPromise?.catch) playPromise.catch(fallbackToBrowser);
   }
 
   function pump(mySess) {
@@ -404,6 +511,7 @@ export function createNaturalSpeech(getLang, apiBase) {
       const item = queue.find((candidate) => candidate.state === 'queued');
       if (!item) break;
       item.state = 'fetching';
+      item.streamFirst = !started && !playing && item === queue[0] && canStreamFirstClip();
       activePrefetches += 1;
       void prefetch(item, mySess);
     }
@@ -416,6 +524,10 @@ export function createNaturalSpeech(getLang, apiBase) {
       const url = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(item.text)}`;
       const response = await fetch(url, { signal: item.abort.signal });
       if (!response.ok) throw new Error('tts ' + response.status);
+      if (item.streamFirst && response.body) {
+        await streamFirstItem(item, response, mySess);
+        return;
+      }
       const blob = await response.blob();
       if (mySess !== sess || item.abort.signal.aborted) return;
       item.url = URL.createObjectURL(blob);
@@ -441,6 +553,7 @@ export function createNaturalSpeech(getLang, apiBase) {
       revokeItem(item);
     }
     queue = [];
+    try { currentItem?.abort?.abort(); } catch { /* noop */ }
     if (currentItem) revokeItem(currentItem);
     currentItem = null;
     playing = false;
@@ -466,7 +579,7 @@ export function createNaturalSpeech(getLang, apiBase) {
     const clean = cleanSpeechText(text);
     if (!clean) return;
     const mySess = sess;
-    const item = { text: clean, state: 'queued', url: null, error: false, abort: null };
+    const item = { text: clean, state: 'queued', url: null, error: false, abort: null, streamFirst: false };
     queue.push(item);
     schedulePrefetch(mySess);
     pump(mySess);
