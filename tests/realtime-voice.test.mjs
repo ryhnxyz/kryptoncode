@@ -41,12 +41,19 @@ class FakeWebSocket {
   static CLOSING = 2;
   static CLOSED = 3;
   static instances = [];
+  static failOnOpen = false;
   constructor(url) {
     this.url = url;
     this.readyState = FakeWebSocket.CONNECTING;
     this.sent = [];
     FakeWebSocket.instances.push(this);
     setImmediate(() => {
+      if (FakeWebSocket.failOnOpen) {
+        this.readyState = FakeWebSocket.CLOSED;
+        this.onerror?.();
+        this.onclose?.();
+        return;
+      }
       this.readyState = FakeWebSocket.OPEN;
       this.onopen?.();
     });
@@ -92,6 +99,7 @@ function installBrowserMocks() {
     WebSocket: globalThis.WebSocket,
   };
   FakeWebSocket.instances = [];
+  FakeWebSocket.failOnOpen = false;
   FakeAudioWorkletNode.instance = null;
   globalThis.WebSocket = FakeWebSocket;
   globalThis.window = {
@@ -197,6 +205,32 @@ test('rejects stale and out-of-order binary frames', async () => {
     assert.equal(FakeAudioWorkletNode.instance.port.messages.filter((message) => message.type === 'pcm').length, 0);
     socket.emitBinary(pcmPacket(start.token, 1));
     assert.match(error, /sequence/i);
+    assert.equal(speech.isSpeaking(), false);
+    speech.destroy();
+  } finally {
+    restore();
+  }
+});
+
+test('audio transport failure reports one error without invoking another audio path', async () => {
+  const restore = installBrowserMocks();
+  try {
+    FakeWebSocket.failOnOpen = true;
+    let starts = 0;
+    let ends = 0;
+    let errors = 0;
+    const speech = createRealtimeSpeech(() => 'id', 'https://api.example.test');
+    speech.beginStream({
+      onstart: () => { starts += 1; },
+      onend: () => { ends += 1; },
+      onerror: () => { errors += 1; },
+    });
+    speech.feed('Teks tetap tersedia.');
+    speech.endStream();
+    for (let index = 0; index < 6; index += 1) await tick();
+    assert.equal(starts, 0);
+    assert.equal(ends, 0);
+    assert.equal(errors, 1);
     assert.equal(speech.isSpeaking(), false);
     speech.destroy();
   } finally {
