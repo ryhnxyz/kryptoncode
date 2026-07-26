@@ -76,6 +76,7 @@ export const STRINGS = {
   stateLabels: {
     idle: { id: 'Siaga', en: 'Idle' },
     listening: { id: 'Mendengarkan', en: 'Listening' },
+    transcribing: { id: 'Mentranskripsi', en: 'Transcribing' },
     thinking: { id: 'Berpikir', en: 'Thinking' },
     searching: { id: 'Mencari', en: 'Searching' },
     browsing: { id: 'Menjelajah', en: 'Browsing' },

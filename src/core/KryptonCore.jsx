@@ -11,6 +11,7 @@ import { Mic, Volume2, VolumeX, X } from './icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createOrbEngine } from './orbEngine';
 import { createMicAnalyser, createNaturalSpeech, createWakeWord, createVoiceCapture } from './voice';
+import { createSpeechChunker } from './speechChunker';
 import { createCues } from './soundCues';
 import * as liveApi from './liveApi';
 import { interpret } from './intentEngine';
@@ -320,7 +321,7 @@ export default function KryptonCore() {
           setInput('');
           handleRef.current?.(text); // → orchestrator (thinking → reply → natural voice)
         } else {
-          if (engineRef.current?.getState() === 'listening' || engineRef.current?.getState() === 'thinking') setOrb('idle');
+          if (['listening', 'transcribing', 'thinking'].includes(engineRef.current?.getState())) setOrb('idle');
           if (openRef.current && voiceModeRef.current) scheduleListen(500, 3);
           else if (window.localStorage.getItem(VOICE_OK_KEY) === '1') wakeRef.current?.setEnabled(true);
         }
@@ -329,7 +330,7 @@ export default function KryptonCore() {
         if (phase !== 'transcribing' || captureGeneration !== listenGenerationRef.current) return;
         listeningRef.current = false;
         setListening(false);
-        setOrb('thinking');
+        setOrb('transcribing');
       }
     );
     if (started) {
@@ -378,7 +379,7 @@ export default function KryptonCore() {
   // hard gates, and the cooldown suppresses the tail of the user's last turn.
   useEffect(() => {
     if (!open) return undefined;
-    const watched = new Set(['thinking', 'reading', 'searching', 'coding', 'browsing']);
+    const watched = new Set(['transcribing', 'thinking', 'reading', 'searching', 'coding', 'browsing']);
     clearInterval(bargeTimerRef.current);
     bargeTimerRef.current = setInterval(() => {
       const now = performance.now();
@@ -501,7 +502,7 @@ export default function KryptonCore() {
     setOrb('thinking');
     bargeCooldownRef.current = performance.now() + 700;
     let buf = '';
-    let fedIdx = 0;
+    const speechChunker = createSpeechChunker();
     let terminalHandled = false;
     const isCurrent = () =>
       mountedRef.current &&
@@ -510,8 +511,8 @@ export default function KryptonCore() {
       speechSession === speechSessionRef.current &&
       !ac.signal.aborted;
 
-    // Stream the spoken reply sentence-by-sentence so Krypton starts talking
-    // after the first sentence instead of waiting for the whole answer.
+    // Stream short, natural speech chunks as tokens arrive. A complete sentence
+    // wins, but a safe clause or word boundary prevents long punctuation waits.
     speechRef.current?.beginStream({
       onstart: () => {
         if (!isCurrent()) return;
@@ -529,14 +530,10 @@ export default function KryptonCore() {
         if (voiceModeRef.current && captureRef.current?.supported) scheduleListen();
       },
     });
-    const feedSentences = (final) => {
+    const feedSpeechChunks = (delta = '', final = false) => {
       if (!isCurrent()) return;
-      const seg = buf.slice(fedIdx);
-      const re = /[^.!?…\n]*[.!?…\n]+/g;
-      let m; let last = 0;
-      while ((m = re.exec(seg))) { const s = m[0].trim(); if (s) speechRef.current?.feed(s); last = re.lastIndex; }
-      if (last) fedIdx += last;
-      if (final) { const tail = buf.slice(fedIdx).trim(); if (tail) speechRef.current?.feed(tail); fedIdx = buf.length; }
+      const chunks = final ? speechChunker.flush() : speechChunker.push(delta);
+      for (const chunk of chunks) speechRef.current?.feed(chunk);
     };
     const stageToState = (stage, agent) => {
       if (stage === 'agent') {
@@ -567,7 +564,14 @@ export default function KryptonCore() {
           if (d.action === 'show') addPanel(d.id, d.id === 'research' ? { query: message.slice(0, 42) } : undefined);
           else if (d.action === 'hide') removePanel(d.id);
         },
-        token: (d) => { if (!isCurrent() || terminalHandled) return; buf += d.t || ''; setKryText(buf); feedSentences(false); bumpActivity(); },
+        token: (d) => {
+          if (!isCurrent() || terminalHandled) return;
+          const token = d.t || '';
+          buf += token;
+          setKryText(buf);
+          feedSpeechChunks(token, false);
+          bumpActivity();
+        },
         done: (d) => {
           if (!isCurrent() || terminalHandled) return;
           terminalHandled = true;
@@ -576,7 +580,7 @@ export default function KryptonCore() {
           const text = String((d && d.text) || buf).trim();
           buf = text;
           setKryText(text);
-          feedSentences(true);
+          feedSpeechChunks('', true);
           speechRef.current?.endStream();
           if (text) {
             historyRef.current = [...historyRef.current, { role: 'user', content: message }, { role: 'assistant', content: text }].slice(-6);

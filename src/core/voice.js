@@ -298,10 +298,13 @@ export function createNaturalSpeech(getLang, apiBase) {
     } catch { /* noop */ }
   }
 
-  // ── ordered prefetch queue: synthesize future sentences in parallel ─
+  // ── ordered, bounded prefetch queue ─────────────────────────────
+  // Two simultaneous syntheses hide clip boundaries without fan-out bursts.
+  const MAX_PREFETCH_CONCURRENCY = 2;
   let queue = [];
   let currentItem = null;
   let playing = false;
+  let activePrefetches = 0;
   let streamEnded = true;
   let started = false;
   let sess = 0;               // bumped on cancel/new stream to void stale work
@@ -390,9 +393,20 @@ export function createNaturalSpeech(getLang, apiBase) {
     if (mySess !== sess || playing) return;
     const item = queue[0];
     if (!item) { maybeFinish(mySess); return; }
-    if (item.state === 'fetching') return;
+    if (item.state !== 'ready') return;
     queue.shift();
     playItem(item, mySess);
+  }
+
+  function schedulePrefetch(mySess) {
+    if (mySess !== sess) return;
+    while (activePrefetches < MAX_PREFETCH_CONCURRENCY) {
+      const item = queue.find((candidate) => candidate.state === 'queued');
+      if (!item) break;
+      item.state = 'fetching';
+      activePrefetches += 1;
+      void prefetch(item, mySess);
+    }
   }
 
   async function prefetch(item, mySess) {
@@ -412,7 +426,11 @@ export function createNaturalSpeech(getLang, apiBase) {
       item.state = 'ready';
     } finally {
       item.abort = null;
-      if (mySess === sess) pump(mySess);
+      activePrefetches = Math.max(0, activePrefetches - 1);
+      if (mySess === sess) {
+        schedulePrefetch(mySess);
+        pump(mySess);
+      }
     }
   }
 
@@ -426,6 +444,7 @@ export function createNaturalSpeech(getLang, apiBase) {
     if (currentItem) revokeItem(currentItem);
     currentItem = null;
     playing = false;
+    activePrefetches = 0;
     started = false;
     streamEnded = true;
     cbStart = null;
@@ -447,9 +466,9 @@ export function createNaturalSpeech(getLang, apiBase) {
     const clean = cleanSpeechText(text);
     if (!clean) return;
     const mySess = sess;
-    const item = { text: clean, state: 'fetching', url: null, error: false, abort: null };
+    const item = { text: clean, state: 'queued', url: null, error: false, abort: null };
     queue.push(item);
-    prefetch(item, mySess);
+    schedulePrefetch(mySess);
     pump(mySess);
   }
 

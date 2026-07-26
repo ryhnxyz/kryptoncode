@@ -15,6 +15,7 @@ const lerp = (a, b, k) => a + (b - a) * k;
 export const ORB_STATES = {
   idle:        { tint: [250, 247, 242], energy: 0.35, spin: 0.12, turb: 0.55, gain: 0.55 },
   listening:   { tint: [250, 247, 242], energy: 0.85, spin: 0.18, turb: 0.75, gain: 1.25 },
+  transcribing:{ tint: [147, 197, 253], energy: 0.62, spin: 0.4,  turb: 0.85, gain: 0.68 },
   thinking:    { tint: [196, 181, 253], energy: 0.7,  spin: 0.6,  turb: 1.5,  gain: 0.7 },
   searching:   { tint: [125, 211, 252], energy: 0.75, spin: 0.95, turb: 1.1,  gain: 0.8 },
   browsing:    { tint: [147, 197, 253], energy: 0.65, spin: 0.7,  turb: 0.9,  gain: 0.75 },

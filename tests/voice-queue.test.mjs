@@ -95,3 +95,42 @@ test('cancel aborts every pending prefetched TTS request', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('limits neural TTS prefetch to two concurrent requests', async () => {
+  const originalAudio = globalThis.Audio;
+  const originalFetch = globalThis.fetch;
+  const originalCreate = URL.createObjectURL;
+  const originalRevoke = URL.revokeObjectURL;
+  const calls = [];
+  const resolvers = [];
+  globalThis.Audio = FakeAudio;
+  globalThis.fetch = (url, options) => {
+    calls.push({ url: String(url), signal: options.signal });
+    return new Promise((resolve) => {
+      resolvers.push(() => resolve({ ok: true, blob: async () => new Blob([String(url)]) }));
+    });
+  };
+  URL.createObjectURL = () => 'blob:ready';
+  URL.revokeObjectURL = () => {};
+
+  try {
+    const speech = createNaturalSpeech(() => 'id', 'https://example.test');
+    speech.beginStream();
+    speech.feed('Satu.');
+    speech.feed('Dua.');
+    speech.feed('Tiga.');
+    await tick();
+    assert.equal(calls.length, 2);
+
+    resolvers[0]();
+    await tick();
+    await tick();
+    assert.equal(calls.length, 3, 'the third request starts only after a slot is free');
+    speech.cancel();
+  } finally {
+    globalThis.Audio = originalAudio;
+    globalThis.fetch = originalFetch;
+    URL.createObjectURL = originalCreate;
+    URL.revokeObjectURL = originalRevoke;
+  }
+});
