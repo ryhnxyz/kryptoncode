@@ -1,55 +1,7 @@
 // ─────────────────────────────────────────────────────────────────
-// KRYPTON AI CORE · mock data layer
-// Mirrors the real VPS (vmi3429943) so phase 2 only swaps this file
-// for live endpoints (terminal API / kryptoncode-backend).
+// KRYPTON AI CORE · public, non-sensitive presentation data
+// Infrastructure identifiers and operational details never belong here.
 // ─────────────────────────────────────────────────────────────────
-
-export const VPS = {
-  host: 'vmi3429943',
-  cpus: 6,
-  totalMemMB: 11961,
-  usedMemMB: 2804,
-  load: [0.14, 0.14, 0.2],
-  uptimeDays: 15.9,
-  servicesOnline: 14,
-};
-
-export const SERVICES = [
-  { name: 'api_kryptoncode', mem: '102.5mb', uptime: '25h', cpu: '0%' },
-  { name: '9router', mem: '73.2mb', uptime: '4D', cpu: '0%' },
-  { name: 'vps-web-terminal', mem: '75.4mb', uptime: '4h', cpu: '0%' },
-  { name: 'router-proxy', mem: '24.6mb', uptime: '25h', cpu: '0%' },
-  { name: 'temp-email', mem: '21.0mb', uptime: '2D', cpu: '0%' },
-  { name: 'xaut-swap-bot', mem: '96.4mb', uptime: '31h', cpu: '0%' },
-];
-
-// Rotating fake log stream for the Logs panel.
-export const LOG_LINES = [
-  [['t', '[12:41:02] '], ['ac', 'GET '], ['n', '/v1/pools/apex → '], ['ok', '200 '], ['t', '23ms']],
-  [['t', '[12:41:03] '], ['ac', 'POST '], ['n', '/v1/exec → '], ['ok', '200 '], ['t', '8ms']],
-  [['t', '[12:41:05] '], ['wn', 'warn '], ['n', 'pool cache miss, refetching upstream']],
-  [['t', '[12:41:06] '], ['ac', 'GET '], ['n', '/v1/products → '], ['ok', '200 '], ['t', '19ms']],
-  [['t', '[12:41:08] '], ['ok', '✓ '], ['n', 'settlement worker tick complete']],
-  [['t', '[12:41:11] '], ['ac', 'WS '], ['n', 'client connected · sess a91f']],
-  [['t', '[12:41:13] '], ['ok', '✓ '], ['n', 'db pool 4/20 · healthy']],
-];
-
-export const DEPLOY_SCRIPTS = {
-  backend: [
-    { kind: 'ac', text: '▶ git pull origin main' },
-    { kind: 'n', text: '  3 files changed · src/routes, src/workers' },
-    { kind: 'ac', text: '▶ npm run build' },
-    { kind: 'ok', text: '✓ tsc → dist/ (2.1s)' },
-    { kind: 'ac', text: '▶ pm2 reload api_kryptoncode' },
-    { kind: 'ok', text: '✓ api_kryptoncode online · 0 downtime' },
-    { kind: 'ok', text: '✓ health /v1/health → 200' },
-  ],
-  restartBot: [
-    { kind: 'ac', text: '▶ pm2 reload xaut-swap-bot' },
-    { kind: 'ok', text: '✓ reloaded · mem 41mb · online' },
-    { kind: 'ok', text: '✓ watcher re-armed' },
-  ],
-};
 
 export const RESEARCH_RESULTS = [
   {
@@ -99,45 +51,26 @@ export const STRINGS = {
     en: 'Ask Krypton, or say "Hey Krypton"…',
   },
   contextLine: {
-    id: 'konteks · console · vmi3429943 · 14 layanan',
-    en: 'context · console · vmi3429943 · 14 services',
+    id: 'konteks · ruang publik · privasi aktif',
+    en: 'context · public space · privacy active',
   },
   chips: {
     id: [
-      ['Status sistem', 'tampilkan status sistem'],
-      ['Proses', 'tampilkan proses'],
-      ['Log langsung', 'tampilkan log'],
+      ['Status platform', 'tampilkan status platform'],
+      ['Layanan inti', 'tampilkan kesehatan layanan'],
       ['Riset Vite 8', 'cari info terbaru vite 8'],
-      ['Deploy backend', 'deploy backend'],
     ],
     en: [
-      ['System status', 'show system status'],
-      ['Processes', 'show processes'],
-      ['Live logs', 'show live logs'],
+      ['Platform status', 'show platform status'],
+      ['Core services', 'show service health'],
       ['Research Vite 8', 'search the latest on vite 8'],
-      ['Deploy backend', 'deploy the backend'],
     ],
   },
-  toast: {
-    id: {
-      text: 'Perhatian — memori xaut-swap-bot naik ke 96 MB (+38% dalam 2 jam).',
-      sub: 'Kemungkinan slow leak · restart akan membersihkannya.',
-      action: 'Restart',
-    },
-    en: {
-      text: 'Heads up — xaut-swap-bot memory crept to 96 MB (+38% in 2h).',
-      sub: 'Possible slow leak · a restart clears it.',
-      action: 'Restart it',
-    },
-  },
   panelTitles: {
-    system: { id: 'Sistem', en: 'System' },
-    processes: { id: 'Proses · pm2', en: 'Processes · pm2' },
-    logs: { id: 'Log langsung · api_kryptoncode', en: 'Live logs · api_kryptoncode' },
+    system: { id: 'Status platform', en: 'Platform status' },
+    processes: { id: 'Kesehatan layanan', en: 'Service health' },
     research: { id: 'Riset', en: 'Research' },
-    code: { id: 'Draf · voiceGateway.js', en: 'Draft · voiceGateway.js' },
-    deploy: { id: 'Deployment · kryptoncode-backend', en: 'Deployment · kryptoncode-backend' },
-    restartBot: { id: 'pm2 reload · xaut-swap-bot', en: 'pm2 reload · xaut-swap-bot' },
+    code: { id: 'Draf', en: 'Draft' },
     browser: { id: 'Browser · kryptoncode.xyz', en: 'Browser · kryptoncode.xyz' },
   },
   stateLabels: {
@@ -160,8 +93,8 @@ export function greeting(lang) {
   const h = new Date().getHours();
   if (lang === 'en') {
     const g = h < 12 ? 'Morning' : h < 18 ? 'Good afternoon' : 'Evening';
-    return `${g}. Krypton online — everything is healthy on vmi3429943. What are we building?`;
+    return `${g}. Krypton is ready. What are we building?`;
   }
   const g = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 19 ? 'Selamat sore' : 'Selamat malam';
-  return `${g}. Krypton aktif — semua sehat di vmi3429943. Kita bangun apa hari ini?`;
+  return `${g}. Krypton siap. Kita bangun apa hari ini?`;
 }

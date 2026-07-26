@@ -27,13 +27,7 @@ export function getSystem() {
 
 export function getProcesses() {
   return getJSON('/api/core/processes')
-    .then((d) => (d && d.success ? d.processes : null))
-    .catch(() => null);
-}
-
-export function getLogs(service = 'api_kryptoncode') {
-  return getJSON(`/api/core/logs?service=${encodeURIComponent(service)}`)
-    .then((d) => (d && d.success ? d.lines : null))
+    .then((data) => (data?.success ? data : null))
     .catch(() => null);
 }
 

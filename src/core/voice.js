@@ -298,8 +298,9 @@ export function createNaturalSpeech(getLang, apiBase) {
     } catch { /* noop */ }
   }
 
-  // ── sequential clip queue (enables sentence-streamed speech) ──────
+  // ── ordered prefetch queue: synthesize future sentences in parallel ─
   let queue = [];
+  let currentItem = null;
   let playing = false;
   let streamEnded = true;
   let started = false;
@@ -307,81 +308,172 @@ export function createNaturalSpeech(getLang, apiBase) {
   let cbStart = null;
   let cbEnd = null;
 
-  function revoke() { if (curUrl) { try { URL.revokeObjectURL(curUrl); } catch { /* noop */ } curUrl = null; } }
-  function finishSession() { started = false; playing = false; cbStart = null; cbEnd = null; }
+  const cleanSpeechText = (text) => String(text)
+    .replace(/[*_#`>~]/g, '')
+    .replace(/^\s*[-•]\s*/gm, '')
+    .replace(/[◈✓▶]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 500);
 
-  function onClipEnd(mySess) {
+  function revokeItem(item) {
+    if (!item?.url) return;
+    try { URL.revokeObjectURL(item.url); } catch { /* noop */ }
+    if (curUrl === item.url) curUrl = null;
+    item.url = null;
+  }
+
+  function finishSession() {
+    started = false;
+    playing = false;
+    currentItem = null;
+    cbStart = null;
+    cbEnd = null;
+  }
+
+  function maybeFinish(mySess) {
+    if (mySess !== sess || playing || queue.length || !streamEnded) return;
+    const callback = cbEnd;
+    finishSession();
+    callback?.();
+  }
+
+  function onClipEnd(item, mySess) {
     if (mySess !== sess) return;
-    revoke();
-    if (queue.length) { fetchAndPlay(queue.shift(), mySess); }
-    else { playing = false; if (streamEnded) { const cb = cbEnd; finishSession(); cb?.(); } }
+    revokeItem(item);
+    if (currentItem === item) currentItem = null;
+    playing = false;
+    pump(mySess);
   }
 
-  function fetchAndPlay(text, mySess) {
-    const lang = getLang() === 'en' ? 'en' : 'id';
-    const clean = String(text)
-      .replace(/[*_#`>~]/g, '')          // strip markdown emphasis/headers/quotes
-      .replace(/^\s*[-•]\s*/gm, '')       // strip list bullets
-      .replace(/[◈✓▶]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 500);
-    if (!clean) { onClipEnd(mySess); return; }
-    const a = ensureAudio();
-    const fireStart = () => { if (mySess === sess && !started) { started = true; cbStart?.(); } };
-    a.onplaying = fireStart;
-    a.onended = () => onClipEnd(mySess);
-    a.onerror = () => {
-      if (mySess !== sess) return;
-      // one chunk failed → speak it with browser TTS, then continue the queue
-      fallback.speak(clean, { onstart: fireStart, onend: () => onClipEnd(mySess) });
+  function fireFirstStart(mySess) {
+    if (mySess === sess && !started) {
+      started = true;
+      cbStart?.();
+    }
+  }
+
+  function playItem(item, mySess) {
+    if (mySess !== sess) return;
+    currentItem = item;
+    playing = true;
+    if (item.error || !item.url) {
+      fallback.speak(item.text, {
+        onstart: () => fireFirstStart(mySess),
+        onend: () => onClipEnd(item, mySess),
+      });
+      return;
+    }
+
+    const player = ensureAudio();
+    let failedOver = false;
+    const useFallback = () => {
+      if (failedOver || mySess !== sess) return;
+      failedOver = true;
+      revokeItem(item);
+      fallback.speak(item.text, {
+        onstart: () => fireFirstStart(mySess),
+        onend: () => onClipEnd(item, mySess),
+      });
     };
-    const url = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(clean)}`;
-    fetch(url)
-      .then((res) => { if (!res.ok) throw new Error('tts ' + res.status); return res.blob(); })
-      .then((blob) => {
-        if (mySess !== sess) return;
-        revoke();
-        curUrl = URL.createObjectURL(blob);
-        a.muted = false;
-        a.src = curUrl;
-        const p = a.play();
-        if (p && p.catch) p.catch(() => { if (mySess === sess && a.onerror) a.onerror(); });
-      })
-      .catch(() => { if (mySess === sess && a.onerror) a.onerror(); });
+    player.onplaying = () => fireFirstStart(mySess);
+    player.onended = () => onClipEnd(item, mySess);
+    player.onerror = useFallback;
+    curUrl = item.url;
+    player.muted = false;
+    player.src = item.url;
+    const playPromise = player.play();
+    if (playPromise?.catch) playPromise.catch(useFallback);
   }
 
-  function beginStream({ onstart, onend } = {}) {
-    sess += 1;
-    queue = []; started = false; playing = false; streamEnded = false;
-    cbStart = onstart || null; cbEnd = onend || null;
+  function pump(mySess) {
+    if (mySess !== sess || playing) return;
+    const item = queue[0];
+    if (!item) { maybeFinish(mySess); return; }
+    if (item.state === 'fetching') return;
+    queue.shift();
+    playItem(item, mySess);
   }
-  function feed(text) {
-    const t = String(text || '').trim();
-    if (!t || streamEnded) return;
-    queue.push(t);
-    if (!playing) { playing = true; fetchAndPlay(queue.shift(), sess); }
-  }
-  function endStream() {
-    streamEnded = true;
-    if (!playing && !queue.length) { const cb = cbEnd; finishSession(); cb?.(); }
-  }
-  function speak(text, opts = {}) {
-    beginStream(opts);
-    const t = String(text || '').trim();
-    if (t) feed(t);
-    endStream();
+
+  async function prefetch(item, mySess) {
+    const lang = getLang() === 'en' ? 'en' : 'id';
+    item.abort = new AbortController();
+    try {
+      const url = `${base}/api/core/voice?lang=${encodeURIComponent(lang)}&text=${encodeURIComponent(item.text)}`;
+      const response = await fetch(url, { signal: item.abort.signal });
+      if (!response.ok) throw new Error('tts ' + response.status);
+      const blob = await response.blob();
+      if (mySess !== sess || item.abort.signal.aborted) return;
+      item.url = URL.createObjectURL(blob);
+      item.state = 'ready';
+    } catch {
+      if (mySess !== sess || item.abort?.signal.aborted) return;
+      item.error = true;
+      item.state = 'ready';
+    } finally {
+      item.abort = null;
+      if (mySess === sess) pump(mySess);
+    }
   }
 
   function cancel() {
-    sess += 1;                 // invalidate pending fetches + callbacks
-    queue = []; playing = false; started = false; streamEnded = true; cbStart = null; cbEnd = null;
+    sess += 1;
+    for (const item of queue) {
+      try { item.abort?.abort(); } catch { /* noop */ }
+      revokeItem(item);
+    }
+    queue = [];
+    if (currentItem) revokeItem(currentItem);
+    currentItem = null;
+    playing = false;
+    started = false;
+    streamEnded = true;
+    cbStart = null;
+    cbEnd = null;
     try { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); } } catch { /* noop */ }
-    revoke();
+    curUrl = null;
     fallback.cancel();
   }
 
-  return { speak, beginStream, feed, endStream, cancel, unlock, isSpeaking: () => playing, supported: true };
+  function beginStream({ onstart, onend } = {}) {
+    cancel();
+    streamEnded = false;
+    cbStart = onstart || null;
+    cbEnd = onend || null;
+  }
+
+  function feed(text) {
+    if (streamEnded) return;
+    const clean = cleanSpeechText(text);
+    if (!clean) return;
+    const mySess = sess;
+    const item = { text: clean, state: 'fetching', url: null, error: false, abort: null };
+    queue.push(item);
+    prefetch(item, mySess);
+    pump(mySess);
+  }
+
+  function endStream() {
+    streamEnded = true;
+    pump(sess);
+  }
+
+  function speak(text, opts = {}) {
+    beginStream(opts);
+    feed(text);
+    endStream();
+  }
+
+  return {
+    speak,
+    beginStream,
+    feed,
+    endStream,
+    cancel,
+    unlock,
+    isSpeaking: () => playing || !!currentItem || queue.length > 0,
+    supported: true,
+  };
 }
 
 // ── active speech recognition (push-to-talk) ─────────────────────

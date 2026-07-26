@@ -13,9 +13,9 @@ import { createOrbEngine } from './orbEngine';
 import { createMicAnalyser, createNaturalSpeech, createWakeWord, createVoiceCapture } from './voice';
 import { createCues } from './soundCues';
 import * as liveApi from './liveApi';
-import { interpret, REPLIES } from './intentEngine';
+import { interpret } from './intentEngine';
 import { STRINGS, greeting } from './mockData';
-import { SystemPanel, ProcessesPanel, LogsPanel, ResearchPanel, CodePanel, DeployPanel, BrowserPanel } from './panels';
+import { SystemPanel, ProcessesPanel, ResearchPanel, CodePanel, BrowserPanel } from './panels';
 import './aiCore.css';
 
 const VOICE_OK_KEY = 'krypton_voice_ok';
@@ -33,7 +33,6 @@ export default function KryptonCore() {
   const wakeRef = useRef(null);
   const cuesRef = useRef(null);
   const restRef = useRef('idle');
-  const proactiveRef = useRef(false);
   const openRef = useRef(false);
   const idleTimer = useRef(null);
   const exitRef = useRef(null);
@@ -63,7 +62,6 @@ export default function KryptonCore() {
   const [input, setInput] = useState('');
   const [listening, setListening] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
-  const [toast, setToast] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [stateSince, setStateSince] = useState(Date.now());
   const [elapsed, setElapsed] = useState('0.0s');
@@ -255,12 +253,6 @@ export default function KryptonCore() {
     setPanels((ps) => ps.map((p) => ({ ...p, closing: true })));
     setTimeout(() => setPanels([]), 460);
   }, []);
-
-  const onDeployDone = useCallback((variant) => {
-    const rep = variant === 'restartBot' ? REPLIES.restartDone : REPLIES.deployDone;
-    setOrb('completed');
-    sayReply(rep[langRef.current], 'celebrating');
-  }, [sayReply, setOrb]);
 
   /* ── listening + hands-free turn-taking ───────────────────────── */
   const cancelInFlight = useCallback((preserveListenGeneration = false) => {
@@ -484,7 +476,6 @@ export default function KryptonCore() {
     document.body.classList.remove('kry-space-open');
     engineRef.current?.setPlacement('dock');
     engineRef.current?.setSpeaking(false);
-    setToast(null);
     clearPanels();
     setYouLine('');
     setKryText('');
@@ -596,23 +587,23 @@ export default function KryptonCore() {
     }).catch(() => recover(langRef.current === 'id' ? 'Aku belum bisa menjangkau server inti sekarang.' : 'I could not reach the core server just now.'));
   }, [addPanel, bumpActivity, clearScheduledListen, removePanel, sayReply, scheduleListen, setOrb, setStreamingState]);
 
-  /* ── instant local intents: live platform facts without an LLM wait ── */
+  /* ── instant public intents: coarse health only, never infrastructure ── */
   const runInstantIntent = useCallback((local) => {
-    if (!local || !['greeting', 'thanks', 'system', 'processes', 'logs'].includes(local.intent)) return false;
+    if (!local || !['greeting', 'thanks', 'admin', 'system', 'processes', 'logs'].includes(local.intent)) return false;
     cancelInFlight();
     const session = ++chatSessionRef.current;
     const isCurrent = () => mountedRef.current && openRef.current && session === chatSessionRef.current;
-    (local.show || []).forEach((id) => addPanel(id));
+    (local.show || []).filter((id) => id === 'system' || id === 'processes').forEach((id) => addPanel(id));
 
-    if (local.intent === 'greeting' || local.intent === 'thanks') {
+    if (local.intent === 'greeting' || local.intent === 'thanks' || local.intent === 'admin') {
       sayReply(local.reply[langRef.current] || local.reply.id, 'idle');
       return true;
     }
     if (local.intent === 'logs') {
       sayReply(
         langRef.current === 'id'
-          ? 'Log terbaru sudah kubuka. Aku tetap mendengarkan.'
-          : 'The latest logs are open. I am still listening.',
+          ? 'Detail operasional hanya tersedia untuk admin yang terautentikasi.'
+          : 'Operational details are available only to authenticated administrators.',
         'idle'
       );
       return true;
@@ -624,21 +615,19 @@ export default function KryptonCore() {
       if (!isCurrent()) return;
       let text;
       if (local.intent === 'system' && data?.success) {
-        const usedGB = ((data.totalMemMB - data.freeMemMB) / 1024).toFixed(1);
-        const totalGB = (data.totalMemMB / 1024).toFixed(1);
-        const load = Array.isArray(data.loadavg) ? data.loadavg[0] : null;
+        const healthy = data.health === 'healthy';
+        const available = data.capacity === 'available';
         text = langRef.current === 'id'
-          ? `Sistem sehat. Beban CPU ${load ?? 'normal'}, RAM terpakai ${usedGB} dari ${totalGB} gigabyte.`
-          : `The system is healthy. CPU load is ${load ?? 'normal'}, with ${usedGB} of ${totalGB} gigabytes of memory in use.`;
-      } else if (local.intent === 'processes' && Array.isArray(data)) {
-        const online = data.filter((item) => item.status === 'online').length;
+          ? `Platform ${healthy ? 'sehat' : 'sedang mengalami gangguan'}, dengan kapasitas ${available ? 'tersedia' : 'sedang sibuk'}.`
+          : `The platform is ${healthy ? 'healthy' : 'degraded'}, with capacity ${available ? 'available' : 'currently busy'}.`;
+      } else if (local.intent === 'processes' && data?.success) {
         text = langRef.current === 'id'
-          ? `${online} dari ${data.length} layanan sedang online.`
-          : `${online} of ${data.length} services are online.`;
+          ? `Layanan inti berstatus ${data.health === 'healthy' ? 'sehat' : 'terganggu'}.`
+          : `Core services are ${data.health === 'healthy' ? 'healthy' : 'degraded'}.`;
       } else {
         text = langRef.current === 'id'
-          ? 'Data live belum bisa kubaca. Coba lagi sebentar.'
-          : 'I could not read the live data just now. Try again shortly.';
+          ? 'Ringkasan kesehatan belum tersedia. Coba lagi sebentar.'
+          : 'The health summary is unavailable. Try again shortly.';
       }
       sayReply(text, 'idle');
     });
@@ -665,37 +654,6 @@ export default function KryptonCore() {
   }, [bumpActivity, cancelInFlight, clearPanels, exit, removePanel, runInstantIntent, sayReply, streamChatToCore]);
   const handleRef = useRef(null);
   useEffect(() => { handleRef.current = handleCommand; }, [handleCommand]);
-
-  /* ── proactive intelligence ───────────────────────────────────── */
-  useEffect(() => {
-    if (!open || proactiveRef.current) return undefined;
-    const t = setTimeout(() => {
-      proactiveRef.current = true;
-      setToast(STRINGS.toast[langRef.current]);
-      setOrb('warning');
-      cuesRef.current?.warn();
-      setTimeout(() => {
-        setOrbState((s) => {
-          if (s === 'warning') { engineRef.current?.setState('idle'); return 'idle'; }
-          return s;
-        });
-      }, 2600);
-    }, 9000);
-    return () => clearTimeout(t);
-  }, [open, setOrb]);
-
-  const onToastAction = useCallback(() => {
-    setToast(null);
-    setYouLine(lang === 'id' ? '(proaktif) restart xaut-swap-bot' : '(proactive) restart xaut-swap-bot');
-    setOrb('deploying');
-    addPanel('restartBot');
-  }, [addPanel, lang, setOrb]);
-
-  useEffect(() => {
-    if (!toast) return undefined;
-    const t = setTimeout(() => setToast(null), 14000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   /* ── keyboard ─────────────────────────────────────────────────── */
   useEffect(() => {
@@ -728,11 +686,8 @@ export default function KryptonCore() {
     switch (p.id) {
       case 'system': return <SystemPanel key={p.id} {...common} />;
       case 'processes': return <ProcessesPanel key={p.id} {...common} />;
-      case 'logs': return <LogsPanel key={p.id} {...common} />;
       case 'research': return <ResearchPanel key={p.id} query={p.query} {...common} />;
       case 'code': return <CodePanel key={p.id} {...common} />;
-      case 'deploy': return <DeployPanel key={p.id} variant="backend" onDone={onDeployDone} {...common} />;
-      case 'restartBot': return <DeployPanel key={p.id} variant="restartBot" onDone={onDeployDone} {...common} />;
       case 'browser': return <BrowserPanel key={p.id} {...common} />;
       default: return null;
     }
@@ -859,17 +814,6 @@ export default function KryptonCore() {
           </div>
         </div>
 
-        {/* proactive toast */}
-        {toast && (
-          <div className="kry-toast">
-            <span className="kry-toast-i">◈</span>
-            <span className="kry-toast-tx">
-              {toast.text}
-              <small>{toast.sub}</small>
-            </span>
-            <button type="button" className="kry-toast-act" onClick={onToastAction}>{toast.action}</button>
-          </div>
-        )}
       </div>
     </>
   );

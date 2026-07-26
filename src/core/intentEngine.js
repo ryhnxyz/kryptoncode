@@ -12,47 +12,39 @@ const REPLIES = {
     "I'm Krypton — the core of this platform. Speak naturally; I'll shape the interface around what you need."
   ),
   system: R(
-    'Ini kondisi vmi3429943 sekarang. CPU santai di load 0,14 — memori terpakai 2,8 dari 12 giga. Semuanya sehat.',
-    "Here's the live picture of vmi3429943. CPU is calm at 0.14 load, memory 2.8 of 12 gig. All healthy."
+    'Platform sehat dan kapasitas tersedia.',
+    'The platform is healthy and capacity is available.'
   ),
   processes: R(
-    'Empat belas layanan online. api_kryptoncode itu backend-mu — sudah 25 jam menyala, 102 mega.',
-    'Fourteen services online. api_kryptoncode is your backend — 25 hours up, 102 meg.'
+    'Layanan inti berstatus sehat.',
+    'Core services are healthy.'
   ),
   logs: R(
-    'Log api_kryptoncode kualirkan langsung. Kalau ada yang janggal, langsung kuberi tahu.',
-    "Streaming api_kryptoncode logs live. I'll flag anything that looks off."
+    'Detail operasional hanya tersedia untuk admin yang terautentikasi.',
+    'Operational details are available only to authenticated administrators.'
   ),
   research: R(
     'Sumber paling relevan sudah kutarik — Vite 8, React 19, Tailwind 4. Mau kurangkum dampak migrasinya?',
     'Pulled the most relevant sources — Vite 8, React 19, Tailwind 4. Want me to summarize the migration impact?'
   ),
   code: R(
-    'Draf jembatan suara realtime sudah jadi. Bilang saja, nanti kupasang ke ai-agent dan kubuka PR-nya.',
-    "Drafted the realtime voice bridge. Say the word and I'll wire it into ai-agent and open a PR."
+    'Draf kode sudah siap untuk ditinjau.',
+    'The code draft is ready for review.'
   ),
-  deploy: R(
-    'Men-deploy kryptoncode-backend sekarang — perhatikan core-nya.',
-    'Deploying kryptoncode-backend now — watch the core.'
-  ),
-  deployDone: R(
-    'Deployment selesai. api_kryptoncode di-reload tanpa downtime.',
-    'Deployment complete. api_kryptoncode reloaded with zero downtime.'
-  ),
-  restartDone: R(
-    'Beres. xaut-swap-bot kembali ke 41 mega. Terus kupantau.',
-    "Done. xaut-swap-bot is back to 41 megs. I'll keep watching it."
+  admin: R(
+    'Aksi operasional hanya tersedia untuk admin yang terautentikasi.',
+    'Operational actions are available only to authenticated administrators.'
   ),
   browse: R(
-    'Aku sudah di halaman deploy. Tinggal bilang mau klik atau isi apa.',
-    "I'm on the deploy page. Tell me what to click or fill."
+    'Halaman publik sudah terbuka. Bilang konten mana yang ingin kamu jelajahi.',
+    'The public page is open. Tell me which content you want to explore.'
   ),
   hide: R('Oke — sudah kusembunyikan.', 'Done — tucked that away.'),
   hideAll: R('Bersih. Tinggal kita berdua.', 'Cleared. Just us now.'),
   thanks: R('Kapan pun. Memang untuk ini aku ada.', "Anytime. This is what I'm here for."),
   fallback: R(
-    'Bisa kubantu. Untuk demo ini coba: "status sistem", "log langsung", "deploy backend", atau "cari vite 8".',
-    'I can act on that. For this demo try: "system status", "live logs", "deploy the backend", or "search vite 8".'
+    'Bisa kubantu. Coba tanyakan status platform, kesehatan layanan, atau minta riset topik tertentu.',
+    'I can help. Ask about platform status, service health, or request research on a topic.'
   ),
 };
 
@@ -79,12 +71,10 @@ export function interpret(raw) {
       return { intent: 'hideAll', hideAll: true, reply: REPLIES.hideAll, state: 'idle', rest: 'idle' };
     }
     const map = [
-      [['log'], 'logs'],
-      [['proses', 'process', 'pm2', 'layanan', 'service'], 'processes'],
-      [['sistem', 'system', 'cpu', 'status', 'metrik', 'metric', 'memori', 'memory'], 'system'],
+      [['proses', 'process', 'layanan', 'service'], 'processes'],
+      [['sistem', 'system', 'status', 'metrik', 'metric'], 'system'],
       [['riset', 'search', 'research', 'dok'], 'research'],
       [['kode', 'code'], 'code'],
-      [['deploy'], 'deploy'],
       [['browser', 'jelajah'], 'browser'],
     ];
     const hide = map.filter(([ws]) => has(...ws)).map(([, id]) => id);
@@ -112,7 +102,7 @@ export function interpret(raw) {
 
   // ── logs ──────────────────────────────────────────────────────
   if (has('log', 'tail')) {
-    return { intent: 'logs', show: ['logs'], think: true, reply: REPLIES.logs, rest: 'reading' };
+    return { intent: 'logs', reply: REPLIES.logs, rest: 'idle' };
   }
 
   // ── research / search ─────────────────────────────────────────
@@ -128,12 +118,9 @@ export function interpret(raw) {
     return { intent: 'code', show: ['code'], think: true, reply: REPLIES.code, rest: 'completed', acting: 'coding' };
   }
 
-  // ── deploy / restart ──────────────────────────────────────────
-  if (has('deploy', 'rilis', 'release', 'ship', 'luncurkan', 'push live')) {
-    return { intent: 'deploy', show: ['deploy'], reply: REPLIES.deploy, state: 'deploying', rest: 'deploying' };
-  }
-  if (has('restart', 'mulai ulang', 'reload')) {
-    return { intent: 'restartBot', show: ['restartBot'], reply: REPLIES.deploy, state: 'deploying', rest: 'deploying' };
+  // ── operational actions stay behind authenticated administration ─
+  if (has('deploy', 'rilis', 'release', 'ship', 'luncurkan', 'push live', 'restart', 'mulai ulang', 'reload')) {
+    return { intent: 'admin', reply: REPLIES.admin, state: 'idle', rest: 'idle' };
   }
 
   // ── browse ────────────────────────────────────────────────────
