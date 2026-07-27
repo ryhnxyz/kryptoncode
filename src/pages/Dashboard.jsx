@@ -95,11 +95,9 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // ── login form ──
-  const [mode, setMode] = useState('signin'); // signin | signup
+  // ── login form (login-only — pendaftaran akun dikelola di luar UI) ──
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState('');
 
@@ -156,11 +154,7 @@ export default function Dashboard() {
     setAuthBusy(true);
     setAuthError('');
     try {
-      const call =
-        mode === 'signup'
-          ? neon.auth.signUp.email({ email, password, name: name || email.split('@')[0] })
-          : neon.auth.signIn.email({ email, password });
-      const { error } = await call;
+      const { error } = await neon.auth.signIn.email({ email, password });
       if (error) throw new Error(error.message || 'Auth error');
       setPassword('');
       await refreshSession();
@@ -333,27 +327,6 @@ export default function Dashboard() {
       <main className="dash-page page-content animate-fade-in">
         {heading}
         <form className="dash-login" onSubmit={submitAuth}>
-          <div className="dash-login-tabs" role="tablist">
-            <button
-              type="button"
-              className={mode === 'signin' ? 'is-active' : ''}
-              onClick={() => setMode('signin')}
-            >
-              {t('dash.signIn')}
-            </button>
-            <button
-              type="button"
-              className={mode === 'signup' ? 'is-active' : ''}
-              onClick={() => setMode('signup')}
-            >
-              {t('dash.signUp')}
-            </button>
-          </div>
-          {mode === 'signup' && (
-            <Field label={t('dash.name')}>
-              <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-            </Field>
-          )}
           <Field label="Email">
             <input
               type="email"
@@ -370,12 +343,12 @@ export default function Dashboard() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
             />
           </Field>
           {authError && <p className="dash-error" role="alert">{authError}</p>}
           <button className="k-btn k-btn--primary dash-submit" type="submit" disabled={authBusy}>
-            {authBusy ? t('dash.working') : mode === 'signup' ? t('dash.signUp') : t('dash.signIn')}
+            {authBusy ? t('dash.working') : t('dash.signIn')}
             <ArrowUpRight size={16} aria-hidden="true" />
           </button>
           <p className="dash-login-note">{t('dash.loginNote')}</p>
