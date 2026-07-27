@@ -12,7 +12,8 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { experimentsData, getExperimentBySlug } from '../data/experimentsData';
+import { experimentsData } from '../data/experimentsData';
+import { fetchExperiments } from '../lib/neonClient';
 
 /**
  * ExperimentDetail — one entry of the Krypton Library.
@@ -26,7 +27,30 @@ export default function ExperimentDetail() {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
 
-  const exp = useMemo(() => getExperimentBySlug(slug), [slug]);
+  // Entri dimuat dari Neon (dikelola via /dashboard); data statis bawaan jadi
+  // tampilan awal + fallback. `loaded` mencegah "not found" palsu untuk entri
+  // baru yang belum ada di bundle statis saat halaman dibuka langsung.
+  const [all, setAll] = useState(experimentsData);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchExperiments()
+      .then((rows) => {
+        if (!cancelled && rows.length > 0) setAll(rows);
+      })
+      .catch(() => {
+        /* offline / Data API down — tetap pakai data statis */
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const exp = useMemo(() => all.find((e) => e.slug === slug) || null, [all, slug]);
 
   // Fresh entry → always start from the top of the sheet.
   useEffect(() => {
@@ -35,8 +59,8 @@ export default function ExperimentDetail() {
   }, [slug]);
 
   const shelf = useMemo(
-    () => (exp ? experimentsData.filter((e) => e.category === exp.category) : []),
-    [exp],
+    () => (exp ? all.filter((e) => e.category === exp.category) : []),
+    [all, exp],
   );
   const pos = exp ? shelf.findIndex((e) => e.id === exp.id) : -1;
   const prev = pos > 0 ? shelf[pos - 1] : null;
@@ -54,6 +78,14 @@ export default function ExperimentDetail() {
       /* clipboard unavailable — silently ignore */
     }
   };
+
+  if (!exp && !loaded) {
+    return (
+      <main className="expd-page page-content" aria-busy="true">
+        <div className="exp-empty">…</div>
+      </main>
+    );
+  }
 
   if (!exp) {
     return (

@@ -11,6 +11,7 @@ import Community from './pages/Community';
 import Pool from './pages/Pool';
 import Experiment from './pages/Experiment';
 import ExperimentDetail from './pages/ExperimentDetail';
+import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 
 import WelcomeSplash from './components/WelcomeSplash';
@@ -139,6 +140,7 @@ function AppContent() {
           <Route path="/community" element={<Community />} />
           <Route path="/experiment" element={<Experiment />} />
           <Route path="/experiment/:slug" element={<ExperimentDetail />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pool" element={<Pool />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

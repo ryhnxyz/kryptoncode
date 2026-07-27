@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Check, Link, TriangleAlert, WifiOff } from 'lucide-react';
 import { renderIcon } from '../lib/icons';
-import { api } from '../lib/api';
+import { fetchProjects } from '../lib/neonClient';
 import { useLanguage } from '../contexts/LanguageContext';
 import { productsData } from '../data/productsData';
 import ProductSourceToggle from '../components/ProductSourceToggle';
@@ -22,9 +22,10 @@ export default function ProductDetail() {
     async function fetchProduct() {
       setLoading(true); setFallback(false); setProduct(null);
       if (source === 'mock') { setProduct(productsData.find((item) => item.id === id) || null); setLoading(false); return; }
-      try { const data = await api.get(`/api/products/${id}`); setProduct(data.product); }
+      // Sumber "live" = Neon Data API (katalog dikelola via /dashboard).
+      try { const items = await fetchProjects(); setProduct(items.find((item) => item.id === id) || null); }
       catch {
-        // API/backend unreachable — try the bundled demo catalog before giving up.
+        // Data API unreachable — try the bundled demo catalog before giving up.
         const demoProduct = productsData.find((item) => item.id === id) || null;
         setProduct(demoProduct);
         setFallback(Boolean(demoProduct));

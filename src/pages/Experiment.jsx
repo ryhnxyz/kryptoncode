@@ -3,11 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, FlaskConical, Lock } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import {
-  experimentCategories,
-  experimentsData,
-  getCategoryCount,
-} from '../data/experimentsData';
+import { experimentCategories, experimentsData } from '../data/experimentsData';
+import { fetchExperiments } from '../lib/neonClient';
 import SpectrumBars from '../components/SpectrumBars';
 
 const WELCOME_HOLD_MS = 2900;   // when the exit choreography starts
@@ -198,14 +195,34 @@ export default function Experiment() {
     return () => window.removeEventListener('krypton:splash-done', onSplashDone);
   }, []);
 
+  // Katalog dimuat dari Neon (dikelola via /dashboard). Data statis bawaan
+  // dipakai sebagai tampilan awal + fallback saat Data API tidak terjangkau.
+  const [all, setAll] = useState(experimentsData);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchExperiments()
+      .then((rows) => {
+        if (!cancelled && rows.length > 0) setAll(rows);
+      })
+      .catch(() => {
+        /* offline / Data API down — tetap pakai data statis */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const countFor = (categoryId) => all.filter((e) => e.category === categoryId).length;
+
   const items = useMemo(
     () =>
-      experimentsData.filter(
+      all.filter(
         (e) =>
           (category === 'all' || e.category === category) &&
           (filter === 'all' || e.status === filter),
       ),
-    [category, filter],
+    [all, category, filter],
   );
 
   return (
@@ -255,7 +272,7 @@ export default function Experiment() {
           <div className="lib-index-head">
             <span>[ {t('lab.shelfKicker')} ]</span>
             <span>
-              {experimentsData.length} {t('lab.count')}
+              {all.length} {t('lab.count')}
             </span>
           </div>
           <div className="lib-rows">
@@ -268,12 +285,12 @@ export default function Experiment() {
               <span className="lib-row-index" aria-hidden="true">00</span>
               <span className="lib-row-name">{t('lab.category.all')}</span>
               <span className="lib-row-count">
-                {experimentsData.length} {t('lab.entries')}
+                {all.length} {t('lab.entries')}
               </span>
               <ArrowRight className="lib-row-arrow" size={16} strokeWidth={1.8} aria-hidden="true" />
             </button>
             {experimentCategories.map((c, i) => {
-              const count = getCategoryCount(c.id);
+              const count = countFor(c.id);
               const soon = c.soon || count === 0;
               const rowIndex = String(i + 1).padStart(2, '0');
               if (soon) {
